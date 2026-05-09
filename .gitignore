@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Verification-gate output
+.verify-test.nv
+.verify-test.nv/
+
+# The actual index binary is regeneratable from hashes.json + the
+# catalogue source; commit hashes.json (small, deterministic) but
+# not the multi-MB native store. Backup snapshots from prior reindex
+# runs (kept locally for safety) are also excluded.
+.nuos-catalogue/index.nv
+.nuos-catalogue/index.nv/
+.nuos-catalogue/*.nv
+.nuos-catalogue/*.nv/
+.nuos-catalogue.*-bak/
+.nuos-catalogue.*-bak.json
