@@ -26,7 +26,7 @@
  *   resolving decision.
  */
 
-import { writeFile } from 'node:fs/promises';
+import { writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import type {
@@ -35,14 +35,26 @@ import type {
   WriteIntent,
   CommitRef,
 } from '@nusoft/nuflow';
+import type {
+  WorkUnitCreatePayload,
+  DecisionCreatePayload,
+  OpenQuestionCreatePayload,
+  PersonaCreatePayload,
+} from '@nusoft/nuflow-pack-nuos-build-catalogue';
 import type { WorkflowStore } from '../migrate/store.js';
-import type { MigratedRecord } from '../migrate/types.js';
+import type { MigratedRecord, Register } from '../migrate/types.js';
 import {
   replaceStatusLine,
   insertStatusLine,
   appendChangeLog,
 } from './markdown-edit.js';
 import { tickAcceptanceCriterion, parseAcceptanceCriteria } from './ac-parse.js';
+import {
+  renderWorkUnit,
+  renderDecision,
+  renderOpenQuestion,
+  renderPersona,
+} from './markdown-render.js';
 
 export interface BuildCatalogueMisAdapterConfig {
   store: WorkflowStore;
@@ -57,9 +69,14 @@ export function createBuildCatalogueMisAdapter(
 
   const adapter: MisWriteAdapter = {
     canCommit(intent: WriteIntent): MisCommitDecision {
-      // Verify all subjects resolve to records the store knows about.
-      // The build-catalogue pack ensures handles are well-formed; the
-      // adapter ensures they exist.
+      // Create intents have placeholder subjects (e.g. wu-pending) that
+      // the workflow has rewritten to the real handle inside the typed
+      // payload. Skip the existence check for create intents.
+      if (isCreateIntent(intent.type)) return { allowed: true };
+
+      // For mutation intents, verify all subjects resolve to records
+      // the store knows about. The build-catalogue pack ensures handles
+      // are well-formed; the adapter ensures they exist.
       for (const subject of intent.subjects) {
         if (!store.has(subject.id)) {
           return {
@@ -73,6 +90,18 @@ export function createBuildCatalogueMisAdapter(
 
     async commit(intent: WriteIntent): Promise<CommitRef> {
       switch (intent.type) {
+        case 'work_unit.create':
+          await commitCreateRecord(store, catalogueRoot, intent, 'work_unit');
+          break;
+        case 'decision.create':
+          await commitCreateRecord(store, catalogueRoot, intent, 'decision');
+          break;
+        case 'open_question.create':
+          await commitCreateRecord(store, catalogueRoot, intent, 'open_question');
+          break;
+        case 'persona.create':
+          await commitCreateRecord(store, catalogueRoot, intent, 'persona');
+          break;
         case 'work_unit.advance_status':
           await commitAdvanceStatus(store, catalogueRoot, intent);
           break;
@@ -87,7 +116,7 @@ export function createBuildCatalogueMisAdapter(
           break;
         default:
           throw new Error(
-            `BuildCatalogueMisAdapter: intent type ${intent.type} is not handled by Phase H part 2 (write commands shipped: advance_status, tick_acceptance_criterion, decision.supersede, open_question.resolve)`
+            `BuildCatalogueMisAdapter: intent type ${intent.type} is not handled by the build-catalogue pack`
           );
       }
 
@@ -107,9 +136,118 @@ export function createBuildCatalogueMisAdapter(
   return adapter;
 }
 
+function isCreateIntent(intentType: string): boolean {
+  return (
+    intentType === 'work_unit.create' ||
+    intentType === 'decision.create' ||
+    intentType === 'open_question.create' ||
+    intentType === 'persona.create'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Per-intent commit handlers
 // ---------------------------------------------------------------------------
+
+async function commitCreateRecord(
+  store: WorkflowStore,
+  catalogueRoot: string,
+  intent: WriteIntent,
+  register: Register
+): Promise<void> {
+  let rendered: string;
+  let handle: string;
+  let number: number;
+  let slug: string;
+  let title: string;
+  let registerDir: string;
+
+  switch (register) {
+    case 'work_unit': {
+      const payload = intent.payload as unknown as WorkUnitCreatePayload;
+      rendered = renderWorkUnit(payload);
+      handle = payload.handle;
+      number = payload.number;
+      slug = payload.slug;
+      title = payload.title;
+      registerDir = 'work-units';
+      break;
+    }
+    case 'decision': {
+      const payload = intent.payload as unknown as DecisionCreatePayload;
+      rendered = renderDecision(payload);
+      handle = payload.handle;
+      number = payload.number;
+      slug = payload.slug;
+      title = payload.title;
+      registerDir = 'decisions';
+      break;
+    }
+    case 'open_question': {
+      const payload = intent.payload as unknown as OpenQuestionCreatePayload;
+      rendered = renderOpenQuestion(payload);
+      handle = payload.handle;
+      number = payload.number;
+      slug = payload.slug;
+      title = payload.title;
+      registerDir = 'open-questions';
+      break;
+    }
+    case 'persona': {
+      const payload = intent.payload as unknown as PersonaCreatePayload;
+      rendered = renderPersona(payload);
+      handle = payload.handle;
+      number = payload.number;
+      slug = payload.slug;
+      title = payload.title;
+      registerDir = 'personas';
+      break;
+    }
+  }
+
+  // Filename pattern matches the migration parser:
+  //   work-units use just the number prefix (e.g. 200-foo.md)
+  //   decisions/questions/personas use the handle as prefix (D200-foo.md, Q200-foo.md, P200-foo.md)
+  const filename =
+    register === 'work_unit'
+      ? `${String(number).padStart(3, '0')}-${slug}.md`
+      : `${handle}-${slug}.md`;
+  const relativeSourcePath = `${registerDir}/${filename}`;
+  const absolutePath = path.join(catalogueRoot, relativeSourcePath);
+
+  // Ensure the register dir exists (e.g. personas/ may not exist yet).
+  await mkdir(path.dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, rendered, 'utf8');
+
+  const now = new Date().toISOString();
+  const record: MigratedRecord = {
+    handle,
+    number,
+    register,
+    title,
+    status: register === 'persona' ? '🟢 active' : initialStatusForRegister(register),
+    slug,
+    sourcePath: relativeSourcePath,
+    rawMarkdown: rendered,
+    fileModifiedAt: now,
+    migratedAt: now,
+    migratedFrom: 'markdown',
+  };
+  store.put(record);
+}
+
+function initialStatusForRegister(register: Register): string {
+  switch (register) {
+    case 'work_unit':
+      return '🔵 proposed';
+    case 'decision':
+      return 'proposed';
+    case 'open_question':
+      return 'active';
+    case 'persona':
+      return '🟢 active';
+  }
+}
 
 async function commitAdvanceStatus(
   store: WorkflowStore,

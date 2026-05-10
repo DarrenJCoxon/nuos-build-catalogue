@@ -36,6 +36,13 @@ import {
   cmdDecisionSupersede,
   cmdQuestionResolve,
 } from './commands/write.js';
+import {
+  cmdWuCreate,
+  cmdDecisionCreate,
+  cmdQuestionCreate,
+  cmdPersonaCreate,
+} from './commands/create.js';
+import { openPrompt } from './commands/prompt.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -275,6 +282,35 @@ async function cmdRegisterDispatch(
       process.exit(result.exitCode);
       break;
     }
+    case 'create': {
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const prompt = openPrompt();
+      try {
+        let result;
+        switch (command) {
+          case 'wu':
+            result = await cmdWuCreate(store, runtime, prompt);
+            break;
+          case 'decision':
+            result = await cmdDecisionCreate(store, runtime, prompt);
+            break;
+          case 'question':
+            result = await cmdQuestionCreate(store, runtime, prompt);
+            break;
+          case 'persona':
+            result = await cmdPersonaCreate(store, runtime, prompt);
+            break;
+          default:
+            console.error(`'create' is not a subcommand of ${command}`);
+            process.exit(2);
+        }
+        console.log(result.output);
+        process.exit(result.exitCode);
+      } finally {
+        prompt.close();
+      }
+      break;
+    }
     default:
       console.error(`unknown ${command} action: ${action}`);
       process.exit(2);
@@ -368,16 +404,20 @@ Usage:
   nuos-catalogue summary  [--json]
   nuos-catalogue wu        list      [--status=<s>] [--limit=N] [--json]
   nuos-catalogue wu        show      <handle> [--json]
+  nuos-catalogue wu        create    (interactive — multi-step prompts)
   nuos-catalogue wu        advance   <handle> --to=<status> [--reason="..."]
   nuos-catalogue wu        tick      <handle> --index=N --evidence="..."
   nuos-catalogue decision  list      [--status=<s>] [--limit=N] [--json]
   nuos-catalogue decision  show      <handle> [--json]
+  nuos-catalogue decision  create    (interactive)
   nuos-catalogue decision  supersede <target> --by=<superseding> [--reason="..."]
   nuos-catalogue question  list      [--status=<s>] [--limit=N] [--json]
   nuos-catalogue question  show      <handle> [--json]
+  nuos-catalogue question  create    (interactive)
   nuos-catalogue question  resolve   <q-handle> --by=<d-handle> [--reason="..."]
   nuos-catalogue persona   list      [--limit=N] [--json]
   nuos-catalogue persona   show      <handle> [--json]
+  nuos-catalogue persona   create    (interactive — seven dimensions + acid-test per D046)
 
   nuos-catalogue help
 

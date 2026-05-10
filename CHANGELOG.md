@@ -1,5 +1,55 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.7.0 — 2026-05-10 — Phase H part 3 interactive create commands (WU 111)
+
+Closes WU 111's last substantive surface before Phase J. Four interactive `create` commands ship: `wu create`, `decision create`, `question create`, `persona create`. Each walks the operator through the relevant register's protocol body (per `scripts/protocols/wu-new.md`, `persona-new.md`, etc.) and drives the workflow lifecycle to commit.
+
+**New CLI subcommands:**
+
+```
+nuos-catalogue wu       create   (interactive — multi-step prompts)
+nuos-catalogue decision create   (interactive)
+nuos-catalogue question create   (interactive)
+nuos-catalogue persona  create   (interactive — seven dimensions + acid-test per D046)
+```
+
+**Architecture.** Three new modules:
+
+- `src/runtime/markdown-render.ts` — pure renderers per register. `renderWorkUnit` produces the D046 six-field shape (with N/A markers for infrastructure WUs); `renderDecision` produces the Context / Decision / Consequences / Alternatives shape; `renderOpenQuestion` produces Why-it-matters / Options / Evidence-needed; `renderPersona` walks the seven dimensions + acid-test.
+- `src/commands/prompt.ts` — readline-based prompt helpers using `node:readline/promises` (no new deps). Exports `Prompt` interface (so tests can mock), `openPrompt()` factory, and `askUntilValid` validation loop helper.
+- `src/commands/create.ts` — four interactive handlers + four pure capture-builders. Each interactive command takes an injected `Prompt` so tests can substitute a `MockPrompt`.
+
+**MIS adapter extended for `*.create` intents.** New `commitCreateRecord` handler: renders the workflow's typed payload via the appropriate renderer, writes the new markdown file at `<register-dir>/<handle>-<slug>.md` (creating the register dir if needed — e.g. `personas/` is empty in the live catalogue and the persona create operation auto-creates it), adds a new `MigratedRecord` to the JSON store with the appropriate initial status. The `canCommit` check skips the subjects-must-exist guard for create intents (the placeholder `wu-pending` / `d-pending` etc. doesn't yet exist).
+
+**Test approach.** Three layers:
+
+1. **Renderers** — pure-function tests confirming output matches the expected catalogue style (5 tests).
+2. **Capture-builders** — pure-function tests confirming the typed payload shape (3 tests).
+3. **End-to-end via mock Prompt** — `MockPrompt` scripts answers in order; the test runs the interactive shell, drives the workflow lifecycle, then asserts the resulting markdown file on disk + the JSON store record (4 tests, one per command).
+
+**`wu create` UX details.**
+- `kind` choice via `askChoice` over `[feature, infrastructure, spike, remediation]`.
+- For infrastructure WUs, persona/trigger/walkthrough are auto-marked `N/A — infrastructure WU` and the prompts are skipped.
+- For outcome WUs, all three are required (validated non-empty).
+- AC entered one-per-line with a blank line to finish; same pattern for contracts produced + contracts consumed.
+- Approach paragraph is optional (defaults to no).
+
+**`persona create` UX details.**
+- Seven dimensions each prompted as multi-line input (sentinel `.`).
+- Acid-test refinement is the eighth multi-line prompt.
+- Validation: every dimension non-empty after trim. The pack's workflow rejects with a clear error if any dimension is empty.
+
+**`decision create` and `question create` UX details.**
+- Decision: title, then context/decision/consequences as multi-line. Optional alternatives-considered.
+- Question: title, why-it-matters, optional options sketch, optional evidence-needed, optional CSV of WUs blocked.
+
+**Test totals:** 113/113 across 33 suites (was 101/101 in 0.6.0; +12 new tests).
+
+**What's not in this release**
+- Phase J — conformance suite + 0.1.0 publish + live cutover migration + WU 128 enforcement-flag flip + 5-day soak.
+- Quality-trap surfacing in `wu create` — the four traps (vagueness, technical language, happy-path-only, kitchen-sink) per the `wu-new` protocol body are not yet surfaced as active prompts at review time. Deferred to a refinement pass; for now the operator self-applies the traps before saving (the prompt body suggests this).
+- Decision file's `Rationale` field — `renderDecision` produces Context/Decision/Consequences/Alternatives but not Rationale (which the live catalogue uses inconsistently — sometimes folded into Decision, sometimes a separate section). The renderer follows the more conservative subset.
+
 ## 0.6.0 — 2026-05-10 — AC parser closes the wu tick + wu advance --to=completed gaps (WU 111)
 
 Closes the two scope cuts from 0.5.0 by adding an acceptance-criteria parser.
