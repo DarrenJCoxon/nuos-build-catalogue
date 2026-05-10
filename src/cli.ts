@@ -14,11 +14,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { selectEmbedderFromEnv } from './embedder/select.js';
-import { openStore } from './store/open.js';
-import { runIndex } from './indexer/upsert.js';
-import { runSearch } from './search/query.js';
-import { formatHumanReadable, formatJson } from './search/format.js';
+// Static imports — these don't pull in NuVector / NuFlow transitively.
+// init / migrate / regenerate / summary / list / show / install-protocols all
+// work without those native deps being installed.
 import { runMigrate } from './migrate/run.js';
 import { openWorkflowStore } from './migrate/store.js';
 import {
@@ -29,21 +27,16 @@ import {
 } from './commands/handlers.js';
 import { runRegenerate } from './regenerate/check.js';
 import type { Register } from './migrate/types.js';
-import { createBuildCatalogueRuntime } from './runtime/runtime.js';
-import {
-  cmdWuAdvance,
-  cmdWuTick,
-  cmdDecisionSupersede,
-  cmdQuestionResolve,
-} from './commands/write.js';
-import {
-  cmdWuCreate,
-  cmdDecisionCreate,
-  cmdQuestionCreate,
-  cmdPersonaCreate,
-} from './commands/create.js';
 import { openPrompt } from './commands/prompt.js';
 import { cmdInit, cmdInstallProtocols } from './commands/init.js';
+
+// Dynamic imports below — index / search / write commands / create commands
+// load NuVector or NuFlow transitively. Loading them at module-parse time
+// would crash on platforms where the NuVector native binary isn't resolved
+// (e.g. fresh npx installs before @nusoft/nuvector ships its platform-specific
+// binaries as optionalDependencies). Lazy-load so the lightweight commands
+// (init, migrate, etc.) work universally; the heavyweight commands degrade
+// gracefully when their deps are missing.
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -96,6 +89,10 @@ async function cmdIndex(flags: Record<string, string | boolean>): Promise<void> 
   const indexPath = String(flags['index'] ?? DEFAULT_INDEX_PATH);
   const hashPath = String(flags['hash-file'] ?? DEFAULT_HASH_PATH);
 
+  const { selectEmbedderFromEnv } = await import('./embedder/select.js');
+  const { openStore } = await import('./store/open.js');
+  const { runIndex } = await import('./indexer/upsert.js');
+
   const embedder = await selectEmbedderFromEnv();
   const store = await openStore({ storagePath: indexPath, dimensions: embedder.dimensions });
 
@@ -132,6 +129,10 @@ async function cmdSearch(positional: string[], flags: Record<string, string | bo
   }
 
   const indexPath = String(flags['index'] ?? DEFAULT_INDEX_PATH);
+  const { selectEmbedderFromEnv } = await import('./embedder/select.js');
+  const { openStore } = await import('./store/open.js');
+  const { runSearch } = await import('./search/query.js');
+  const { formatHumanReadable, formatJson } = await import('./search/format.js');
   const embedder = await selectEmbedderFromEnv();
   const store = await openStore({ storagePath: indexPath, dimensions: embedder.dimensions });
 
@@ -240,6 +241,8 @@ async function cmdRegisterDispatch(
         console.error(`'advance' is a wu subcommand only`);
         process.exit(2);
       }
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const { cmdWuAdvance } = await import('./commands/write.js');
       const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
       const result = await cmdWuAdvance(store, runtime, {
         handle: positional[1],
@@ -255,6 +258,8 @@ async function cmdRegisterDispatch(
         console.error(`'tick' is a wu subcommand only`);
         process.exit(2);
       }
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const { cmdWuTick } = await import('./commands/write.js');
       const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
       const result = await cmdWuTick(store, runtime, {
         handle: positional[1],
@@ -270,6 +275,8 @@ async function cmdRegisterDispatch(
         console.error(`'supersede' is a decision subcommand only`);
         process.exit(2);
       }
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const { cmdDecisionSupersede } = await import('./commands/write.js');
       const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
       const result = await cmdDecisionSupersede(store, runtime, {
         target: positional[1],
@@ -285,6 +292,8 @@ async function cmdRegisterDispatch(
         console.error(`'resolve' is a question subcommand only`);
         process.exit(2);
       }
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const { cmdQuestionResolve } = await import('./commands/write.js');
       const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
       const result = await cmdQuestionResolve(store, runtime, {
         qHandle: positional[1],
@@ -296,6 +305,13 @@ async function cmdRegisterDispatch(
       break;
     }
     case 'create': {
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const {
+        cmdWuCreate,
+        cmdDecisionCreate,
+        cmdQuestionCreate,
+        cmdPersonaCreate,
+      } = await import('./commands/create.js');
       const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
       const prompt = openPrompt();
       try {
