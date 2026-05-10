@@ -16,6 +16,7 @@ import type { NuFlowRuntime, ActorRef, CaptureInput } from '@nusoft/nuflow';
 import type { WorkflowStore } from '../migrate/store.js';
 import type { MigratedRecord } from '../migrate/types.js';
 import { normaliseHandle } from './handlers.js';
+import { extractForCompletion } from '../runtime/ac-parse.js';
 
 const BUILD_MAINTAINER: ActorRef = {
   kind: 'staff',
@@ -51,6 +52,12 @@ export async function cmdWuAdvance(
 
   const fromStatus = inferWorkflowStatus(record);
 
+  // For → completed, the pack's completion gate requires the AC list.
+  // Extract it from the markdown so the gate can verify every AC is
+  // ticked-with-evidence. For other transitions the AC list is informational.
+  const acceptanceCriteria =
+    args.to === 'completed' ? extractForCompletion(record.rawMarkdown) : undefined;
+
   const capture: CaptureInput = {
     channel: 'typed_note',
     content: `advance ${handle} → ${args.to}${args.reason ? `: ${args.reason}` : ''}`,
@@ -60,10 +67,7 @@ export async function cmdWuAdvance(
       fromStatus,
       toStatus: args.to,
       reason: args.reason,
-      // Completion gate needs the AC list; without parsed AC the gate
-      // can't fire. For non-→completed transitions this is harmless;
-      // for → completed we surface a warning to the user.
-      acceptanceCriteria: undefined,
+      acceptanceCriteria,
     },
   };
 

@@ -170,10 +170,12 @@ describe('§2 wu advance', () => {
     await cmdWuAdvance(store, runtime, { handle: 'wu-200', to: 'in_progress' });
     await cmdWuAdvance(store, runtime, { handle: 'wu-200', to: 'in_review' });
 
-    // Try to complete — should fail because AC list not provided
+    // Try to complete — should fail because the WU 200 fixture has no
+    // AC section, so the parser returns an empty list and the
+    // completion gate rejects with "at least one acceptance criterion".
     const result = await cmdWuAdvance(store, runtime, { handle: 'wu-200', to: 'completed' });
     assert.equal(result.exitCode, 1);
-    assert.match(result.output, /completion requires metadata\.acceptanceCriteria/);
+    assert.match(result.output, /at least one acceptance criterion/);
   });
 
   test('rejects unknown handle', async () => {

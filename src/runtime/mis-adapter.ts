@@ -42,6 +42,7 @@ import {
   insertStatusLine,
   appendChangeLog,
 } from './markdown-edit.js';
+import { tickAcceptanceCriterion, parseAcceptanceCriteria } from './ac-parse.js';
 
 export interface BuildCatalogueMisAdapterConfig {
   store: WorkflowStore;
@@ -163,13 +164,39 @@ async function commitTickAC(
     throw new Error(`commitTickAC: no record for ${payload.targetHandle}`);
   }
 
-  const summary = payload.criterionText
-    ? `Acceptance criterion ${payload.criterionIndex + 1} ticked: "${payload.criterionText}".`
+  // Try to flip the AC line in the markdown. If parsing succeeds we get
+  // the structural tick; otherwise we fall back to the audit-log-only
+  // approach (older/atypical AC shapes the parser doesn't recognise).
+  let workingMarkdown = record.rawMarkdown;
+  let acText = payload.criterionText;
+  let structuralTick = false;
+  try {
+    const acs = parseAcceptanceCriteria(record.rawMarkdown);
+    if (acs.length === 0) {
+      // No AC section recognised — audit-log-only.
+    } else if (payload.criterionIndex >= acs.length) {
+      throw new Error(
+        `commitTickAC: criterion index ${payload.criterionIndex} out of range (${record.handle} has ${acs.length} parsed AC entries)`
+      );
+    } else {
+      acText = acText ?? acs[payload.criterionIndex].text;
+      workingMarkdown = tickAcceptanceCriterion(record.rawMarkdown, payload.criterionIndex);
+      structuralTick = true;
+    }
+  } catch (err) {
+    // Re-throw out-of-range errors; tolerate parse failures.
+    if (err instanceof Error && err.message.includes('out of range')) {
+      throw err;
+    }
+  }
+
+  const summary = acText
+    ? `Acceptance criterion ${payload.criterionIndex + 1} ticked: "${acText}".`
     : `Acceptance criterion at index ${payload.criterionIndex} ticked.`;
 
-  const updatedMarkdown = appendChangeLog(record.rawMarkdown, {
+  const updatedMarkdown = appendChangeLog(workingMarkdown, {
     isoTimestamp: new Date().toISOString(),
-    summary,
+    summary: structuralTick ? summary : `${summary} (audit-log-only — AC list not recognised)`,
     details: `Evidence: ${payload.evidence}`,
     reference: `intent ${intent.intentId}`,
   });

@@ -1,5 +1,41 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.6.0 — 2026-05-10 — AC parser closes the wu tick + wu advance --to=completed gaps (WU 111)
+
+Closes the two scope cuts from 0.5.0 by adding an acceptance-criteria parser.
+
+**`wu tick` now flips the actual checkbox.** Before 0.6.0 it appended an audit-log entry only. Now it parses the AC list out of the markdown, finds the AC at the supplied index, and replaces the unticked line with the ticked equivalent in the same style:
+
+- `- [ ] text` → `- [x] text`
+- `1. text` → `1. ✅ text`
+
+The audit-log entry is still appended for the workflow record. If the AC section can't be parsed (atypical shape — only WU 073 in the live catalogue), the tick falls back to audit-log-only and labels the entry `(audit-log-only — AC list not recognised)`.
+
+**`wu advance --to=completed` now works via CLI when all AC are ticked.** The CLI extracts the AC list from the markdown using `extractForCompletion`, attaches it to the workflow capture as `metadata.acceptanceCriteria`, and the pack's completion gate (Phase C) verifies every entry. Evidence inference:
+- Ticked AC with a matching `## Build catalogue history` entry → the evidence string from that entry (e.g., commit ref).
+- Ticked AC with no matching history entry → `"Ticked in source markdown."` (the maintainer hand-ticked).
+- Unticked AC → no evidence; the gate rejects naming the AC.
+
+**Two AC shapes recognised** (matching what the live catalogue uses across 130+ files):
+1. **Checkbox:** `- [ ] text` / `- [x] text` — the newer convention; used by WU 111 itself.
+2. **Numbered + emoji:** `1. ✅ text` (ticked) / `1. text` (unticked) — the older convention; common in `done/` files.
+
+**Live verification.** The §6 real-fixture test parses WU 111's actual AC list: 14 unticked checkbox entries; every entry round-trips through `tickAcceptanceCriterion` → checked equivalent → `parseAcceptanceCriteria` again with met=true.
+
+**Added**
+- `src/runtime/ac-parse.ts` — `parseAcceptanceCriteria(rawMarkdown)`, `tickAcceptanceCriterion(rawMarkdown, index)`, `extractForCompletion(rawMarkdown)`. Plus a `parseHistoryEvidence` helper that bridges the audit log into the completion gate.
+- `tests/ac-parse.test.ts` — 21 acceptance tests across 6 sections (checkbox parsing, numbered+emoji parsing, tick-with-style-preservation, evidence inference, end-to-end through the CLI on a synthetic corpus, and the WU 111 real-fixture test).
+
+**Bug-fixes during testing**
+1. The first cut of `parseHistoryEvidence` used a multiline-flag regex with `$` for end-of-input, which actually matched end-of-line and cut entry blocks short before the Evidence sub-bullet. Fixed by switching to a section-bounded split-by-bullet approach.
+2. The `commands-write.test.ts` test for "advance to completed without AC" was asserting the old workflow rejection message. With the AC parser in place, an empty AC section now produces a different (clearer) error: `"at least one acceptance criterion"`. Test matcher updated.
+
+**Test totals:** 101/101 across 30 suites (was 82/82 in 0.5.0; +19 new tests).
+
+**What's not in this release**
+- Interactive `create` commands (Phase H part 3 — `wu create`, `decision create`, `persona create`)
+- Phase J cutover
+
 ## 0.5.0 — 2026-05-10 — Phase H part 2 flag-driven write commands (WU 111)
 
 Adds the four flag-driven write commands and wires the build-catalogue NuFlow runtime end-to-end. Markdown files and the JSON workflow store now stay in sync atomically — every write operation updates both.
