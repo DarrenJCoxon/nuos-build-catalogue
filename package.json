@@ -1,6 +1,6 @@
 {
   "name": "@nusoft/nuos-build-catalogue",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "NuOS build-catalogue tooling: semantic search (WU 110) + migration runner that lifts markdown artefacts into JSON-backed workflow records (WU 111, Phase G).",
   "type": "module",
   "bin": {
@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc",
     "verify-storage": "tsx scripts/verify-persistence.ts",
-    "test": "tsx --test tests/chunk.test.ts tests/metadata.test.ts tests/crawl.test.ts tests/migrate.test.ts",
+    "test": "tsx --test tests/chunk.test.ts tests/metadata.test.ts tests/crawl.test.ts tests/migrate.test.ts tests/commands-read.test.ts",
     "typecheck": "tsc --noEmit",
     "index": "tsx src/cli.ts index",
     "search": "tsx src/cli.ts search"

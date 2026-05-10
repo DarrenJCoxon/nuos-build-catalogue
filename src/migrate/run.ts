@@ -17,7 +17,12 @@ import { readdir, readFile } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
 import path from 'node:path';
 
-import type { MigratedRecord, MigrationReport, Register } from './types.js';
+import type {
+  MigratedRecord,
+  MigrationReport,
+  HandleConflict,
+  Register,
+} from './types.js';
 import { parseFile, registerForRelativePath } from './parsers.js';
 import type { WorkflowStore } from './store.js';
 
@@ -49,6 +54,7 @@ export async function runMigrate(config: RunMigrateConfig): Promise<MigrationRep
   let scanned = 0;
   let migrated = 0;
   let skipped = 0;
+  const conflicts: HandleConflict[] = [];
 
   for (const register of REGISTER_DIRS) {
     const dirName = REGISTER_TO_DIRNAME[register];
@@ -77,6 +83,17 @@ export async function runMigrate(config: RunMigrateConfig): Promise<MigrationRep
       byRegister[register].scanned += 1;
 
       if (config.store.has(record.handle)) {
+        const existing = config.store.get(record.handle);
+        if (existing && existing.sourcePath !== record.sourcePath) {
+          // A different file claimed this handle. This is a real
+          // catalogue-discipline issue (e.g. two WUs sharing the same
+          // number prefix); surface it rather than silently dropping.
+          conflicts.push({
+            handle: record.handle,
+            winnerSourcePath: existing.sourcePath,
+            loserSourcePath: record.sourcePath,
+          });
+        }
         skipped += 1;
         byRegister[register].skipped += 1;
         continue;
@@ -98,12 +115,17 @@ export async function runMigrate(config: RunMigrateConfig): Promise<MigrationRep
     scanned,
     migrated,
     skipped,
+    conflicts,
     byRegister,
     durationMs: Date.now() - startedAt,
   };
 }
 
 /**
+ * After in-memory store-puts, we still need to detect within-pass
+ * conflicts. The block above handles that via `config.store.has()` +
+ * `get()`; the result lands in the report's `conflicts` array.
+ *
  * Collect markdown artefact files under a register directory, including
  * one level of subdirectory (e.g. work-units/done, decisions/superseded).
  * Skips index files (`_index.md`), templates (filename includes

@@ -38,10 +38,20 @@ export interface MigratedRecord {
   migratedFrom: 'markdown';
 }
 
+export interface HandleConflict {
+  handle: string;
+  /** The file that won (was already in the store or scanned first). */
+  winnerSourcePath: string;
+  /** The file that was dropped because its handle was already taken. */
+  loserSourcePath: string;
+}
+
 export interface MigrationReport {
   scanned: number;
   migrated: number;
   skipped: number;
+  /** Files dropped because a different file already claimed the same handle. */
+  conflicts: HandleConflict[];
   byRegister: Record<Register, { scanned: number; migrated: number; skipped: number }>;
   durationMs: number;
 }

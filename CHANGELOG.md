@@ -1,5 +1,48 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.3.0 — 2026-05-10 — Phase H read commands + Phase G conflict reporting (WU 111)
+
+**Phase H read commands.** Eight new CLI subcommands for inspecting the migrated workflow store: `summary`, `wu list/show`, `decision list/show`, `question list/show`, `persona list/show`. All accept `--json` for machine consumption. List commands accept `--status=<text>` (substring match, case-insensitive) and `--limit=N`. The `show` subcommands accept canonical handles (`wu-111`, `D046`, `Q009`, `P001`) AND friendly variants (`WU 111`, `111`, `D45`, `Q9`) — the latter normalised before lookup.
+
+**Phase G conflict reporting (small refinement).** The migrator now distinguishes idempotent skips (same source path, re-run) from genuine handle conflicts (different source files claiming the same handle). Conflicts are reported in the migration output with a warning section that names every dropped file and points the maintainer at the fix.
+
+**Real-world finding from live dry-run.** The current live catalogue has 3 WUs sharing the prefix `072b-` in `work-units/done/`:
+- `072b-phase-2-step-6-design.md`
+- `072b-production-wiring-spec.md`
+- `072b-sensight-per-student-propose-mode.md`
+
+Without conflict reporting, the migrator would silently keep one and drop two. With the conflict report, the maintainer sees the issue immediately. This kind of catalogue-discipline feedback is exactly what the migrator needs to surface before the live cutover at Phase J.
+
+**Live end-to-end smoke (no commit; temp-dir):**
+```
+$ nuos-catalogue migrate --workflows=$TMP/wf.json
+scanned: 165, migrated: 163, skipped: 2 (with 2 handle conflicts on wu-072b reported)
+
+$ nuos-catalogue summary --workflows=$TMP/wf.json
+total: 163 (work_unit 114, decision 36, open_question 13, persona 0)
+
+$ nuos-catalogue wu list --status=ready --workflows=$TMP/wf.json
+6 records: wu-048, wu-072b, wu-083, wu-094, wu-111, wu-125
+```
+
+**Added (Phase H)**
+- `src/commands/format.ts` — shared list/show formatters (human + JSON; width-aware tabular output)
+- `src/commands/handlers.ts` — `listRegister()`, `showRecord()`, `normaliseHandle()`, `listAcrossRegisters()`, `commandToRegister()`
+- `src/cli.ts` — new subcommand dispatch for `summary`, `wu`, `decision`, `question`, `persona` plus updated help text
+- `tests/commands-read.test.ts` — 23 acceptance tests across normaliseHandle, list (sort, filter, limit, JSON, empty), show (canonical, friendly, integer, JSON, missing, wrong-register), summary, command→register dispatch
+
+**Added (Phase G refinement)**
+- `MigrationReport.conflicts: HandleConflict[]` — per-conflict winner/loser source paths
+- Migrator distinguishes idempotent re-run skips from genuine conflicts
+- CLI surfaces conflicts with a prominent ⚠ warning section
+- One new test in `tests/migrate.test.ts` (§3b) verifying conflict detection on a synthetic two-file collision
+
+**Test totals:** 52/52 across 13 suites.
+
+**What's not in this release**
+- Write commands (`wu advance`, `wu tick`, `decision supersede`, `open_question.resolve`) — flag-driven; deferred to a follow-up alongside the workflow-pack runtime wiring
+- Interactive `create` commands (`wu create`, `decision create`, `persona create`) — these need real prompt UX mirroring the `wu-new` / `persona-new` markdown protocol bodies; substantial UX scope, deferred
+
 ## 0.2.0 — 2026-05-10 — Phase G migration runner (WU 111)
 
 Adds the `migrate` subcommand: lifts every artefact in the live catalogue (work units, decisions, open questions, personas) into a JSON-backed workflow record store. Idempotent; tolerant of pre-D046 markdown shapes; subdirectory-aware (`work-units/done/`, `decisions/superseded/`).

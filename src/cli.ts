@@ -21,6 +21,12 @@ import { runSearch } from './search/query.js';
 import { formatHumanReadable, formatJson } from './search/format.js';
 import { runMigrate } from './migrate/run.js';
 import { openWorkflowStore } from './migrate/store.js';
+import {
+  listRegister,
+  showRecord,
+  commandToRegister,
+  listAcrossRegisters,
+} from './commands/handlers.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -148,7 +154,77 @@ async function cmdMigrate(flags: Record<string, string | boolean>): Promise<void
       `  ${register.padEnd(15)}  scanned=${counts.scanned}  migrated=${counts.migrated}  skipped=${counts.skipped}`
     );
   }
+  if (report.conflicts.length > 0) {
+    console.log('');
+    console.log(`⚠  ${report.conflicts.length} handle conflict${report.conflicts.length === 1 ? '' : 's'} — multiple source files share the same handle:`);
+    for (const c of report.conflicts) {
+      console.log(`     ${c.handle}`);
+      console.log(`       kept:    ${c.winnerSourcePath}`);
+      console.log(`       dropped: ${c.loserSourcePath}`);
+    }
+    console.log('');
+    console.log('     Resolve by renaming the conflicting files (e.g. give them distinct number prefixes) then re-run migrate.');
+  }
   console.log(`(${(report.durationMs / 1000).toFixed(2)}s)`);
+}
+
+async function cmdRegisterDispatch(
+  command: string,
+  positional: string[],
+  flags: Record<string, string | boolean>
+): Promise<void> {
+  const register = commandToRegister(command);
+  if (!register) {
+    console.error(`unknown register command: ${command}`);
+    process.exit(2);
+  }
+
+  const action = positional[0];
+  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const store = await openWorkflowStore(workflowsPath);
+  const asJson = Boolean(flags['json']);
+
+  switch (action) {
+    case 'list':
+    case undefined: {
+      const status = flags['status'] ? String(flags['status']) : undefined;
+      const limit = flags['limit'] ? Number(flags['limit']) : undefined;
+      const result = listRegister(store, register, { asJson, status, limit });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'show': {
+      const handle = positional[1];
+      if (!handle) {
+        console.error(`Usage: nuos-catalogue ${command} show <handle> [--json]`);
+        process.exit(2);
+      }
+      const result = showRecord(store, register, handle, { asJson });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    default:
+      console.error(`unknown ${command} action: ${action}`);
+      process.exit(2);
+  }
+}
+
+async function cmdSummary(flags: Record<string, string | boolean>): Promise<void> {
+  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const store = await openWorkflowStore(workflowsPath);
+  const { byRegister, total } = listAcrossRegisters(store);
+  if (Boolean(flags['json'])) {
+    console.log(JSON.stringify({ total, byRegister }, null, 2));
+    return;
+  }
+  console.log(`workflow store: ${workflowsPath}`);
+  console.log(`total records:  ${total}`);
+  console.log('by register:');
+  for (const [register, count] of Object.entries(byRegister)) {
+    console.log(`  ${register.padEnd(15)}  ${count}`);
+  }
 }
 
 function cmdHelp(): void {
@@ -158,7 +234,22 @@ Usage:
   nuos-catalogue index    [--force] [--dry-run] [--catalogue=<dir>]
   nuos-catalogue search   "<query>" [--kind=<file_kind>] [--status=<s>] [--limit=N] [--json]
   nuos-catalogue migrate  [--build-root=<dir>] [--workflows=<file>] [--dry-run]
+
+  nuos-catalogue summary  [--json]
+  nuos-catalogue wu        list   [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue wu        show   <handle> [--json]
+  nuos-catalogue decision  list   [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue decision  show   <handle> [--json]
+  nuos-catalogue question  list   [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue question  show   <handle> [--json]
+  nuos-catalogue persona   list   [--limit=N] [--json]
+  nuos-catalogue persona   show   <handle> [--json]
+
   nuos-catalogue help
+
+Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
+(WU 111, 111, D45, Q9). Unambiguous integers ("111" under "wu show")
+are normalised to the canonical form.
 
 Environment:
   NUOS_CATALOGUE_EMBEDDER  vertex | openai | stub  (default: vertex)
@@ -179,6 +270,15 @@ async function main(): Promise<void> {
       break;
     case 'migrate':
       await cmdMigrate(args.flags);
+      break;
+    case 'summary':
+      await cmdSummary(args.flags);
+      break;
+    case 'wu':
+    case 'decision':
+    case 'question':
+    case 'persona':
+      await cmdRegisterDispatch(args.command, args.positional, args.flags);
       break;
     case 'help':
     case '--help':

@@ -190,6 +190,7 @@ describe('§3 runMigrate orchestration', () => {
     assert.equal(report.scanned, 5, 'should scan exactly the 5 artefact files (2 WU + 2 D + 1 Q + 0 P)');
     assert.equal(report.migrated, 5);
     assert.equal(report.skipped, 0);
+    assert.equal(report.conflicts.length, 0);
     assert.equal(report.byRegister.work_unit.scanned, 2);
     assert.equal(report.byRegister.decision.scanned, 2);
     assert.equal(report.byRegister.open_question.scanned, 1);
@@ -203,6 +204,10 @@ describe('§3 runMigrate orchestration', () => {
     assert.equal(report.scanned, 5);
     assert.equal(report.migrated, 0);
     assert.equal(report.skipped, 5);
+    // Re-running on a clean store with the same source files: the
+    // sourcePath matches existing.sourcePath, so this is idempotent
+    // skip, NOT a conflict.
+    assert.equal(report.conflicts.length, 0);
   });
 
   test('subdir files (done/, superseded/) are migrated under the parent register', async () => {
@@ -244,6 +249,48 @@ describe('§3 runMigrate orchestration', () => {
     assert.ok(parsed.records['D046']);
     assert.ok(parsed.records['D024']);
     assert.ok(parsed.records['Q009']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §3b Handle conflict detection
+// ---------------------------------------------------------------------------
+
+describe('§3b handle conflicts (different source files claiming the same handle)', () => {
+  test('detects conflict when two WU files share a number prefix', async () => {
+    // Build a separate workspace to keep this test independent.
+    const conflictWorkspace = await mkdtemp(path.join(tmpdir(), 'nuos-migrate-conflict-'));
+    const conflictBuildRoot = path.join(conflictWorkspace, 'docs', 'build');
+    const conflictWfPath = path.join(conflictWorkspace, '.nuos-catalogue', 'workflows.json');
+
+    await mkdir(path.join(conflictBuildRoot, 'work-units', 'done'), { recursive: true });
+    await writeFile(
+      path.join(conflictBuildRoot, 'work-units', 'done', '072b-spec-a.md'),
+      '# 072b spec A\n\n**Status:** ✅ completed\n',
+      'utf8'
+    );
+    await writeFile(
+      path.join(conflictBuildRoot, 'work-units', 'done', '072b-spec-b.md'),
+      '# 072b spec B\n\n**Status:** ✅ completed\n',
+      'utf8'
+    );
+
+    const store = await openWorkflowStore(conflictWfPath);
+    const report = await runMigrate({ catalogueRoot: conflictBuildRoot, store });
+
+    assert.equal(report.scanned, 2);
+    assert.equal(report.migrated, 1);
+    assert.equal(report.skipped, 1);
+    assert.equal(report.conflicts.length, 1);
+    assert.equal(report.conflicts[0].handle, 'wu-072b');
+    assert.match(report.conflicts[0].winnerSourcePath, /072b-spec-[ab]/);
+    assert.match(report.conflicts[0].loserSourcePath, /072b-spec-[ab]/);
+    assert.notEqual(
+      report.conflicts[0].winnerSourcePath,
+      report.conflicts[0].loserSourcePath
+    );
+
+    await rm(conflictWorkspace, { recursive: true, force: true });
   });
 });
 
