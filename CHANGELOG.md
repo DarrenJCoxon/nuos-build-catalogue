@@ -1,5 +1,32 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.2.0 — 2026-05-10 — Phase G migration runner (WU 111)
+
+Adds the `migrate` subcommand: lifts every artefact in the live catalogue (work units, decisions, open questions, personas) into a JSON-backed workflow record store. Idempotent; tolerant of pre-D046 markdown shapes; subdirectory-aware (`work-units/done/`, `decisions/superseded/`).
+
+**Storage decision: JSON, not NuVector (yet).** A flat `.nuos-catalogue/workflows.json` keyed by handle. Inspectable, simple, sets up Phase I (markdown regeneration) cleanly. NuVector cutover is a deliberate follow-up; the store interface is narrow (`has`, `get`, `put`, `list`, `flush`) so a NuVector adapter can be substituted later without changing call sites.
+
+**Scope: count parity, not field-level fidelity.** Pre-D046 WUs and decisions don't have the new D046 six-field shape in their markdown — the parser preserves handle, number, title, status, slug, source path, raw markdown, and file mtime. Field-level fidelity comes when the catalogue is *authored* via the workflow lifecycle (post-cutover). Migration is back-fill, not transcription.
+
+**Live validation against the real catalogue (dry-run):** 165 artefacts scanned cleanly — 116 WUs, 36 decisions, 13 open questions, 0 personas (the personas register is empty pre-WU-111). Zero parser errors. The actual one-shot live migration runs at Phase J per the WU 111 spec.
+
+**Tolerance for real-world shapes:**
+- WU sub-numbers (`030g-...`, `072a-...`, `072b-...`) — the integer part is the number; the suffix flows through into the handle (e.g. `wu-030g`)
+- Status extraction handles both `**Status:** ...` (bold) and `| Status | ... |` (pipe-table) forms
+- Subdirectories `done/` and `superseded/` are walked one level deep and assigned to the parent register
+- `_index.md` files and templates (filenames containing `template`) are skipped
+- Empty registers (e.g. `personas/` pre-author) report 0/0 cleanly without error
+
+**Added**
+- `src/migrate/types.ts` — `MigratedRecord`, `MigrationReport`, `Register`
+- `src/migrate/parsers.ts` — `parseFile()` per-register parser; `registerForRelativePath()` directory→register dispatcher
+- `src/migrate/store.ts` — `WorkflowStore` interface backed by `.nuos-catalogue/workflows.json` (schemaVersion 1)
+- `src/migrate/run.ts` — `runMigrate()` walker + orchestration + idempotence
+- `src/cli.ts` — `migrate` subcommand with `--build-root`, `--workflows`, `--dry-run` flags
+- `tests/migrate.test.ts` — 14 acceptance tests across pure parser, register dispatch, full-corpus migration (synthetic 5-artefact fixture), idempotence, subdirectory recursion, dry-run
+
+**Test totals:** 28/28 across 7 suites.
+
 ## 0.1.0 — 2026-05-09
 
 First release. Implements [WU 110](../nuos/docs/build/work-units/done/110-index-catalogue-into-nuvector.md) per [D040](../nuos/docs/build/decisions/D040-nuos-led-build-is-foundation-not-parallel-track.md).
