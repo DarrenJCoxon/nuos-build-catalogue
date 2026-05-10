@@ -17,3 +17,10 @@ dist/
 .nuos-catalogue/*.nv/
 .nuos-catalogue.*-bak/
 .nuos-catalogue.*-bak.json
+
+# Per WU 111 D047: the JSON workflow store is local state in Mode 1
+# (markdown is canonical). Re-running `nuos-catalogue migrate` against
+# the live catalogue is deterministic and produces the same records on
+# any machine, so the file does not need to live in git. Mode 2
+# (post-WU-113) may revisit if the JSON becomes canonical.
+.nuos-catalogue/workflows.json

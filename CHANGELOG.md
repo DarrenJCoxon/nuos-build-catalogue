@@ -1,5 +1,20 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.8.0 — 2026-05-10 — Phase J: WU 111 ship readiness
+
+Marks the CLI as ready for the WU 111 cutover. No new commands or behaviour changes since 0.7.0 — this is the version-and-documentation release that ships alongside `@nusoft/nuflow-pack-nuos-build-catalogue@0.1.0`.
+
+**Added**
+- `docs/INTEGRATION-RUNBOOK.md` — operator-facing runbook covering install on a new machine, four-step smoke verification, day-to-day use, build catalogue history convention, and troubleshooting. The canonical reference for "how to use this CLI from clean install to first commit".
+- `.gitignore` for `.nuos-catalogue/` — the JSON workflow store is local state in Mode 1 (markdown canonical). Re-running `migrate` is deterministic; the file does not need to live in git. Mode 2 (post-WU-113) may revisit if JSON becomes canonical.
+
+**Test totals:** 113/113 across 33 suites (unchanged from 0.7.0).
+
+**What's not in this release**
+- The actual `npm publish` of either this CLI or the pack (the maintainer's guardrail).
+- The live one-shot migration commit (the maintainer chooses when to commit `.nuos-catalogue/workflows.json` if at all — per the gitignore, today's default is "don't commit").
+- The 5-day soak begins after publish.
+
 ## 0.7.0 — 2026-05-10 — Phase H part 3 interactive create commands (WU 111)
 
 Closes WU 111's last substantive surface before Phase J. Four interactive `create` commands ship: `wu create`, `decision create`, `question create`, `persona create`. Each walks the operator through the relevant register's protocol body (per `scripts/protocols/wu-new.md`, `persona-new.md`, etc.) and drives the workflow lifecycle to commit.
