@@ -1,5 +1,33 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.9.0 — 2026-05-10 — Env-var support for multi-project use
+
+Adds env-var defaults so the CLI works ergonomically against any catalogue, not just the nuos sibling. **Use case:** Sensight (the first consumer-product adoption of the build-catalogue tooling) has its catalogue at `current-projects/sensight/docs/build/` — passing `--build-root=...` to every command was friction. Now the maintainer sets the env vars in their shell profile (or per-project via direnv / .envrc) and every CLI command picks them up.
+
+**New env vars:**
+
+| Variable | What it controls | Maps to flag |
+| --- | --- | --- |
+| `NUOS_CATALOGUE_BUILD_ROOT` | Path to the catalogue's `docs/build/` dir | `--build-root` |
+| `NUOS_CATALOGUE_WORKFLOWS` | Path to the JSON workflow store file | `--workflows` |
+| `NUOS_CATALOGUE_ROOT` | Path to the catalogue's `docs/` dir (semantic-search index source) | `--catalogue` |
+| `NUOS_CATALOGUE_INDEX_DIR` | Default parent dir for `index.nv` + `workflows.json` | (no flag; controls computed defaults) |
+
+Resolution order is unchanged from before: explicit flag (highest precedence) → env var → package-relative fallback (works only against the nuos catalogue as a sibling). The fallback path is preserved for backward compatibility with the original WU 110 use case; new consumers should use env vars or flags.
+
+Help text in `nuos-catalogue help` now documents all five env vars.
+
+**Tests:** 113/113 (unchanged; the env-var support is additive).
+
+**Smoke verified against Sensight:**
+
+```bash
+export NUOS_CATALOGUE_BUILD_ROOT="/path/to/sensight/docs/build"
+export NUOS_CATALOGUE_WORKFLOWS="/path/to/sensight/.nuos-catalogue/workflows.json"
+nuos-catalogue summary
+# → reads Sensight's catalogue, no flags needed
+```
+
 ## 0.8.1 — 2026-05-10 — Dep-range fix for pack at 0.1.0
 
 Patch follow-up to 0.8.0. The pack repo bumped 0.0.6 → 0.1.0 in this

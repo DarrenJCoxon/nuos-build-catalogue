@@ -46,12 +46,24 @@ import { openPrompt } from './commands/prompt.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
-const DEFAULT_CATALOGUE_ROOT = path.resolve(PACKAGE_ROOT, '../nuos/docs');
-const DEFAULT_BUILD_ROOT = path.resolve(PACKAGE_ROOT, '../nuos/docs/build');
-const DEFAULT_INDEX_DIR = path.resolve(PACKAGE_ROOT, '.nuos-catalogue');
+
+// Defaults resolve in this order: env var > flag-supplied > package-relative
+// fallback. The package-relative fallback only makes sense when running
+// against the nuos catalogue as a sibling (the original WU 110 use case);
+// for any other consumer (Sensight, NuTutor, etc.) the env vars or the
+// per-command flags are the right path. CLAUDE.md guidance for adopters:
+// set NUOS_CATALOGUE_BUILD_ROOT and NUOS_CATALOGUE_WORKFLOWS in your
+// shell profile.
+const DEFAULT_CATALOGUE_ROOT =
+  process.env.NUOS_CATALOGUE_ROOT ?? path.resolve(PACKAGE_ROOT, '../nuos/docs');
+const DEFAULT_BUILD_ROOT =
+  process.env.NUOS_CATALOGUE_BUILD_ROOT ?? path.resolve(PACKAGE_ROOT, '../nuos/docs/build');
+const DEFAULT_INDEX_DIR =
+  process.env.NUOS_CATALOGUE_INDEX_DIR ?? path.resolve(PACKAGE_ROOT, '.nuos-catalogue');
 const DEFAULT_INDEX_PATH = path.join(DEFAULT_INDEX_DIR, 'index.nv');
 const DEFAULT_HASH_PATH = path.join(DEFAULT_INDEX_DIR, 'hashes.json');
-const DEFAULT_WORKFLOWS_PATH = path.join(DEFAULT_INDEX_DIR, 'workflows.json');
+const DEFAULT_WORKFLOWS_PATH =
+  process.env.NUOS_CATALOGUE_WORKFLOWS ?? path.join(DEFAULT_INDEX_DIR, 'workflows.json');
 
 interface ParsedArgs {
   command: string;
@@ -426,10 +438,14 @@ Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
 are normalised to the canonical form.
 
 Environment:
-  NUOS_CATALOGUE_EMBEDDER  vertex | openai | stub  (default: vertex)
-  GOOGLE_CLOUD_PROJECT     required for vertex
-  GOOGLE_CLOUD_LOCATION    optional (default: us-central1)
-  OPENAI_API_KEY           required for openai
+  NUOS_CATALOGUE_BUILD_ROOT   default for --build-root (the catalogue's docs/build/ dir)
+  NUOS_CATALOGUE_WORKFLOWS    default for --workflows (the JSON workflow store path)
+  NUOS_CATALOGUE_ROOT         default for --catalogue (semantic-search index source)
+  NUOS_CATALOGUE_INDEX_DIR    default parent dir for index.nv + workflows.json
+  NUOS_CATALOGUE_EMBEDDER     vertex | openai | stub  (default: vertex)
+  GOOGLE_CLOUD_PROJECT        required for vertex
+  GOOGLE_CLOUD_LOCATION       optional (default: us-central1)
+  OPENAI_API_KEY              required for openai
 `);
 }
 
