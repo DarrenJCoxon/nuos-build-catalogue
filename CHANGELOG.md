@@ -1,5 +1,47 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.5.0 — 2026-05-10 — Phase H part 2 flag-driven write commands (WU 111)
+
+Adds the four flag-driven write commands and wires the build-catalogue NuFlow runtime end-to-end. Markdown files and the JSON workflow store now stay in sync atomically — every write operation updates both.
+
+**New CLI subcommands:**
+
+```
+nuos-catalogue wu       advance   <handle> --to=<status> [--reason="..."]
+nuos-catalogue wu       tick      <handle> --index=N --evidence="..."
+nuos-catalogue decision supersede <target> --by=<superseding> [--reason="..."]
+nuos-catalogue question resolve   <q-handle> --by=<d-handle> [--reason="..."]
+```
+
+**Architecture.** Three new modules:
+
+- `src/runtime/markdown-edit.ts` — pure helpers: `replaceStatusLine` (handles both bold and pipe-table forms); `insertStatusLine` (inserts after H1 if no status line exists); `appendChangeLog` (adds structured entries to a `## Build catalogue history` section, idempotent across calls).
+- `src/runtime/mis-adapter.ts` — `BuildCatalogueMisAdapter` implementing NuFlow's `MisWriteAdapter`. Per-intent commit handlers for the four supported workflow types. Both the markdown file on disk AND the JSON store record are updated in `persist()`; the `status` field on the record is updated alongside `rawMarkdown` so the next workflow invocation reads the current state, not the stale migrated value.
+- `src/runtime/runtime.ts` — `createBuildCatalogueRuntime({ store, catalogueRoot })` wires NuFlow runtime + stub memory adapters + the build-catalogue MIS adapter + registers the `@nusoft/nuflow-pack-nuos-build-catalogue` pack.
+
+**New deps:** `@nusoft/nuflow ^0.4.1` (+ devDep `file:../nuflow`); `@nusoft/nuflow-pack-nuos-build-catalogue ^0.0.6` (+ devDep `file:../nuflow-pack-nuos-build-catalogue`). Both load via the CLI when a write command is invoked; they are not loaded for read commands or the migration runner.
+
+**Honest scope cut: AC-list parser deferred.** `wu tick` does not parse the AC list out of the markdown. Instead, it appends a structured entry to the `## Build catalogue history` section naming the criterion index and evidence. The AC list itself stays as the maintainer wrote it; the workflow record + audit chain are the canonical statements. The full AC parser is its own project (different files use different AC shapes — checkbox lists, numbered lists, prose bullets, sub-headings); deferred until a future phase if the audit-log-only approach proves insufficient.
+
+**Honest scope cut: `wu advance --to=completed` requires AC list.** The pack's completion gate (Phase C) requires every AC to have `met: true` with non-empty evidence. The CLI doesn't extract the AC list from markdown, so `--to=completed` fails at the gate with the workflow's own clear error message. This is intentional — completion through the CLI requires the AC parser, which is the same deferred work as `wu tick`. For now, the maintainer flips status to `completed` by hand-editing the markdown directly (and the existing `regenerate` command will surface the resulting drift). When the AC parser lands, the CLI path becomes available.
+
+**Bug-fix surfaced and fixed during testing.** First version of the MIS adapter updated `rawMarkdown` and `fileModifiedAt` on the store record but not the `status` field. The next workflow invocation read the stale `status`, normalised it to the migrated value (e.g., `ready`), and the transition validity check rejected what should have been a legal sequence (e.g., advancing `in_progress → in_review` after just advancing `ready → in_progress`). Fixed by passing the new status through the `persist()` helper as a field update alongside `rawMarkdown`.
+
+**Test totals:** 82/82 across 24 suites (was 63/63 across 18 in Phase I; +19 new tests for write commands + markdown editors).
+
+**Coverage:**
+- Markdown editors: replace bold + pipe-table forms; insert after H1; append to history (creates section, appends idempotently).
+- `wu advance`: legal transitions update status + history; `→ completed` without AC fails with the gate's error; unknown handle rejected; missing `--to` rejected.
+- `wu tick`: appends history entry; rejects empty evidence; rejects negative index.
+- `decision supersede`: updates target's status + appends history; appends history to superseding (without changing its status); rejects unknown target; rejects missing `--by`.
+- `question resolve`: updates Q's status + appends history; appends history to resolving D; rejects unknown question.
+- `regenerate-check` reports zero drift after any write command (store-disk sync verified).
+
+**What's not in this release**
+- Interactive `create` commands (Phase H part 3 — `wu create`, `decision create`, `persona create`); these need real prompt UX mirroring the markdown protocol bodies; deferred.
+- AC-list parser (deferred; `wu tick` and `wu advance --to=completed` use the audit-log-only approach for now).
+- Conformance suite + 0.1.0 publish + live cutover migration + WU 128 enforcement-flag flip (Phase J).
+
 ## 0.4.0 — 2026-05-10 — Phase I regenerate + drift report (WU 111)
 
 Adds the `regenerate` subcommand: walks the JSON workflow store, compares each record's stored `rawMarkdown` to its source file, reports drift. Three operating modes: `--check` (default; reports drift), `--diff` (same as check; future enhancement will add unified-diff output), `--write` (overwrite source files with the stored canonical form — Mode 2 cutover; not normally used in Mode 1).

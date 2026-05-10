@@ -29,6 +29,13 @@ import {
 } from './commands/handlers.js';
 import { runRegenerate } from './regenerate/check.js';
 import type { Register } from './migrate/types.js';
+import { createBuildCatalogueRuntime } from './runtime/runtime.js';
+import {
+  cmdWuAdvance,
+  cmdWuTick,
+  cmdDecisionSupersede,
+  cmdQuestionResolve,
+} from './commands/write.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -183,6 +190,7 @@ async function cmdRegisterDispatch(
 
   const action = positional[0];
   const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const buildRoot = String(flags['build-root'] ?? DEFAULT_BUILD_ROOT);
   const store = await openWorkflowStore(workflowsPath);
   const asJson = Boolean(flags['json']);
 
@@ -203,6 +211,66 @@ async function cmdRegisterDispatch(
         process.exit(2);
       }
       const result = showRecord(store, register, handle, { asJson });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'advance': {
+      if (command !== 'wu') {
+        console.error(`'advance' is a wu subcommand only`);
+        process.exit(2);
+      }
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const result = await cmdWuAdvance(store, runtime, {
+        handle: positional[1],
+        to: flags['to'] ? String(flags['to']) : undefined,
+        reason: flags['reason'] ? String(flags['reason']) : undefined,
+      });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'tick': {
+      if (command !== 'wu') {
+        console.error(`'tick' is a wu subcommand only`);
+        process.exit(2);
+      }
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const result = await cmdWuTick(store, runtime, {
+        handle: positional[1],
+        index: flags['index'] !== undefined ? Number(flags['index']) : undefined,
+        evidence: flags['evidence'] ? String(flags['evidence']) : undefined,
+      });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'supersede': {
+      if (command !== 'decision') {
+        console.error(`'supersede' is a decision subcommand only`);
+        process.exit(2);
+      }
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const result = await cmdDecisionSupersede(store, runtime, {
+        target: positional[1],
+        by: flags['by'] ? String(flags['by']) : undefined,
+        reason: flags['reason'] ? String(flags['reason']) : undefined,
+      });
+      console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'resolve': {
+      if (command !== 'question') {
+        console.error(`'resolve' is a question subcommand only`);
+        process.exit(2);
+      }
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const result = await cmdQuestionResolve(store, runtime, {
+        qHandle: positional[1],
+        by: flags['by'] ? String(flags['by']) : undefined,
+        reason: flags['reason'] ? String(flags['reason']) : undefined,
+      });
       console.log(result.output);
       process.exit(result.exitCode);
       break;
@@ -298,14 +366,18 @@ Usage:
   nuos-catalogue regenerate [--register=<r>] [--diff] [--write] [--build-root=<dir>] [--workflows=<file>]
 
   nuos-catalogue summary  [--json]
-  nuos-catalogue wu        list   [--status=<s>] [--limit=N] [--json]
-  nuos-catalogue wu        show   <handle> [--json]
-  nuos-catalogue decision  list   [--status=<s>] [--limit=N] [--json]
-  nuos-catalogue decision  show   <handle> [--json]
-  nuos-catalogue question  list   [--status=<s>] [--limit=N] [--json]
-  nuos-catalogue question  show   <handle> [--json]
-  nuos-catalogue persona   list   [--limit=N] [--json]
-  nuos-catalogue persona   show   <handle> [--json]
+  nuos-catalogue wu        list      [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue wu        show      <handle> [--json]
+  nuos-catalogue wu        advance   <handle> --to=<status> [--reason="..."]
+  nuos-catalogue wu        tick      <handle> --index=N --evidence="..."
+  nuos-catalogue decision  list      [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue decision  show      <handle> [--json]
+  nuos-catalogue decision  supersede <target> --by=<superseding> [--reason="..."]
+  nuos-catalogue question  list      [--status=<s>] [--limit=N] [--json]
+  nuos-catalogue question  show      <handle> [--json]
+  nuos-catalogue question  resolve   <q-handle> --by=<d-handle> [--reason="..."]
+  nuos-catalogue persona   list      [--limit=N] [--json]
+  nuos-catalogue persona   show      <handle> [--json]
 
   nuos-catalogue help
 
