@@ -27,6 +27,8 @@ import {
   commandToRegister,
   listAcrossRegisters,
 } from './commands/handlers.js';
+import { runRegenerate } from './regenerate/check.js';
+import type { Register } from './migrate/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -211,6 +213,65 @@ async function cmdRegisterDispatch(
   }
 }
 
+async function cmdRegenerate(flags: Record<string, string | boolean>): Promise<void> {
+  const buildRoot = String(flags['build-root'] ?? DEFAULT_BUILD_ROOT);
+  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const write = Boolean(flags['write']);
+  const showDiffs = Boolean(flags['diff']);
+  const registerFilter = flags['register'] ? (String(flags['register']) as Register) : undefined;
+
+  const store = await openWorkflowStore(workflowsPath);
+  if (store.list().length === 0) {
+    console.log('workflow store is empty — run `nuos-catalogue migrate` first');
+    process.exit(2);
+  }
+
+  console.log(`regenerate-check ${buildRoot}`);
+  console.log(`  workflows file: ${workflowsPath}`);
+  if (write) console.log('  --write mode: source files will be overwritten with stored canonical form');
+  if (registerFilter) console.log(`  register filter: ${registerFilter}`);
+
+  const report = await runRegenerate({ catalogueRoot: buildRoot, store, registerFilter, write });
+
+  console.log('');
+  console.log(`scanned:    ${report.total}`);
+  console.log(`identical:  ${report.identical}`);
+  console.log(`differs:    ${report.differs}`);
+  console.log(`missing:    ${report.missing}`);
+  console.log(`unreadable: ${report.unreadable}`);
+  console.log('by register:');
+  for (const [register, counts] of Object.entries(report.byRegister)) {
+    if (counts.total === 0) continue;
+    console.log(
+      `  ${register.padEnd(15)}  total=${counts.total}  identical=${counts.identical}  differs=${counts.differs}  missing=${counts.missing}`
+    );
+  }
+
+  if (report.drifted.length > 0) {
+    console.log('');
+    console.log(`⚠  ${report.drifted.length} drifted record${report.drifted.length === 1 ? '' : 's'}:`);
+    for (const d of report.drifted) {
+      if (d.kind === 'differs') {
+        const tag = write ? '[overwritten]' : '[differs]';
+        console.log(
+          `  ${tag.padEnd(14)} ${d.handle.padEnd(10)} ${d.sourcePath}  (+${d.linesAdded}/-${d.linesRemoved} lines, ${d.byteDelta} bytes)`
+        );
+      } else if (d.kind === 'missing-source') {
+        console.log(`  [missing]      ${d.handle.padEnd(10)} ${d.sourcePath}`);
+      } else if (d.kind === 'unreadable-source') {
+        console.log(`  [unreadable]   ${d.handle.padEnd(10)} ${d.sourcePath}  (${d.errorMessage})`);
+      }
+    }
+    if (showDiffs && !write) {
+      console.log('');
+      console.log('(use --write to overwrite source files with the stored canonical form; --diff is line-count only in Mode 1)');
+    }
+  }
+
+  console.log(`(${(report.durationMs / 1000).toFixed(2)}s)`);
+  process.exit(report.differs > 0 || report.missing > 0 ? 1 : 0);
+}
+
 async function cmdSummary(flags: Record<string, string | boolean>): Promise<void> {
   const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
   const store = await openWorkflowStore(workflowsPath);
@@ -233,7 +294,8 @@ function cmdHelp(): void {
 Usage:
   nuos-catalogue index    [--force] [--dry-run] [--catalogue=<dir>]
   nuos-catalogue search   "<query>" [--kind=<file_kind>] [--status=<s>] [--limit=N] [--json]
-  nuos-catalogue migrate  [--build-root=<dir>] [--workflows=<file>] [--dry-run]
+  nuos-catalogue migrate    [--build-root=<dir>] [--workflows=<file>] [--dry-run]
+  nuos-catalogue regenerate [--register=<r>] [--diff] [--write] [--build-root=<dir>] [--workflows=<file>]
 
   nuos-catalogue summary  [--json]
   nuos-catalogue wu        list   [--status=<s>] [--limit=N] [--json]
@@ -270,6 +332,9 @@ async function main(): Promise<void> {
       break;
     case 'migrate':
       await cmdMigrate(args.flags);
+      break;
+    case 'regenerate':
+      await cmdRegenerate(args.flags);
       break;
     case 'summary':
       await cmdSummary(args.flags);

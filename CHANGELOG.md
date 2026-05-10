@@ -1,5 +1,40 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.4.0 — 2026-05-10 — Phase I regenerate + drift report (WU 111)
+
+Adds the `regenerate` subcommand: walks the JSON workflow store, compares each record's stored `rawMarkdown` to its source file, reports drift. Three operating modes: `--check` (default; reports drift), `--diff` (same as check; future enhancement will add unified-diff output), `--write` (overwrite source files with the stored canonical form — Mode 2 cutover; not normally used in Mode 1).
+
+**Scope: Mode 1 verification gate, not Mode 2 field-by-field rendering.** Phase G's migration runner stopped at count parity — the `MigratedRecord` shape preserves `rawMarkdown` verbatim but doesn't extract field-level data (no AC list, no decision body parsed out of markdown). So "regeneration" in Mode 1 is byte-identical reproduction from `rawMarkdown` + drift detection. The richer field-by-field rendering only matters at Mode 2 (post-WU-113), when workflow state mutates through the lifecycle and markdown is generated from richer fields. Phase I therefore ships as the verification-gate version: proves the roundtrip works (trivially, since it's a cache), and detects when a markdown file diverges from the migrated record.
+
+**Live validation against the real catalogue (post-Q019 resolution):**
+
+```
+$ nuos-catalogue migrate --workflows=$TMP/wf.json
+scanned: 166, migrated: 166, skipped: 0 (zero conflicts)
+
+$ nuos-catalogue regenerate --workflows=$TMP/wf.json
+scanned: 166, identical: 166, differs: 0, missing: 0, unreadable: 0
+by register: work_unit=114, decision=38, open_question=14, persona=0
+```
+
+The roundtrip is verified end-to-end. After the live cutover at Phase J, drift detection becomes the catalogue-discipline gate that surfaces hand-edits-without-workflow-update.
+
+**Why the workflow body in the pack stays a stub.** The pack defines `regenerate_markdown_catalogue` as a workflow handle, but its body remains a stub. The CLI's `regenerate` subcommand does the work directly (reads JSON store, runs drift check). Wiring the workflow body to invoke this code path through NuFlow's lifecycle would be theatre at this stage (no real reason to round-trip through `startWorkflow → confirm → commit` for a read-only verification). Future WU 113 (markdown-as-generated-output cutover) may revisit this if there's a clear need.
+
+**Added**
+- `src/regenerate/types.ts` — `DriftEntry`, `DriftReport`, `RegenerateConfig`
+- `src/regenerate/diff.ts` — `countLineDiff(before, after)` LCS-based line-counting helper
+- `src/regenerate/check.ts` — `runRegenerate({ catalogueRoot, store, registerFilter?, write? })`
+- `src/cli.ts` — new `regenerate` subcommand with `--register`, `--diff`, `--write`, `--build-root`, `--workflows`, plus updated help text
+- `tests/regenerate.test.ts` — 11 acceptance tests across line-diff math, zero-drift roundtrip, drift detection on edit, register filter, missing-source detection, --write overwrite
+
+**Test totals:** 63/63 across 18 suites.
+
+**What's not in this release**
+- Field-by-field renderers (Mode 2 cutover; deferred until WU 113)
+- Unified-diff output beyond line-counts (deferred; small enhancement)
+- The pack's `regenerate_markdown_catalogue` workflow body (stays a stub; see above)
+
 ## 0.3.0 — 2026-05-10 — Phase H read commands + Phase G conflict reporting (WU 111)
 
 **Phase H read commands.** Eight new CLI subcommands for inspecting the migrated workflow store: `summary`, `wu list/show`, `decision list/show`, `question list/show`, `persona list/show`. All accept `--json` for machine consumption. List commands accept `--status=<text>` (substring match, case-insensitive) and `--limit=N`. The `show` subcommands accept canonical handles (`wu-111`, `D046`, `Q009`, `P001`) AND friendly variants (`WU 111`, `111`, `D45`, `Q9`) — the latter normalised before lookup.
