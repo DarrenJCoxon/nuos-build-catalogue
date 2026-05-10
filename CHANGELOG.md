@@ -1,5 +1,14 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.8.1 — 2026-05-10 — Dep-range fix for pack at 0.1.0
+
+Patch follow-up to 0.8.0. The pack repo bumped 0.0.6 → 0.1.0 in this
+session's commit `c85f607`, but the CLI's `dependencies` range for
+`@nusoft/nuflow-pack-nuos-build-catalogue` was still `^0.0.6` —
+which (per semver caret rules on `0.0.x`) does not match `0.1.0`.
+Caught before publish; range bumped to `^0.1.0` per D045 (caret
+ranges, never exact pins).
+
 ## 0.8.0 — 2026-05-10 — Phase J: WU 111 ship readiness
 
 Marks the CLI as ready for the WU 111 cutover. No new commands or behaviour changes since 0.7.0 — this is the version-and-documentation release that ships alongside `@nusoft/nuflow-pack-nuos-build-catalogue@0.1.0`.
