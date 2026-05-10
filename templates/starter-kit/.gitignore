@@ -1,0 +1,36 @@
+# Vetted .gitignore for a NuOS-method catalogue.
+# IMPORTANT: do NOT add a bare `build` entry here — it will silently exclude
+# `docs/build/` (the catalogue itself). If you add build artefacts later,
+# scope the entry: `/build/` or `dist/` or `.next/` etc.
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+.vscode/
+.idea/
+*.swp
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Node / npm — uncomment if this project uses them
+# node_modules/
+# npm-debug.log*
+# yarn-error.log*
+
+# Python — uncomment if this project uses Python
+# __pycache__/
+# *.pyc
+# .venv/
+# venv/
+
+# Build artefacts — scope explicitly so we don't shadow docs/build/
+# /build/
+# dist/
+# .next/

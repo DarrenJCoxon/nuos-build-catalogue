@@ -1,5 +1,63 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.10.0 — 2026-05-10 — `init` and `install-protocols` commands
+
+Closes the gap that the manual Sensight scaffold made obvious: there was no single command for adopting the build catalogue on a new project. Two new operator-facing commands ship together; the CLI package now bundles the protocol bodies and starter-kit content as data files so consumers don't need a sibling nuos repo.
+
+### `nuos-catalogue init`
+
+Single-command bootstrap of a new project's catalogue. Replaces the previous six-step manual scaffold (mkdir + copy starter-kit + customise STATE.md + customise methodfile + copy protocols + .gitignore overrides + first migrate).
+
+```bash
+cd /path/to/your-new-project
+
+# Interactive (prompts for project name, tagline, domain, role)
+nuos-catalogue init
+
+# Or non-interactive
+nuos-catalogue init --name=foo --tagline="..." --domain=foo.com --role=consumer --yes
+```
+
+What it does:
+
+1. Refuses if `docs/build/` already exists (one-shot bootstrap).
+2. Creates `docs/build/` from the bundled starter-kit (substituting `{{PROJECT_NAME}}`, `{{PROJECT_TAGLINE}}`, `{{PROJECT_DOMAIN}}`, `{{PROJECT_ROLE}}`, `{{TODAY}}`).
+3. Writes `methodfile.json` at the repo root with the same substitutions.
+4. Copies the four NuOS Build Method protocols (start-of-session, end-of-session, wu-new, persona-new) into `.claude/commands/`. Creates the directory if missing; preserves any existing slash commands the project has.
+5. Appends a "Build catalogue (NuOS Build Method)" section to `CLAUDE.md` (creates `CLAUDE.md` if missing; preserves existing content; idempotent — re-running won't double-append).
+6. Updates `.gitignore`:
+   - **Adds `!docs/build/` + `!docs/build/**` override IF an unanchored `build/` rule is present** (this is the gotcha that bit nuos at Session 53 and Sensight in this session — Next.js / Cargo projects routinely have a generic `build/` rule that silently ignores the catalogue without the negation).
+   - **Adds `.nuos-catalogue/` ignore** per nuos D047 (the JSON workflow store is local state in Mode 1).
+7. Surfaces the env-var commands the operator should add to their shell profile.
+
+### `nuos-catalogue install-protocols`
+
+Refreshes the four protocol bodies in `.claude/commands/` from the canonical bodies bundled with this CLI package. Use after upgrading the CLI to a new version that ships updated protocols.
+
+```bash
+cd /path/to/project-with-stale-protocols
+nuos-catalogue install-protocols
+```
+
+Reports `created`, `updated`, or `unchanged` per protocol. Idempotent — running on an already-current `.claude/commands/` is a no-op that prints four `unchanged` lines.
+
+### Bundled templates
+
+The CLI package now ships two new directories:
+
+- `templates/protocols/` — the four protocol bodies (canonical copies of `nuos/scripts/protocols/*.md`)
+- `templates/starter-kit/` — the full starter-kit content (canonical copy of `nuos/starter-kit/`)
+
+`package.json` `files` array updated to include `templates`. Both `init` and `install-protocols` resolve from `dist/src/cli.js` upward to find the bundled templates.
+
+### Test totals
+
+121/121 across 38 suites (was 113/113 in 0.9.0; +8 new tests across init's full bootstrap, gitignore handling, CLAUDE.md preservation, install-protocols created/unchanged/updated states).
+
+### What this enables
+
+The Sensight scaffold I just did manually for the maintainer is now a single command. The next consumer-product adoption (NuTutor, floe-studio, eventually third-party adopters per WU 132's `@nusoft/nuos-build`) takes one command instead of seven. Sensight stays clean: re-running `install-protocols` against Sensight is a no-op (the protocols I copied manually match the bundled canonical bit-for-bit).
+
 ## 0.9.0 — 2026-05-10 — Env-var support for multi-project use
 
 Adds env-var defaults so the CLI works ergonomically against any catalogue, not just the nuos sibling. **Use case:** Sensight (the first consumer-product adoption of the build-catalogue tooling) has its catalogue at `current-projects/sensight/docs/build/` — passing `--build-root=...` to every command was friction. Now the maintainer sets the env vars in their shell profile (or per-project via direnv / .envrc) and every CLI command picks them up.

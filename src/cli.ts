@@ -43,6 +43,7 @@ import {
   cmdPersonaCreate,
 } from './commands/create.js';
 import { openPrompt } from './commands/prompt.js';
+import { cmdInit, cmdInstallProtocols } from './commands/init.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
@@ -408,6 +409,11 @@ function cmdHelp(): void {
   console.log(`nuos-catalogue — NuOS build-catalogue tooling (WU 110, WU 111)
 
 Usage:
+  nuos-catalogue init     [--name=X --tagline="Y" --domain=Z --role=consumer --yes]
+                          (interactive bootstrap of docs/build/, methodfile.json, .claude/commands/<protocols>, CLAUDE.md, .gitignore overrides; refuses if docs/build/ already exists)
+  nuos-catalogue install-protocols
+                          (refresh .claude/commands/<protocols> from this CLI's bundled canonical bodies)
+
   nuos-catalogue index    [--force] [--dry-run] [--catalogue=<dir>]
   nuos-catalogue search   "<query>" [--kind=<file_kind>] [--status=<s>] [--limit=N] [--json]
   nuos-catalogue migrate    [--build-root=<dir>] [--workflows=<file>] [--dry-run]
@@ -458,6 +464,35 @@ async function main(): Promise<void> {
     case 'search':
       await cmdSearch(args.positional, args.flags);
       break;
+    case 'init': {
+      const prompt = openPrompt();
+      try {
+        const result = await cmdInit(prompt, {
+          cwd: process.cwd(),
+          name: args.flags['name'] ? String(args.flags['name']) : undefined,
+          tagline: args.flags['tagline'] ? String(args.flags['tagline']) : undefined,
+          domain: args.flags['domain'] ? String(args.flags['domain']) : undefined,
+          role: args.flags['role'] ? String(args.flags['role']) : undefined,
+          nonInteractive: Boolean(args.flags['yes']),
+        });
+        if (result.output) console.log(result.output);
+        process.exit(result.exitCode);
+      } finally {
+        prompt.close();
+      }
+      break;
+    }
+    case 'install-protocols': {
+      const prompt = openPrompt();
+      try {
+        const result = await cmdInstallProtocols(prompt, { cwd: process.cwd() });
+        if (result.output) console.log(result.output);
+        process.exit(result.exitCode);
+      } finally {
+        prompt.close();
+      }
+      break;
+    }
     case 'migrate':
       await cmdMigrate(args.flags);
       break;

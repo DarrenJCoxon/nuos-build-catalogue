@@ -1,0 +1,54 @@
+{
+  "$schema": "https://nusoft.dev/schemas/methodfile/v1.json",
+  "method": {
+    "version": "1.0",
+    "lastValidatedAt": "{{TODAY}}"
+  },
+  "project": {
+    "name": "{{PROJECT_NAME}}",
+    "tagline": "{{PROJECT_TAGLINE}}",
+    "domain": "{{PROJECT_DOMAIN}}"
+  },
+  "catalogue": {
+    "root": "docs/build/",
+    "registers": {
+      "decisions": "decisions/",
+      "workUnits": "work-units/",
+      "sessions": "sessions/",
+      "risks": "risks/",
+      "openQuestions": "open-questions/"
+    },
+    "snapshot": "STATE.md",
+    "protocols": {
+      "startOfSession": "START-OF-SESSION.md",
+      "endOfSession": "END-OF-SESSION.md"
+    },
+    "supportingLayers": {
+      "philosophy": "../philosophy/",
+      "contracts": "../contracts/",
+      "guides": "../guides/"
+    }
+  },
+  "harness": {
+    "wired": false,
+    "runtime": {
+      "nuvector": null,
+      "nuflow": null,
+      "nuwiki": null
+    },
+    "packs": {
+      "method": null
+    },
+    "documentTypes": []
+  },
+  "domain": {
+    "type": "standard",
+    "confidentialityRequired": false,
+    "auditRetentionMonths": 0
+  },
+  "ecology": {
+    "role": "{{PROJECT_ROLE}}",
+    "parentCatalogue": null,
+    "siblingCatalogues": []
+  }
+}
