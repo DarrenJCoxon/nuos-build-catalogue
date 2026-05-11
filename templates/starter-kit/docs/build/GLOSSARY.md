@@ -94,6 +94,21 @@ A period of focused work — could be an hour, could be an afternoon. Each sessi
 
 A piece of the user-facing experience. A page, a screen, a modal, a command-line prompt, an email the user receives — anything they see or interact with. Each surface gets its own file in `ui-ux/`. Different from a screen mockup: a surface file says *who uses it, what they see, what they do, what happens next, which contracts it touches.*
 
+## Swarm
+
+A set of specialised AI agents working in parallel on the same work unit, each playing a different role (architect, coder, tester, reviewer, debugger, researcher). The architect designs; the coder implements; the tester writes tests; the reviewer checks against the spec; the debugger traces failures when work breaks; the researcher looks things up. Each role uses the model best matched to its work — **Opus** for design + debugging (the reasoning-heavy ~20%), **Sonnet** for coding + tests + review (the 80%), **Haiku** for online research + lookups.
+
+The cost win is real but moderate (~30% lower spend than running everything through Opus, with current pricing). The bigger win is that each agent stays narrow and focused — the coder isn't redesigning mid-flight, the reviewer isn't writing patches, the architect isn't getting buried in implementation detail.
+
+Agent definitions live in `.claude/agents/` (installed by `init` and `install-protocols`). Default model routing lives in `methodfile.json` under `swarm.models` and can be overridden per-spawn.
+
+## Tier (model)
+
+A swarm agent's compute budget. Three tiers:
+- **Opus** — the most capable Claude model; reserved for design decisions, strategic choices, and debugging (where reasoning is load-bearing)
+- **Sonnet** — the default for coding, tests, and review; capable enough for the 80% of build work; substantially cheaper than Opus
+- **Haiku** — fastest and cheapest; suitable for lookups, research, summarisation — work where recall + scan matter, not deep reasoning
+
 ## Trigger
 
 The real-world event that makes someone need an outcome. Not a UI interaction — the moment in the persona's day or week that creates the need.

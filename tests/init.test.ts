@@ -203,6 +203,29 @@ describe('§1 init on a fresh directory', () => {
     assert.ok(existsSync(path.join(cwd, 'scripts', 'hooks', 'pre-commit')));
     assert.ok(existsSync(path.join(cwd, 'scripts', 'hooks', 'post-commit')));
     assert.ok(existsSync(path.join(cwd, 'scripts', 'install-hooks.sh')));
+
+    // Six swarm agent definitions installed into .claude/agents/
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'architect.md')));
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'coder.md')));
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'tester.md')));
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'reviewer.md')));
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'debugger.md')));
+    assert.ok(existsSync(path.join(cwd, '.claude', 'agents', 'researcher.md')));
+
+    // Agent frontmatter routes architect to Opus, coder to Sonnet, researcher to Haiku
+    const arch = await readFile(path.join(cwd, '.claude', 'agents', 'architect.md'), 'utf8');
+    assert.match(arch, /^---[\s\S]*?\nmodel: opus\n[\s\S]*?---/);
+    const coder = await readFile(path.join(cwd, '.claude', 'agents', 'coder.md'), 'utf8');
+    assert.match(coder, /^---[\s\S]*?\nmodel: sonnet\n[\s\S]*?---/);
+    const researcher = await readFile(path.join(cwd, '.claude', 'agents', 'researcher.md'), 'utf8');
+    assert.match(researcher, /^---[\s\S]*?\nmodel: haiku\n[\s\S]*?---/);
+
+    // methodfile.json has the swarm.models block
+    const mf3 = JSON.parse(await readFile(path.join(cwd, 'methodfile.json'), 'utf8'));
+    assert.ok(mf3.swarm, 'methodfile.swarm section must exist');
+    assert.equal(mf3.swarm.models.architect, 'opus');
+    assert.equal(mf3.swarm.models.coder, 'sonnet');
+    assert.equal(mf3.swarm.models.researcher, 'haiku');
   });
 });
 

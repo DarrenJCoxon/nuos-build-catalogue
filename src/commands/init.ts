@@ -249,6 +249,13 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   // installer.
   await installHooks(cwd, log_line);
 
+  // Step 3c: install the swarm agent definitions. Each agent is a markdown
+  // file with Claude Code frontmatter (name, description, model, tools).
+  // They land in .claude/agents/ so Claude Code's Task tool finds them.
+  // The model field per-agent is the default routing — overridable in
+  // methodfile.json's swarm.models or per-spawn.
+  await installAgents(cwd, log_line);
+
   // Step 4: CLAUDE.md
   const claudeMdPath = path.join(cwd, 'CLAUDE.md');
   const catalogueSection = renderCatalogueSection(name);
@@ -326,6 +333,11 @@ export async function cmdInstallProtocols(
   prompt.print('');
   prompt.print(`Refreshing git hooks (pre-commit enforcement, post-commit auto-reindex):`);
   await installHooks(cwd, (msg) => prompt.print(msg));
+
+  // Refresh agent definitions too.
+  prompt.print('');
+  prompt.print(`Refreshing swarm agent definitions (.claude/agents/):`);
+  await installAgents(cwd, (msg) => prompt.print(msg));
 
   return { output: '', exitCode: 0 };
 }
@@ -407,6 +419,61 @@ async function writeHookFile(
   const { chmod } = await import('node:fs/promises');
   await chmod(dest, 0o755);
   log_line(`${prefix}${action} ${label}`);
+}
+
+// ---------------------------------------------------------------------------
+// installAgents — copy bundled swarm agent definitions into .claude/agents/
+// ---------------------------------------------------------------------------
+
+/**
+ * Bundled agent definitions ship in templates/agents/. Each is a markdown
+ * file with Claude Code frontmatter (name, description, model, tools). They
+ * get copied into <cwd>/.claude/agents/ where Claude Code's Task tool
+ * discovers them.
+ *
+ * Six default agents land in 0.15.0:
+ *   architect (opus) — design + contracts
+ *   debugger  (opus) — trace failures
+ *   coder     (sonnet) — implementation
+ *   tester    (sonnet) — tests against acceptance criteria
+ *   reviewer  (sonnet) — code review against spec + design system
+ *   researcher(haiku) — online lookups + summaries
+ *
+ * Per-agent model is the default. Project-wide overrides live in
+ * methodfile.json under swarm.models. Per-spawn overrides via the Task
+ * tool's `model` parameter.
+ *
+ * Idempotent: byte-identical sources are reported "unchanged".
+ */
+async function installAgents(
+  cwd: string,
+  log_line: (msg: string) => void
+): Promise<void> {
+  const agentsTemplatesRoot = path.join(TEMPLATES_ROOT, 'agents');
+  if (!existsSync(agentsTemplatesRoot)) {
+    log_line('  · (agents bundle not present in this CLI install — skipping)');
+    return;
+  }
+
+  const claudeAgentsDir = path.join(cwd, '.claude', 'agents');
+  await mkdir(claudeAgentsDir, { recursive: true });
+
+  const entries = await readdir(agentsTemplatesRoot, { withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+    const src = path.join(agentsTemplatesRoot, entry.name);
+    const dest = path.join(claudeAgentsDir, entry.name);
+    const srcContent = await readFile(src, 'utf8');
+    let action: 'created' | 'updated' | 'unchanged' = 'created';
+    if (existsSync(dest)) {
+      const destContent = await readFile(dest, 'utf8');
+      action = destContent === srcContent ? 'unchanged' : 'updated';
+    }
+    if (action !== 'unchanged') {
+      await writeFile(dest, srcContent, 'utf8');
+    }
+    log_line(`  · ${action} .claude/agents/${entry.name}`);
+  }
 }
 
 // ---------------------------------------------------------------------------

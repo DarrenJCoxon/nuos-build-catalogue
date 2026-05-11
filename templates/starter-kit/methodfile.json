@@ -40,6 +40,17 @@
     "phaseE_initialWorkUnits": "not_started",
     "completedAt": null
   },
+  "swarm": {
+    "models": {
+      "architect": "opus",
+      "debugger": "opus",
+      "coder": "sonnet",
+      "tester": "sonnet",
+      "reviewer": "sonnet",
+      "researcher": "haiku"
+    },
+    "comment": "Default model routing for swarm agents. Opus for design + debugging (reasoning-heavy, ~20% of work). Sonnet for coding + tests + review (the 80%). Haiku for research + lookups. Override per-spawn by passing `model: '...'` to the Task tool. See docs/build/WELCOME.md for the rationale."
+  },
   "harness": {
     "wired": false,
     "runtime": {

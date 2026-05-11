@@ -16,9 +16,24 @@ You don't have to remember any of it. The catalogue does.
 
 If anything ever feels out of date, that's a bug, not a feature. The repair is to file the missing piece before continuing.
 
+## How the implementation work itself runs (the swarm)
+
+Once planning is done and the first work units are filed, you don't sit through an Opus-priced conversation for every line of code. Each work unit becomes the input to a small **swarm** of specialised agents:
+
+- An **architect** (Opus) designs the load-bearing structure
+- One or more **coders** (Sonnet) implement
+- A **tester** (Sonnet) writes tests against the acceptance criteria
+- A **reviewer** (Sonnet) checks the output against the spec + the design system
+- A **debugger** (Opus) traces failures if something breaks
+- A **researcher** (Haiku) looks up library docs, API changes, error messages
+
+Each role uses the model best matched to its work. Opus does the ~20% that needs deep reasoning (design and debugging); Sonnet handles the routine 80% (the coding + tests + review); Haiku handles fast lookups. Cost works out roughly 30% lower than running everything through Opus on real builds.
+
+The agent definitions are installed automatically into `.claude/agents/` by `init`. Model routing lives in `methodfile.json` under `swarm.models` — overridable per project.
+
 ## How a project gets built
 
-A project starts with a 5-phase **planning arc** the AI walks you through. Each phase is its own session. By the end of the arc, the catalogue has the substrate that makes everything downstream coherent.
+A project starts with a 5-phase **planning arc** the AI walks you through. Each phase is its own session. By the end of the arc, the catalogue has the substrate that makes everything downstream coherent. After that, work units feed into the swarm above.
 
 1. **Orientation** (~30 min) — what is this project, who's it for. You'll describe the project in your own words and name 1-3 specific people it serves.
 
