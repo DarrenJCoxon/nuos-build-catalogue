@@ -97,11 +97,38 @@ describe('§1 init on a fresh directory', () => {
     assert.match(stateMd, /test-project/);
     assert.doesNotMatch(stateMd, /\{\{PROJECT_NAME\}\}/);
 
-    // .claude/commands/ has the four protocols
+    // .claude/commands/ has the four protocols (Claude Code)
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'start-of-session.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'end-of-session.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'wu-new.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'persona-new.md')));
+
+    // .opencode/commands/ has the four protocols (OpenCode; same shape)
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'start-of-session.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'end-of-session.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'wu-new.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'persona-new.md')));
+
+    // .agents/skills/<slug>/SKILL.md for each protocol (Codex CLI convention)
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'start-of-session', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'end-of-session', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'wu-new', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'persona-new', 'SKILL.md')));
+
+    // Codex frontmatter includes `name:` (per SKILL.md convention)
+    const codexBody = await readFile(
+      path.join(cwd, '.agents', 'skills', 'start-of-session', 'SKILL.md'),
+      'utf8'
+    );
+    assert.match(codexBody, /^---\nname: start-of-session\ndescription: .+\n---\n/);
+
+    // Claude / OpenCode frontmatter has `description:` but NOT `name:`
+    const claudeBody = await readFile(
+      path.join(cwd, '.claude', 'commands', 'start-of-session.md'),
+      'utf8'
+    );
+    assert.match(claudeBody, /^---\ndescription: .+\n---\n/);
+    assert.doesNotMatch(claudeBody, /\nname: /);
 
     // CLAUDE.md created with catalogue section
     const claudeMd = await readFile(path.join(cwd, 'CLAUDE.md'), 'utf8');
@@ -221,7 +248,7 @@ describe('§4 init handles unanchored build/ in .gitignore', () => {
 // ---------------------------------------------------------------------------
 
 describe('§5 install-protocols', () => {
-  test('creates .claude/commands/ if missing and copies all four protocols', async () => {
+  test('creates all three tool paths and installs four protocols each', async () => {
     const cwd = path.join(workspace, 'install-fresh');
     await mkdir(cwd);
     const prompt = new MockPrompt([]);
@@ -229,13 +256,28 @@ describe('§5 install-protocols', () => {
     const result = await cmdInstallProtocols(prompt, { cwd });
     assert.equal(result.exitCode, 0);
 
+    // Claude Code
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'start-of-session.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'end-of-session.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'wu-new.md')));
     assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'persona-new.md')));
 
-    // Ran print at least once
+    // OpenCode
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'start-of-session.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'end-of-session.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'wu-new.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'persona-new.md')));
+
+    // Codex CLI (directory-based)
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'start-of-session', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'end-of-session', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'wu-new', 'SKILL.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'persona-new', 'SKILL.md')));
+
+    // Output mentions all three tool paths
     assert.ok(prompt.output.some((l) => /created\s+\.claude\/commands\/start-of-session\.md/.test(l)));
+    assert.ok(prompt.output.some((l) => /created\s+\.opencode\/commands\/start-of-session\.md/.test(l)));
+    assert.ok(prompt.output.some((l) => /created\s+\.agents\/skills\/start-of-session\/SKILL\.md/.test(l)));
   });
 
   test('reports unchanged when files already match canonical', async () => {

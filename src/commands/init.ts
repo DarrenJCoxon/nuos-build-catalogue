@@ -5,8 +5,15 @@
  *   1. mkdir docs/build/ + copy starter-kit content
  *   2. Substitute {{PROJECT_NAME}} / {{PROJECT_TAGLINE}} / {{TODAY}} in
  *      STATE.md and methodfile.json
- *   3. Copy the four protocols into .claude/commands/ (preserving
- *      existing files)
+ *   3. Fan the four protocols out to ALL THREE supported AI coding tools:
+ *      Claude Code (.claude/commands/<n>.md), OpenCode
+ *      (.opencode/commands/<n>.md), and Codex CLI
+ *      (.agents/skills/<n>/SKILL.md). Each tool reads commands from a
+ *      different path with slightly different frontmatter; the body is
+ *      identical across all three. We write to all three by default — the
+ *      files are tiny and harmless if a tool is unused. A consumer of
+ *      this catalogue on any of the three tools gets working slash
+ *      commands without extra configuration.
  *   4. Append a "Build catalogue (NuOS Build Method)" section to
  *      CLAUDE.md (creating it if missing; preserving existing content)
  *   5. Update .gitignore: !docs/build/ override (if `build/` is present
@@ -16,10 +23,11 @@
  *   6. Run a first migrate to verify
  *
  * Companion command: `install-protocols` refreshes just step 3 from the
- * canonical bodies bundled in this CLI package.
+ * canonical bodies bundled in this CLI package, also fanning out to all
+ * three tool paths.
  */
 
-import { mkdir, readFile, writeFile, copyFile, readdir, stat, access } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, stat, access } from 'node:fs/promises';
 import { existsSync, constants } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,6 +62,63 @@ const PROTOCOL_FILES = [
   'wu-new.md',
   'persona-new.md',
 ] as const;
+
+/**
+ * One-line descriptions used in the frontmatter of installed protocol
+ * files. Tools surface this text in their command list, so it should
+ * read as an imperative summary.
+ */
+const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
+  'start-of-session': 'Read STATE, last session log, active WU; surface next action',
+  'end-of-session': 'Write session log, update STATE + indices, move ✅ WUs to done/, commit',
+  'wu-new': 'Create a new work unit with the six-field outcome shape (per D046)',
+  'persona-new': 'Create a new P-NNN persona with the seven dimensions and acid-test (per D046)',
+};
+
+/**
+ * The three AI coding tools the catalogue supports. Each tool reads
+ * project-level commands from a different path with a slightly different
+ * frontmatter shape. The body itself is identical across all three.
+ *
+ * The bundled `templates/protocols/<slug>.md` files are raw bodies (no
+ * frontmatter); `renderForTool` adds tool-appropriate frontmatter.
+ */
+type ToolSlug = 'claude' | 'opencode' | 'codex';
+
+interface ToolTarget {
+  /** Tool's display name (for logs). */
+  label: string;
+  /** Path relative to project root, given a protocol slug. */
+  destPath: (slug: string) => string;
+  /** Render the file content given the slug and the raw body. */
+  render: (slug: string, body: string) => string;
+}
+
+const TOOLS: Record<ToolSlug, ToolTarget> = {
+  claude: {
+    label: 'Claude Code',
+    destPath: (slug) => path.join('.claude', 'commands', `${slug}.md`),
+    render: (slug, body) => withFrontmatter({ description: PROTOCOL_DESCRIPTIONS[slug] ?? '' }, body),
+  },
+  opencode: {
+    label: 'OpenCode',
+    destPath: (slug) => path.join('.opencode', 'commands', `${slug}.md`),
+    render: (slug, body) => withFrontmatter({ description: PROTOCOL_DESCRIPTIONS[slug] ?? '' }, body),
+  },
+  codex: {
+    label: 'Codex CLI',
+    destPath: (slug) => path.join('.agents', 'skills', slug, 'SKILL.md'),
+    render: (slug, body) =>
+      withFrontmatter({ name: slug, description: PROTOCOL_DESCRIPTIONS[slug] ?? '' }, body),
+  },
+};
+
+function withFrontmatter(fields: Record<string, string>, body: string): string {
+  const lines = ['---'];
+  for (const [k, v] of Object.entries(fields)) lines.push(`${k}: ${v}`);
+  lines.push('---', '', '');
+  return lines.join('\n') + body;
+}
 
 export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promise<InitResult> {
   const cwd = options.cwd ?? process.cwd();
@@ -150,14 +215,20 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   );
   await writeFile(path.join(cwd, 'methodfile.json'), substitute(methodfileSrc, subs), 'utf8');
 
-  // Step 3: copy protocols into .claude/commands/
-  const claudeCommandsDir = path.join(cwd, '.claude', 'commands');
-  await mkdir(claudeCommandsDir, { recursive: true });
-  for (const protocol of PROTOCOL_FILES) {
-    const dest = path.join(claudeCommandsDir, protocol);
-    const existed = existsSync(dest);
-    await copyFile(path.join(TEMPLATES_ROOT, 'protocols', protocol), dest);
-    log_line(`  · ${existed ? 'overwrote' : 'installed'} .claude/commands/${protocol}`);
+  // Step 3: fan protocols out to all three supported AI coding tools.
+  // Each tool reads project-level commands from its own path; we install
+  // to all three by default so users on any of Claude Code / OpenCode /
+  // Codex CLI get working slash commands without extra configuration.
+  for (const protocolFile of PROTOCOL_FILES) {
+    const slug = path.basename(protocolFile, '.md');
+    const body = await readFile(path.join(TEMPLATES_ROOT, 'protocols', protocolFile), 'utf8');
+    for (const tool of Object.values(TOOLS)) {
+      const dest = path.join(cwd, tool.destPath(slug));
+      const existed = existsSync(dest);
+      await mkdir(path.dirname(dest), { recursive: true });
+      await writeFile(dest, tool.render(slug, body), 'utf8');
+      log_line(`  · ${existed ? 'overwrote' : 'installed'} ${tool.destPath(slug)} (${tool.label})`);
+    }
   }
 
   // Step 4: CLAUDE.md
@@ -216,27 +287,27 @@ export async function cmdInstallProtocols(
       exitCode: 1,
     };
   }
-  const claudeCommandsDir = path.join(cwd, '.claude', 'commands');
-  await mkdir(claudeCommandsDir, { recursive: true });
 
   const lines: string[] = [];
-  for (const protocol of PROTOCOL_FILES) {
-    const src = path.join(TEMPLATES_ROOT, 'protocols', protocol);
-    const dest = path.join(claudeCommandsDir, protocol);
-    let action: 'created' | 'updated' | 'unchanged' = 'created';
-    if (existsSync(dest)) {
-      const [srcContent, destContent] = await Promise.all([
-        readFile(src, 'utf8'),
-        readFile(dest, 'utf8'),
-      ]);
-      action = srcContent === destContent ? 'unchanged' : 'updated';
+  for (const protocolFile of PROTOCOL_FILES) {
+    const slug = path.basename(protocolFile, '.md');
+    const body = await readFile(path.join(TEMPLATES_ROOT, 'protocols', protocolFile), 'utf8');
+    for (const tool of Object.values(TOOLS)) {
+      const dest = path.join(cwd, tool.destPath(slug));
+      const rendered = tool.render(slug, body);
+      let action: 'created' | 'updated' | 'unchanged' = 'created';
+      if (existsSync(dest)) {
+        const destContent = await readFile(dest, 'utf8');
+        action = destContent === rendered ? 'unchanged' : 'updated';
+      }
+      if (action !== 'unchanged') {
+        await mkdir(path.dirname(dest), { recursive: true });
+        await writeFile(dest, rendered, 'utf8');
+      }
+      lines.push(`  ${action.padEnd(10)} ${tool.destPath(slug)}`);
     }
-    if (action !== 'unchanged') {
-      await copyFile(src, dest);
-    }
-    lines.push(`  ${action.padEnd(10)} .claude/commands/${protocol}`);
   }
-  prompt.print(`Refreshing protocols at ${claudeCommandsDir}:`);
+  prompt.print(`Refreshing protocols (Claude Code / OpenCode / Codex CLI):`);
   for (const l of lines) prompt.print(l);
   return { output: '', exitCode: 0 };
 }
