@@ -113,3 +113,60 @@ Every decision made by any agent during the swarm MUST land in the catalogue bef
 ## Cost guidance
 
 A typical full-feature swarm spawning architect (Opus, ~30 min) + coder (Sonnet, ~1 hr) + tester (Sonnet, ~30 min) + reviewer (Sonnet, ~15 min) costs substantially less than running the same work as a continuous Opus conversation. Don't sweat exact figures — the 80/20 split is the lever. If a single work unit's swarm cost is becoming meaningful (>>£10), surface that to the operator before continuing; the WU is probably bigger than scoped.
+
+---
+
+## Verification gates
+
+To prevent a swarm from spiralling into runaway cost or quality drift, observe these gates. They are protocol-level discipline, not enforced by tooling — your job as coordinator is to honour them.
+
+### Retry cap on REQUEST CHANGES loops
+
+If the reviewer returns REQUEST CHANGES, re-spawn the coder ONCE to address the findings, then run the tester + reviewer cycle a second time. If the third reviewer pass still returns REQUEST CHANGES:
+
+- STOP the swarm
+- Escalate to the operator with a plain-English summary: *"After three attempts the reviewer still flags X. Likely either the design is wrong or the spec is under-specified. How would you like to proceed?"*
+
+Don't loop indefinitely. A third reviewer rejection is a signal — the work unit's design, contract, or acceptance criteria need clarification, not more code.
+
+### Cost ceiling per work unit
+
+If the estimated cost (per the swarm audit) is exceeding **£10** for a single work unit:
+
+- STOP the swarm
+- Surface the cost trajectory to the operator
+- Recommend either splitting the work unit into smaller pieces, or accepting the higher cost with their explicit go-ahead
+
+This is a soft ceiling — the operator can authorise more. The point is to make cost visible before it accumulates invisibly.
+
+### Time ceiling per agent
+
+If a single agent's run is taking substantially longer than its rough budget (architect >1 hr, coder >2 hrs, tester >1 hr, reviewer >30 min):
+
+- Don't kill the agent — that loses its in-flight work
+- Surface the duration to the operator
+- Ask whether to continue, redirect, or escalate to a different agent (e.g. if coder is stuck, route to debugger)
+
+### Architectural drift detection
+
+If the coder or tester surfaces a design choice that wasn't in the architect's brief (or no architect was spawned because this was meant to be implementation-only):
+
+- STOP the implementation
+- Escalate to the architect agent with the surfaced choice
+- Wait for the architect's brief or decision file before re-spawning the coder
+
+This is the load-bearing gate. Coders making design calls inline is the failure mode that produces drift between intent and implementation; the swarm pattern's whole value is preventing it.
+
+### Coherence check at midpoint
+
+For full-feature swarms (architect → coder → tester → reviewer), after the coder finishes and before the tester spawns, do a quick check:
+
+- Is what the coder produced visibly consistent with what the architect specified?
+- Are the file paths / module boundaries the architect named present in the coder's output?
+- Are the contracts the architect filed still the ones the coder is consuming?
+
+If anything looks misaligned, escalate to the operator before spending more tokens on the tester.
+
+### Recording gate triggers
+
+Every gate trigger gets recorded in the swarm audit entry under a `## Gate triggers` section. Even if the swarm continues, the trigger is logged. This builds the audit trail for the operator to review when reasoning about whether the swarm pattern is paying off.

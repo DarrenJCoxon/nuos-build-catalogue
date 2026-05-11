@@ -455,6 +455,9 @@ Usage:
 
   nuos-catalogue plan      status    show planning progress across the 5-phase arc
 
+  nuos-catalogue swarm     status    [--limit=N]  list recent /build-wu runs
+  nuos-catalogue swarm     cost      aggregate cost across swarm runs
+
   nuos-catalogue help
 
 Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
@@ -542,6 +545,24 @@ async function main(): Promise<void> {
       }
       console.error(`unknown plan subcommand: ${sub ?? '(none)'}`);
       console.error('available: plan status');
+      process.exit(1);
+    }
+    case 'swarm': {
+      const sub = args.positional[0];
+      const { cmdSwarmStatus, cmdSwarmCost } = await import('./commands/swarm.js');
+      if (sub === 'status') {
+        const limit = args.flags['limit'] ? Number(args.flags['limit']) : undefined;
+        const code = await cmdSwarmStatus({ cwd: process.cwd(), limit });
+        if (code !== 0) process.exit(code);
+        break;
+      }
+      if (sub === 'cost') {
+        const code = await cmdSwarmCost({ cwd: process.cwd() });
+        if (code !== 0) process.exit(code);
+        break;
+      }
+      console.error(`unknown swarm subcommand: ${sub ?? '(none)'}`);
+      console.error('available: swarm status [--limit=N], swarm cost');
       process.exit(1);
     }
     case 'help':
