@@ -211,15 +211,19 @@ describe('§3 wu tick', () => {
     await runMigrate({ catalogueRoot: buildRoot, store });
     const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
 
+    // --index=1 is 1-based at the CLI boundary — the first AC.
     const result = await cmdWuTick(store, runtime, {
       handle: 'wu-200',
-      index: 0,
+      index: 1,
       evidence: 'commit abc123',
     });
     assert.equal(result.exitCode, 0, result.output);
 
     const onDisk = await readFile(path.join(buildRoot, 'work-units', '200-test-wu.md'), 'utf8');
-    assert.match(onDisk, /Acceptance criterion at index 0 ticked/);
+    // The audit log always uses 1-based numbering — both for the
+    // structural-tick path and the audit-log-only fallback. The 0.13
+    // change makes this consistent with the user-facing --index flag.
+    assert.match(onDisk, /Acceptance criterion 1 ticked/);
     assert.match(onDisk, /Evidence: commit abc123/);
   });
 
@@ -228,23 +232,35 @@ describe('§3 wu tick', () => {
     const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
     const result = await cmdWuTick(store, runtime, {
       handle: 'wu-200',
-      index: 0,
+      index: 1,
       evidence: '   ',
     });
     assert.equal(result.exitCode, 2);
     assert.match(result.output, /--evidence=.* is required/);
   });
 
-  test('rejects negative index', async () => {
+  test('rejects zero or negative index', async () => {
     const store = await openWorkflowStore(workflowsPath);
     const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
-    const result = await cmdWuTick(store, runtime, {
+
+    // index=0 is the most common off-by-one users will hit if they
+    // assumed zero-based semantics; the message has to spell out the
+    // 1-based convention.
+    const zeroResult = await cmdWuTick(store, runtime, {
+      handle: 'wu-200',
+      index: 0,
+      evidence: 'evidence',
+    });
+    assert.equal(zeroResult.exitCode, 2);
+    assert.match(zeroResult.output, /1-based/);
+
+    const negativeResult = await cmdWuTick(store, runtime, {
       handle: 'wu-200',
       index: -1,
       evidence: 'evidence',
     });
-    assert.equal(result.exitCode, 2);
-    assert.match(result.output, /index=<non-negative integer>/);
+    assert.equal(negativeResult.exitCode, 2);
+    assert.match(negativeResult.output, /1-based/);
   });
 });
 

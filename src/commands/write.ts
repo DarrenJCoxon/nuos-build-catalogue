@@ -107,6 +107,12 @@ function inferWorkflowStatus(record: MigratedRecord): string {
 
 // ---------------------------------------------------------------------------
 // wu tick <handle> --index=N --evidence="..."
+//
+// --index is **1-based** at the CLI boundary (so --index=1 ticks the first
+// AC). Internally the pack workflow + ac-parse use 0-based indexing; the
+// conversion happens here so the user-facing surface matches the
+// human-readable summary text the mis-adapter writes into the markdown
+// changelog ("Acceptance criterion 3 ticked: ...").
 // ---------------------------------------------------------------------------
 
 export async function cmdWuTick(
@@ -116,12 +122,15 @@ export async function cmdWuTick(
 ): Promise<WriteHandlerResult> {
   if (!args.handle) {
     return {
-      output: 'Usage: nuos-catalogue wu tick <handle> --index=N --evidence="..."',
+      output: 'Usage: nuos-catalogue wu tick <handle> --index=N --evidence="..."  (--index is 1-based)',
       exitCode: 2,
     };
   }
-  if (typeof args.index !== 'number' || !Number.isInteger(args.index) || args.index < 0) {
-    return { output: '--index=<non-negative integer> is required', exitCode: 2 };
+  if (typeof args.index !== 'number' || !Number.isInteger(args.index) || args.index < 1) {
+    return {
+      output: '--index=<positive integer> is required (1-based: --index=1 ticks the first AC)',
+      exitCode: 2,
+    };
   }
   if (!args.evidence || args.evidence.trim().length === 0) {
     return { output: '--evidence="..." is required (non-empty)', exitCode: 2 };
@@ -132,13 +141,16 @@ export async function cmdWuTick(
     return { output: `no work_unit record for handle "${handle}"`, exitCode: 1 };
   }
 
+  // Convert 1-based CLI input to 0-based for the workflow + ac-parse layer.
+  const zeroBasedIndex = args.index - 1;
+
   const capture: CaptureInput = {
     channel: 'typed_note',
     content: `tick AC #${args.index} on ${handle}`,
     subjects: [{ kind: 'work_unit', id: handle }],
     metadata: {
       targetHandle: handle,
-      criterionIndex: args.index,
+      criterionIndex: zeroBasedIndex,
       evidence: args.evidence,
     },
   };
@@ -148,7 +160,7 @@ export async function cmdWuTick(
     'work_unit.tick_acceptance_criterion',
     capture,
     handle,
-    `index ${args.index}`
+    `AC ${args.index}`
   );
 }
 

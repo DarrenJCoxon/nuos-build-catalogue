@@ -195,15 +195,19 @@ export function extractForCompletion(rawMarkdown: string): AcceptanceCriterion[]
  */
 function parseHistoryEvidence(rawMarkdown: string): Map<number, string> {
   const result = new Map<number, string>();
-  const historyHeadingIndex = rawMarkdown.indexOf('## Build catalogue history');
-  if (historyHeadingIndex === -1) return result;
+  // Anchor the heading lookup to start-of-line so prose mentions inside
+  // code spans or paragraphs (e.g. a WU's notes log discussing the
+  // section by name) don't false-match the literal string.
+  const HEADING_RE = /^## Build catalogue history\s*$/m;
+  const headingMatch = HEADING_RE.exec(rawMarkdown);
+  if (!headingMatch) return result;
+  const historyHeadingIndex = headingMatch.index;
+  const headingLength = headingMatch[0].length;
 
   const sectionTail = rawMarkdown.slice(historyHeadingIndex);
   // Bound the history section at the next ## heading (if any).
-  const nextSectionMatch = /\n## \S/.exec(sectionTail.slice('## Build catalogue history'.length));
-  const sectionEnd = nextSectionMatch
-    ? '## Build catalogue history'.length + nextSectionMatch.index
-    : sectionTail.length;
+  const nextSectionMatch = /\n## \S/.exec(sectionTail.slice(headingLength));
+  const sectionEnd = nextSectionMatch ? headingLength + nextSectionMatch.index : sectionTail.length;
   const section = sectionTail.slice(0, sectionEnd);
 
   // Split into entries on the top-level `- **<timestamp>**` bullets.

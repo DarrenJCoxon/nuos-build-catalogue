@@ -202,9 +202,10 @@ describe('§5 end-to-end via CLI write commands', () => {
     await runMigrate({ catalogueRoot: buildRoot, store });
     const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
 
+    // --index=1 is 1-based at the CLI boundary — the first AC.
     const result = await cmdWuTick(store, runtime, {
       handle: 'wu-300',
-      index: 0,
+      index: 1,
       evidence: 'commit alpha',
     });
     assert.equal(result.exitCode, 0, result.output);
@@ -222,10 +223,10 @@ describe('§5 end-to-end via CLI write commands', () => {
     const store = await openWorkflowStore(workflowsPath);
     const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
 
-    // Tick the second criterion too
+    // Tick the second criterion too (1-based: --index=2 is the second).
     await cmdWuTick(store, runtime, {
       handle: 'wu-300',
-      index: 1,
+      index: 2,
       evidence: 'commit beta',
     });
 

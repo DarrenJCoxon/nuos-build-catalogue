@@ -1,5 +1,49 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.13.0 — 2026-05-11 — WU 111 soak findings + bundled git hooks
+
+The 0.12.0 → 0.13.0 release closes four real-use issues surfaced when running the CLI against the live nuos catalogue via `npx` (WU 111 Day-1 soak) plus extends `init` to bundle the project's git hooks. 135/135 tests pass.
+
+### Defaults walk up from cwd (Day-1 soak finding 1)
+
+Pre-0.13, the CLI resolved `--build-root`, `--workflows`, `--catalogue`, etc. relative to the **package install location** (e.g. `/Users/me/.npm/_npx/abc/node_modules/@nusoft/nuos-build-catalogue/..`). That made every `npx`-style invocation point at the wrong directory. Workaround was setting `NUOS_CATALOGUE_*` env vars for every run.
+
+0.13 walks up from `process.cwd()` looking for the nearest directory that contains `docs/build/`, the same way `git` finds its repo root. Invoke `nuos-catalogue migrate` from anywhere inside the project — it finds the right root. `--build-root` and the matching env vars still take precedence when set; the walk-up only kicks in when no explicit value is supplied. If no `docs/build/` exists from cwd up to the filesystem root, write commands now throw with a clear hint instead of silently using the package install location.
+
+Path-resolution helpers moved to a new `src/path-resolution.ts` module so they're directly unit-testable (see `tests/wu-111-soak-findings.test.ts`).
+
+### Gitignore note from `migrate` (Day-1 soak finding 2)
+
+After `migrate` creates `.nuos-catalogue/workflows.json`, the CLI checks whether the project's `.gitignore` excludes the directory. If a `.gitignore` exists and is missing the entry, `migrate` now prints a short `note:` at the end of the run telling the operator to add `.nuos-catalogue/`. Silent when `.gitignore` is absent (the project may not be a git repo) or already correct. This complements the existing behaviour of `init`, which adds the entry automatically when bootstrapping a fresh project — the note covers the corner case of an existing repo adopting the catalogue without running `init`.
+
+### `--index` is 1-based at the CLI boundary (Day-1 soak finding 3)
+
+`nuos-catalogue wu tick <handle> --index=N --evidence="..."` previously accepted `--index=0` to tick the first AC, but the audit-log entry used a mix of 0-based ("Acceptance criterion at index 0 ticked") and 1-based ("Acceptance criterion 1 ticked: ..."). The flag is now 1-based end-to-end: `--index=1` ticks the first AC, the audit-log entries use 1-based numbering in both the structural-tick and audit-log-only paths. `--index=0` is rejected with a message naming the 1-based convention.
+
+`parseHistoryEvidence` still reads legacy 0-based "at index N" entries for backward compatibility, so audit trails written by older versions remain valid.
+
+### Anchored `## Build catalogue history` heading lookup (Day-1 soak finding 4)
+
+`appendChangeLog` and `parseHistoryEvidence` previously located the history section via `rawMarkdown.indexOf('## Build catalogue history')`, which matched **any** mention of that string — including prose references inside code spans and paragraphs. WU 111's own notes log discusses the section by name when explaining the audit-trail design; the false match meant the first tick on WU 111 wrote its changelog entry into the wrong location (after the prose mention) instead of creating a new section at the end of the file.
+
+Both functions now use an anchored regex (`/^## Build catalogue history\s*$/m`). Prose mentions are ignored. Real headings — at start-of-line, with optional trailing whitespace — match.
+
+### `init` now bundles git hooks (carried over from 0.13 mid-flight work)
+
+`nuos-catalogue init` writes `.git/hooks/pre-commit` and `.git/hooks/post-commit` from the bundled canonical bodies, plus a `scripts/install-hooks.sh` for the project to re-run after a clone. Consumers no longer need to copy hooks across by hand from the nuos repo.
+
+### Migration from 0.12.0
+
+No breaking changes for anyone using the documented env-var path. The flag-boundary change for `--index` is breaking for anyone calling `cmdWuTick({index: 0, ...})` directly from TypeScript; update to `index: 1`. The 121 pre-existing tests required two callsite updates in `tests/commands-write.test.ts` and `tests/ac-parse.test.ts` to switch from 0-based to 1-based.
+
+## 0.12.0 — 2026-05-11 — Ollama embedder default
+
+Switches the local-Ollama embedder default model from `qwen3-embedding:8b` (4096 dims) to `qwen3-embedding:0.6b` (1024 dims). The smaller model is the right default for fast iteration on local hardware; the larger model is still selectable via the embedder factory and works unchanged. Closes a soak-mode usability cut on user-owned AMD Ryzen rigs.
+
+## 0.11.0 — 2026-05-11 — Init fans protocols across coding tools
+
+`nuos-catalogue init` now writes the four NuOS Build Method protocols into all three locations the cross-tool harness expects (`.claude/commands/`, `.opencode/commands/`, `.agents/skills/<protocol>/SKILL.md`) so a fresh project works in Claude Code, OpenCode, and Codex CLI out of the box.
+
 ## 0.10.0 — 2026-05-10 — `init` and `install-protocols` commands
 
 Closes the gap that the manual Sensight scaffold made obvious: there was no single command for adopting the build catalogue on a new project. Two new operator-facing commands ship together; the CLI package now bundles the protocol bodies and starter-kit content as data files so consumers don't need a sibling nuos repo.

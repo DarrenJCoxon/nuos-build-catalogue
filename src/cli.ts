@@ -11,9 +11,6 @@
  * If we need richer parsing later, swap in commander/yargs.
  */
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 // Static imports — these don't pull in NuVector / NuFlow transitively.
 // init / migrate / regenerate / summary / list / show / install-protocols all
 // work without those native deps being installed.
@@ -29,6 +26,14 @@ import { runRegenerate } from './regenerate/check.js';
 import type { Register } from './migrate/types.js';
 import { openPrompt } from './commands/prompt.js';
 import { cmdInit, cmdInstallProtocols } from './commands/init.js';
+import {
+  resolveBuildRoot,
+  resolveCatalogueRoot,
+  resolveWorkflowsPath,
+  resolveIndexPath,
+  resolveHashPath,
+  gitignoreCatalogueNote,
+} from './path-resolution.js';
 
 // Dynamic imports below — index / search / write commands / create commands
 // load NuVector or NuFlow transitively. Loading them at module-parse time
@@ -37,27 +42,6 @@ import { cmdInit, cmdInstallProtocols } from './commands/init.js';
 // binaries as optionalDependencies). Lazy-load so the lightweight commands
 // (init, migrate, etc.) work universally; the heavyweight commands degrade
 // gracefully when their deps are missing.
-
-const __filename = fileURLToPath(import.meta.url);
-const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..');
-
-// Defaults resolve in this order: env var > flag-supplied > package-relative
-// fallback. The package-relative fallback only makes sense when running
-// against the nuos catalogue as a sibling (the original WU 110 use case);
-// for any other consumer (Sensight, NuTutor, etc.) the env vars or the
-// per-command flags are the right path. CLAUDE.md guidance for adopters:
-// set NUOS_CATALOGUE_BUILD_ROOT and NUOS_CATALOGUE_WORKFLOWS in your
-// shell profile.
-const DEFAULT_CATALOGUE_ROOT =
-  process.env.NUOS_CATALOGUE_ROOT ?? path.resolve(PACKAGE_ROOT, '../nuos/docs');
-const DEFAULT_BUILD_ROOT =
-  process.env.NUOS_CATALOGUE_BUILD_ROOT ?? path.resolve(PACKAGE_ROOT, '../nuos/docs/build');
-const DEFAULT_INDEX_DIR =
-  process.env.NUOS_CATALOGUE_INDEX_DIR ?? path.resolve(PACKAGE_ROOT, '.nuos-catalogue');
-const DEFAULT_INDEX_PATH = path.join(DEFAULT_INDEX_DIR, 'index.nv');
-const DEFAULT_HASH_PATH = path.join(DEFAULT_INDEX_DIR, 'hashes.json');
-const DEFAULT_WORKFLOWS_PATH =
-  process.env.NUOS_CATALOGUE_WORKFLOWS ?? path.join(DEFAULT_INDEX_DIR, 'workflows.json');
 
 interface ParsedArgs {
   command: string;
@@ -85,9 +69,10 @@ function parseArgs(argv: string[]): ParsedArgs {
 }
 
 async function cmdIndex(flags: Record<string, string | boolean>): Promise<void> {
-  const catalogueRoot = String(flags['catalogue'] ?? DEFAULT_CATALOGUE_ROOT);
-  const indexPath = String(flags['index'] ?? DEFAULT_INDEX_PATH);
-  const hashPath = String(flags['hash-file'] ?? DEFAULT_HASH_PATH);
+  const catalogueRoot = resolveCatalogueRoot(flags['catalogue']);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const indexPath = resolveIndexPath(buildRoot, flags['index']);
+  const hashPath = resolveHashPath(buildRoot, flags['hash-file']);
 
   const { selectEmbedderFromEnv } = await import('./embedder/select.js');
   const { openStore } = await import('./store/open.js');
@@ -128,7 +113,8 @@ async function cmdSearch(positional: string[], flags: Record<string, string | bo
     process.exit(2);
   }
 
-  const indexPath = String(flags['index'] ?? DEFAULT_INDEX_PATH);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const indexPath = resolveIndexPath(buildRoot, flags['index']);
   const { selectEmbedderFromEnv } = await import('./embedder/select.js');
   const { openStore } = await import('./store/open.js');
   const { runSearch } = await import('./search/query.js');
@@ -163,8 +149,8 @@ async function cmdSearch(positional: string[], flags: Record<string, string | bo
 }
 
 async function cmdMigrate(flags: Record<string, string | boolean>): Promise<void> {
-  const buildRoot = String(flags['build-root'] ?? DEFAULT_BUILD_ROOT);
-  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const workflowsPath = resolveWorkflowsPath(buildRoot, flags['workflows']);
   const dryRun = Boolean(flags['dry-run']);
 
   console.log(`migrating ${buildRoot}`);
@@ -196,6 +182,18 @@ async function cmdMigrate(flags: Record<string, string | boolean>): Promise<void
     console.log('     Resolve by renaming the conflicting files (e.g. give them distinct number prefixes) then re-run migrate.');
   }
   console.log(`(${(report.durationMs / 1000).toFixed(2)}s)`);
+
+  // Surface a gitignore hint if the project's .gitignore is missing the
+  // `.nuos-catalogue/` entry. Silent if .gitignore is absent or correct.
+  // (We do this after the success block so the report is the first thing
+  // the operator reads; the note follows.)
+  if (!dryRun) {
+    const note = gitignoreCatalogueNote(buildRoot);
+    if (note) {
+      console.log('');
+      console.log(note);
+    }
+  }
 }
 
 async function cmdRegisterDispatch(
@@ -210,8 +208,8 @@ async function cmdRegisterDispatch(
   }
 
   const action = positional[0];
-  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
-  const buildRoot = String(flags['build-root'] ?? DEFAULT_BUILD_ROOT);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const workflowsPath = resolveWorkflowsPath(buildRoot, flags['workflows']);
   const store = await openWorkflowStore(workflowsPath);
   const asJson = Boolean(flags['json']);
 
@@ -347,8 +345,8 @@ async function cmdRegisterDispatch(
 }
 
 async function cmdRegenerate(flags: Record<string, string | boolean>): Promise<void> {
-  const buildRoot = String(flags['build-root'] ?? DEFAULT_BUILD_ROOT);
-  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const workflowsPath = resolveWorkflowsPath(buildRoot, flags['workflows']);
   const write = Boolean(flags['write']);
   const showDiffs = Boolean(flags['diff']);
   const registerFilter = flags['register'] ? (String(flags['register']) as Register) : undefined;
@@ -406,7 +404,8 @@ async function cmdRegenerate(flags: Record<string, string | boolean>): Promise<v
 }
 
 async function cmdSummary(flags: Record<string, string | boolean>): Promise<void> {
-  const workflowsPath = String(flags['workflows'] ?? DEFAULT_WORKFLOWS_PATH);
+  const buildRoot = resolveBuildRoot(flags['build-root']);
+  const workflowsPath = resolveWorkflowsPath(buildRoot, flags['workflows']);
   const store = await openWorkflowStore(workflowsPath);
   const { byRegister, total } = listAcrossRegisters(store);
   if (Boolean(flags['json'])) {
@@ -441,6 +440,7 @@ Usage:
   nuos-catalogue wu        create    (interactive — multi-step prompts)
   nuos-catalogue wu        advance   <handle> --to=<status> [--reason="..."]
   nuos-catalogue wu        tick      <handle> --index=N --evidence="..."
+                          (--index is 1-based: --index=1 ticks the first AC)
   nuos-catalogue decision  list      [--status=<s>] [--limit=N] [--json]
   nuos-catalogue decision  show      <handle> [--json]
   nuos-catalogue decision  create    (interactive)
@@ -459,11 +459,17 @@ Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
 (WU 111, 111, D45, Q9). Unambiguous integers ("111" under "wu show")
 are normalised to the canonical form.
 
+Default locations: when --build-root / --workflows / --catalogue are
+omitted and the matching env vars are unset, the CLI walks up from the
+current working directory looking for a docs/build/ directory (the
+same way git finds its repo root). Invoke from anywhere inside the
+project. The workflow store lives at <project-root>/.nuos-catalogue/.
+
 Environment:
-  NUOS_CATALOGUE_BUILD_ROOT   default for --build-root (the catalogue's docs/build/ dir)
-  NUOS_CATALOGUE_WORKFLOWS    default for --workflows (the JSON workflow store path)
-  NUOS_CATALOGUE_ROOT         default for --catalogue (semantic-search index source)
-  NUOS_CATALOGUE_INDEX_DIR    default parent dir for index.nv + workflows.json
+  NUOS_CATALOGUE_BUILD_ROOT   override for --build-root (the catalogue's docs/build/ dir)
+  NUOS_CATALOGUE_WORKFLOWS    override for --workflows (the JSON workflow store path)
+  NUOS_CATALOGUE_ROOT         override for --catalogue (semantic-search index source)
+  NUOS_CATALOGUE_INDEX_DIR    override for parent dir of index.nv + workflows.json
   NUOS_CATALOGUE_EMBEDDER     vertex | openai | stub  (default: vertex)
   GOOGLE_CLOUD_PROJECT        required for vertex
   GOOGLE_CLOUD_LOCATION       optional (default: us-central1)

@@ -328,9 +328,14 @@ async function commitTickAC(
     }
   }
 
+  // criterionIndex is 0-based internally; the audit log uses 1-based
+  // numbering consistently across both the structural-tick path and the
+  // audit-log-only fallback, so users never see a mix of 0-based and
+  // 1-based references in their catalogue history.
+  const oneBased = payload.criterionIndex + 1;
   const summary = acText
-    ? `Acceptance criterion ${payload.criterionIndex + 1} ticked: "${acText}".`
-    : `Acceptance criterion at index ${payload.criterionIndex} ticked.`;
+    ? `Acceptance criterion ${oneBased} ticked: "${acText}".`
+    : `Acceptance criterion ${oneBased} ticked.`;
 
   const updatedMarkdown = appendChangeLog(workingMarkdown, {
     isoTimestamp: new Date().toISOString(),

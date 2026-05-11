@@ -79,10 +79,18 @@ export interface ChangeLogEntry {
  * Idempotence: each call appends; running the same workflow twice
  * appends twice. The audit chain in the workflow store is the
  * deduplicating source of truth.
+ *
+ * Heading detection is anchored to start-of-line via a regex so that
+ * prose mentions of the heading text inside code spans or paragraphs
+ * (e.g. a WU's notes log discussing the section by name) don't
+ * false-match and cause the entry to land in the wrong place.
  */
 export function appendChangeLog(rawMarkdown: string, entry: ChangeLogEntry): string {
   const heading = '## Build catalogue history';
-  const headingIndex = rawMarkdown.indexOf(heading);
+  const HEADING_RE = /^## Build catalogue history\s*$/m;
+  const headingMatch = HEADING_RE.exec(rawMarkdown);
+  const headingIndex = headingMatch ? headingMatch.index : -1;
+  const headingLength = headingMatch ? headingMatch[0].length : 0;
 
   const detailLines: string[] = [];
   if (entry.details) detailLines.push(`  - ${entry.details}`);
@@ -99,17 +107,16 @@ export function appendChangeLog(rawMarkdown: string, entry: ChangeLogEntry): str
   }
 
   // Find the end of the file (or the next section) and insert before that.
-  // Simplest: append the block immediately after the existing section's
-  // current content. We treat everything from `headingIndex` to the
-  // next H1/H2 boundary (or EOF) as the section.
+  // We treat everything from `headingIndex` to the next H1/H2 boundary
+  // (or EOF) as the section's body.
   const tail = rawMarkdown.slice(headingIndex);
-  const nextHeadingMatch = /\n##? \S/.exec(tail.slice(heading.length));
+  const nextHeadingMatch = /\n##? \S/.exec(tail.slice(headingLength));
   if (!nextHeadingMatch) {
     // History is the last section — append at end of file.
     const sep = rawMarkdown.endsWith('\n') ? '' : '\n';
     return `${rawMarkdown}${sep}${block}\n`;
   }
-  const splitAt = headingIndex + heading.length + nextHeadingMatch.index;
+  const splitAt = headingIndex + headingLength + nextHeadingMatch.index;
   const before = rawMarkdown.slice(0, splitAt);
   const after = rawMarkdown.slice(splitAt);
   const beforeHasTrailingNewline = before.endsWith('\n');
