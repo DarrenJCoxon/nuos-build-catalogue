@@ -72,6 +72,7 @@ const PROTOCOL_FILES = [
   'wu-new.md',
   'persona-new.md',
   'plan-orientation.md',
+  'build-wu.md',
 ] as const;
 
 /**
@@ -85,6 +86,7 @@ const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
   'wu-new': 'File a new work unit through a guided plain-English conversation',
   'persona-new': 'File a new persona by walking the seven dimensions conversationally',
   'plan-orientation': 'Phase A of planning — project description, personas, the horizon map',
+  'build-wu': 'Orchestrate a swarm of agents to build one work unit end-to-end',
 };
 
 /**

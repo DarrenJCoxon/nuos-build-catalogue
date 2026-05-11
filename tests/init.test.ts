@@ -120,6 +120,15 @@ describe('§1 init on a fresh directory', () => {
     assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'plan-orientation.md')));
     assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'plan-orientation', 'SKILL.md')));
 
+    // build-wu coordinator protocol fanned out across all three tools
+    assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'build-wu.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'build-wu.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'build-wu', 'SKILL.md')));
+
+    // swarm/ register scaffolded with _index.md + template
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'swarm', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'swarm', '_template.md')));
+
     // WELCOME and GLOSSARY are the entry points
     assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'WELCOME.md')));
     assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'GLOSSARY.md')));

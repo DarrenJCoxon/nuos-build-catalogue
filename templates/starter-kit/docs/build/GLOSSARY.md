@@ -100,7 +100,13 @@ A set of specialised AI agents working in parallel on the same work unit, each p
 
 The cost win is real but moderate (~30% lower spend than running everything through Opus, with current pricing). The bigger win is that each agent stays narrow and focused — the coder isn't redesigning mid-flight, the reviewer isn't writing patches, the architect isn't getting buried in implementation detail.
 
-Agent definitions live in `.claude/agents/` (installed by `init` and `install-protocols`). Default model routing lives in `methodfile.json` under `swarm.models` and can be overridden per-spawn.
+Swarms are invoked via `/build-wu <handle>` — the coordinator reads the work unit, classifies it (design-only / implementation / full-feature / bug-fix / research-first), spawns the right agents in the right sequence, aggregates results, files an audit entry in `swarm/`, and reports back. Agent definitions live in `.claude/agents/` (installed by `init` and `install-protocols`). Default model routing lives in `methodfile.json` under `swarm.models` and can be overridden per-spawn.
+
+## Swarm run
+
+A single execution of `/build-wu` against one work unit. Filed in `swarm/` as `YYYY-MM-DD-wu-<handle>.md` with the audit detail: classification, decomposition, each agent spawned (role + model + input + output), final outcome, estimated cost, and any decisions/questions/risks that surfaced.
+
+The swarm register is the cost-auditability layer. Sort by cost to see which work units have been expensive; read recent runs to see how the swarm is performing over time; find escalation patterns clustered around specific modules (they indicate contracts that need sharpening).
 
 ## Tier (model)
 

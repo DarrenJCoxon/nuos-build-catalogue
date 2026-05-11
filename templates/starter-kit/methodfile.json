@@ -22,7 +22,8 @@
       "openQuestions": "open-questions/",
       "workUnits": "work-units/",
       "risks": "risks/",
-      "sessions": "sessions/"
+      "sessions": "sessions/",
+      "swarm": "swarm/"
     },
     "snapshot": "STATE.md",
     "welcome": "WELCOME.md",
