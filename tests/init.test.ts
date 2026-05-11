@@ -115,6 +115,65 @@ describe('§1 init on a fresh directory', () => {
     assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'wu-new', 'SKILL.md')));
     assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'persona-new', 'SKILL.md')));
 
+    // plan-orientation protocol fanned out across all three tools
+    assert.ok(existsSync(path.join(cwd, '.claude', 'commands', 'plan-orientation.md')));
+    assert.ok(existsSync(path.join(cwd, '.opencode', 'commands', 'plan-orientation.md')));
+    assert.ok(existsSync(path.join(cwd, '.agents', 'skills', 'plan-orientation', 'SKILL.md')));
+
+    // WELCOME and GLOSSARY are the entry points
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'WELCOME.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'GLOSSARY.md')));
+
+    // Five new registers scaffolded with their _index.md files
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'maps', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'maps', '01-template.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'maps', '02-template.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'maps', '03-template.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'architecture', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'architecture', 'module-template.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'contracts', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'contracts', 'contract-template.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'ui-ux', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'ui-ux', 'surface-template.md')));
+
+    // Design system register with multi-file shape
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'tokens-colour.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'tokens-typography.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'tokens-spacing.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'tokens-motion.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'tokens-radius-elevation.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'voice.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'accessibility.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'components', '_index.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'design-system', 'patterns', '_index.md')));
+
+    // Two-tier WU templates
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'work-units', '001-template-simple.md')));
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'work-units', '001-template-full.md')));
+
+    // methodfile.json includes the planning tracker
+    const mf2 = JSON.parse(await readFile(path.join(cwd, 'methodfile.json'), 'utf8'));
+    assert.ok(mf2.planning, 'methodfile.planning section must exist');
+    assert.equal(mf2.planning.phaseA_orientation, 'not_started');
+    assert.equal(mf2.planning.phaseB_architecture, 'not_started');
+    assert.equal(mf2.planning.phaseC_uiUxDesignSystem, 'not_started');
+    assert.equal(mf2.planning.phaseD_maps, 'not_started');
+    assert.equal(mf2.planning.phaseE_initialWorkUnits, 'not_started');
+
+    // methodfile.json catalogue.registers includes the new register paths
+    assert.ok(mf2.catalogue.registers.maps);
+    assert.ok(mf2.catalogue.registers.architecture);
+    assert.ok(mf2.catalogue.registers.contracts);
+    assert.ok(mf2.catalogue.registers.uiUx);
+    assert.ok(mf2.catalogue.registers.designSystem);
+
+    // STATE.md has a Planning progress section
+    const stateMd2 = await readFile(path.join(cwd, 'docs', 'build', 'STATE.md'), 'utf8');
+    assert.match(stateMd2, /## Planning progress/);
+    assert.match(stateMd2, /A.*Orientation/);
+    assert.match(stateMd2, /E.*Initial Work Units/);
+
     // Codex frontmatter includes `name:` (per SKILL.md convention)
     const codexBody = await readFile(
       path.join(cwd, '.agents', 'skills', 'start-of-session', 'SKILL.md'),

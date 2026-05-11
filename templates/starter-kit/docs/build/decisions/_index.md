@@ -1,30 +1,34 @@
 # Decisions
 
-> Architectural commitments made by this project. Each decision lives in its own D-NNN file. Decisions are dated, justified, and have a status (`accepted`, `superseded`, `withdrawn`).
+A **decision** is a choice that's been made and shouldn't drift. Once accepted, a decision isn't edited — if circumstances change, you file a new decision that supersedes the old one and link forward. Decisions are the project's load-bearing commitments: the things future work has to honour. See [the glossary](../GLOSSARY.md#decision) for the full definition.
 
 ## Index
 
 | ID | Title | Status | Date |
 | --- | --- | --- | --- |
-| _none yet — see the template_ | | | |
+| _none yet — file your first one with `/decision-new` or `nuos-catalogue decision create`_ | | | |
 
-## How to add a decision
+## When to file a decision
 
-1. Copy `D001-template.md` to `DNNN-short-title-with-dashes.md` (next available number)
-2. Fill in the template
-3. Add a row to the table above
-4. If the decision affects a work unit's acceptance criteria, link it from the WU
-5. If the decision supersedes a prior one, mark the prior one's status as `superseded` and link forward
+- You're choosing between two reasonable approaches and want the choice to stick
+- You're adopting a constraint future work will need to honour (e.g. "all data stays on-device", "no third-party trackers")
+- You're overriding something previously decided — file the supersede; don't silently shift
+- You're committing to a technology, a deployment target, a major design principle
 
-## When to write a decision
+> Example: "D003 — All overnight processing happens on the school's own server, never in the cloud."
 
-- An architectural commitment is being made
-- Two reasonable approaches are being chosen between
-- A constraint is being adopted that future work will need to honour
-- A prior decision is being overridden (write the supersede; don't silently shift)
+## When NOT to file a decision
 
-## When NOT to write a decision
+- The choice is an implementation detail and easy to reverse
+- It belongs inside a work unit's notes — local to that work unit, not a project-wide commitment
+- The matter is still open and unresolved — file it as an **open question** ([Q-NNN](../open-questions/_index.md)) instead
 
-- The choice is implementation-detail and easy to reverse
-- The work unit's notes are sufficient to capture the rationale
-- The matter is open and unresolved — file it as an open question (Q-NNN), not a decision
+## What never to do
+
+**Never edit an accepted decision file.** The pre-commit hook will block it. If you need to change something material, file a new decision that supersedes the old one — `nuos-catalogue decision supersede D003 --by=D012 --reason="..."`. Typo or link fixes that don't change meaning are the only edits allowed.
+
+## How to file one
+
+Easiest way: run `/decision-new` (or `nuos-catalogue decision create`). The AI walks you through the prompts and files the result with a fresh D-NNN handle.
+
+The file is short — a one-paragraph context, the decision itself in one sentence, why it was made, and what it commits future work to. It doesn't need to be long. It needs to be unambiguous.

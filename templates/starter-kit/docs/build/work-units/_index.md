@@ -1,34 +1,32 @@
-# Work Units
+# Work units
 
-> Concrete, buildable pieces of work. Each work unit has an outcome, acceptance criteria, dependencies, and a status. Work units are the unit of progress; the catalogue's compounding value comes from accumulated WU notes.
+A **work unit** is one concrete thing the project will build. Each one has a title, an outcome (what's true after it ships that wasn't true before), a story of someone using it, and a short list of how you'll know it's done. The catalogue's value compounds as work units accumulate notes — every session adds to the record of what was attempted, what worked, what didn't, and what was learned. See [the glossary](../GLOSSARY.md#work-unit) for the full definition.
 
 ## Index
 
-| WU | Title | Status | Depends on | Notes |
-| --- | --- | --- | --- | --- |
-| 001 | [first WU title] | 🟡 in flight | — | First work unit |
+| WU | Title | Status | Notes |
+| --- | --- | --- | --- |
+| _none yet — file your first one with `/wu-new`_ | | | |
 
-## Status legend
+## What status means
 
 - 🔵 **proposed** — written down, not yet started
 - 🟡 **in flight** — actively being worked on
-- 🟣 **built / awaiting review** — implementation done, review pending
-- ✅ **merged / shipped** — complete and integrated
-- 🔴 **blocked** — cannot proceed; see notes for blocker
+- 🟣 **awaiting review** — implementation done, review pending
+- ✅ **shipped** — complete; lives in `done/`
+- 🔴 **blocked** — cannot proceed; the WU's notes say why
 
-## Deferred / proposed-with-trigger work units
+## When to file a work unit
 
-A work unit can be `🔵 proposed` in three flavours:
+When you're about to start (or have just started) work that you'll want to track. Anything bigger than "edit a paragraph" deserves one. Smaller work can land inside an existing work unit's notes.
 
-- **proposed-ready** — eligible to activate at next priority review
-- **proposed-deferred-with-trigger** — committed, awaiting a checkable condition (state the condition in the WU itself)
-- **proposed-blocked-on-question** — cannot activate until an open question resolves; link to the Q-NNN
+If a work unit is **proposed** but can't start yet, say why right in its title or notes:
+- _waiting on Q003_ — an open question must resolve first
+- _waiting on WU 007_ — another work unit must ship first
+- _deferred — start when [specific condition]_ — set a checkable trigger
 
-The quarterly catalogue review walks each deferred WU and re-evaluates its trigger.
+## How to file one
 
-## How to add a work unit
+Easiest way: run `/wu-new`. The AI will walk you through the four fields (title, outcome, walkthrough, how-we-know-it's-done) and save the file in the right place, then add a row to this index.
 
-1. Copy `001-template.md` to `NNN-short-title-with-dashes.md` (next available number)
-2. Fill in the template
-3. Add a row to the table above
-4. If the WU resolves an open question, link it; if the WU was created in response to a decision, link the decision
+If you'd rather file manually: copy `001-template-simple.md` to `NNN-short-title.md` and fill it in. Use `001-template-full.md` instead if your work unit is infrastructure (build, publish, refactor) and you want the fuller shape (contracts produced/consumed, forward-compatibility notes).

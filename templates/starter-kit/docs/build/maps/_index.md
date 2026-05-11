@@ -1,63 +1,28 @@
-# Maps — index
+# Maps
 
-> Maps are the canonical operational plan for a project running the NuOS Build Method. **Story-level detail lives in maps**, not in fragmented planning docs. If a phase step isn't here, it isn't planned. The maps are the single source of truth for sequencing.
+A **map** is a picture of where the project is going. Three maps cover most projects — each at a different zoom level:
 
-## Why maps matter (the post-Phase-3 evolution)
+- **Map 1 — The Horizon.** The whole journey, in plain language. What this project is, who it serves, what "done" looks like. Written once and updated only when the destination genuinely changes. Read this if you only read one thing.
+- **Map 2 — Phases in Detail.** What each phase delivers, with entry and exit conditions. The mid-zoom view: how the journey breaks into stages.
+- **Map 3 — The Near-Term Plan.** What's happening this week, this month. Day-by-day where possible. Updated frequently — this map ages quickly and that's correct.
 
-The NuOS catalogue has many surfaces — decisions, contracts, work units, sessions, risks, open questions. Maps are what stops planning from sprawling across all of them. Maps own:
+See [the glossary](../GLOSSARY.md#map) for the full definition.
 
-- **Sequencing** — which work unit comes when, with explicit dependencies
-- **Phase-step decomposition** — when a WU is too large for one shot, the phase steps live here, each with acceptance + verification gate
-- **Contracts realised** — every WU on the path cites the contract surface(s) it fulfils
+## Index
 
-This is one of the four agentic-age patterns codified in the NuOS Build Method (see [`docs/THE-NUOS-BUILD-METHOD.md`](https://github.com/DarrenJCoxon/nuos/blob/main/docs/THE-NUOS-BUILD-METHOD.md) §post-Phase-3). The pattern: **maps as single canonical plan** closes the proliferation loop. A fresh session — human or agent — should be able to read STATE.md + the active map and have full operational context.
+| Map | Title | Last updated |
+| --- | --- | --- |
+| _none yet — the planning protocol fills these in during phases A (Map 1) and D (Maps 2 + 3)_ | | |
 
-## Map conventions
+## When maps get written
 
-- **Map 1 — the horizon.** The whole project journey, narrative form. Layperson-readable. If you read only one map, this is it.
-- **Map 2 — phases-in-detail (optional).** When the project has clearly separated phases (e.g., NuOS's Phases 0–F), this map gives mid-level detail per phase.
-- **Map N — canonical operational plan(s).** One per major workstream. Story-level detail with verification gates. This is where the active work lives.
+- **Map 1** is written during the **Orientation** phase of the planning arc (the AI's first conversation with you). It sets the whole-project picture.
+- **Maps 2 and 3** are written during the **Maps** phase (phase D of planning). Map 2 needs Map 1 and the architecture phase to be done first; Map 3 needs Map 2.
 
-A small project may only need Map 1 + Map 2 (canonical plan). A larger project may have several Map N variants for parallel workstreams. The convention: numbered sequentially; the latest is the most operational.
+You don't write maps by hand. The AI walks you through each one during its phase. Once written, maps are updated only by the protocol that updates them — never by silent edit.
 
-## Story-step shape
+## How maps interact with everything else
 
-Every executable phase step in a map has the following shape (per [`01-template.md`](01-template.md)):
+Every work unit gets placed inside Map 2 (which phase does it belong to?) and surfaces in Map 3 (when is it being built?). When the situation changes — a date slips, a phase rescopes — the map gets updated and the change flows to the affected work units via the catalogue's normal mechanisms.
 
-```
-| # | Phase step | Acceptance | Verification gate |
-|---|---|---|---|
-| 1 | <what move is being made> | <what proves it produced the intended outcome> | <specific file/grep/test in the target repo that the operator runs to confirm the gate> |
-```
-
-The **verification gate** is the load-bearing column for agent-led work. *"This works"* is not a gate. *"`grep 'createSensightMisWriteAdapter' apps/web/lib/nuos/nuflow/runtime.ts` returns a hit"* is a gate. Vague gates leave room for plausible-looking work that doesn't match reality; precise gates close that loop.
-
-## Hedge words are a stop signal
-
-If you find yourself writing *"likely"*, *"presumably"*, *"should be"* in a map, stop. The hedge word indicates a verification step you skipped. Replace it with the grep/test/file-read result before the map ships.
-
-## Design alternatives before implementation
-
-For any non-trivial architectural choice — schema, migration, integration shape, adapter design, audit composition, RBAC pattern, error-handling strategy, retention policy — **produce at least two fundamentally different designs, evaluate them, then pick or hybrid before any implementation is generated.** This is Ousterhout's "design it twice" applied to agent-led work.
-
-Two syntactic variations of the same design (e.g., `USING` clause vs `WITH CHECK` clause for the same RLS pattern) do not count. Three fundamentally different designs (e.g., session-variable RLS / Supabase auth.uid() RLS / defense-in-depth + app-side enforcement) do count.
-
-Record the alternatives in the WU's Design notes (or as a D-NNN decision when the choice is durable enough). The audit trail of *"we considered A, B, C; chose B because X"* is catalogue value — future sessions can re-evaluate when context changes.
-
-In maps, any phase step whose work is *"generate non-trivial implementation"* carries an implicit prerequisite: design alternatives recorded in the WU notes. The gate fires before code is written, not after.
-
-## Naming
-
-- `01-the-horizon.md` — the high-level narrative (recommend keep verbatim if adopting unchanged)
-- `02-<name>.md` — phases-in-detail or first canonical operational plan
-- `03-<name>.md`, `04-<name>.md`, etc. — additional canonical plans per workstream
-
-When a map is superseded (e.g., the project's operational shape changes), preserve the old map with a `(HISTORICAL)` header pointing at its replacement. Don't delete — the evolution is part of the audit trail.
-
-## Maps in this catalogue
-
-| File | Title | Purpose |
-|---|---|---|
-| `01-template.md` | Map template | Shape for a canonical operational map (copy + rename) |
-
-Update this list as you add real maps.
+A small project may only need Map 1 and Map 3 (skip the middle layer). A larger project may grow into having multiple operational plans for parallel workstreams; see `99-template-power-user-operational-plan.md` for the structured operational map shape used by mature projects.

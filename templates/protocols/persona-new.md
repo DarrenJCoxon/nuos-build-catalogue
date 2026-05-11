@@ -1,43 +1,77 @@
 # persona-new
 
-Create a new persona (P-NNN) for this NuOS Build Method project.
+You are filing a new **persona** for a project that uses the **NuOS Build Method catalogue**. A persona is one specific person the project serves — not a market segment, not a demographic. One person with a name, a situation, and a reason to need what's being built.
 
-A persona is a **specification of who will use an outcome and what situation they will be in when they use it** — not a demographic snapshot, but a design constraint. Personas live as first-class catalogue entries (per D046) so they can be cited by stable handle from multiple WUs.
+**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Walk the operator through the persona in conversation — don't read out a form.
 
-If arguments are provided (`$ARGUMENTS` for OpenCode/Claude Code, prompt-supplied for Codex), use them as the persona name; otherwise prompt the operator for the name.
+---
 
-Steps:
+## Step 1 — Open with the why
 
-1. **Determine the next available P number.** Scan `docs/build/personas/` and `docs/build/personas/done/` for the maximum P-NNN prefix. The new number is max + 1.
-2. **Slugify the persona name** — lowercase, dashes for spaces, no special characters, max 60 chars.
-3. **Generate the file** at `docs/build/personas/P<NNN>-<slug>.md` from the template at `starter-kit/docs/build/personas/001-template.md`. Replace placeholders with operator-supplied values.
-4. **Prompt the operator for the seven dimensions:**
+Briefly explain why we're doing this (one or two sentences):
 
-   - **1. Identity** — who they are in the context of *this system*. Not their age or job title in the abstract — their relationship to this particular system. What account do they have? What role do they play? What other systems have they used that shape their expectations?
-   - **2. Reality** — physical environment when they use the outcome. Device, connection quality, noise level, time pressure. Real conditions, not idealised ones.
-   - **3. Psychology** — technical confidence, stress level, tolerance for confusion. Will they read instructions or click around? Will they abandon if a page takes more than three seconds?
-   - **4. Trigger** — what brings them to this outcome. A real-world event, not a UI click. The event in their life that created the need.
-   - **5. History** — what they have done before arriving at this outcome. Returning user vs first-time visitor. Saved details vs no context.
-   - **6. Success** — what "done" looks like from *their* perspective. Not what the system logs — what they *feel*. This drives the design.
-   - **7. Constraints** — what they cannot or will not do. Defines the outer boundary of acceptable design.
+> "I'll capture this person specifically so everything we build downstream can refer back to them. The point isn't to fill in a form — it's so that when we file a feature later, we can say 'this is for [name], in [their situation], when [their trigger happens]' and not have to re-explain who they are every time."
 
-5. **Prompt for the acid-test refinement.** The hardest legitimate user — this persona with the most demanding combination of real constraints. Not a hostile user; a legitimate one with the worst realistic conditions. Slow device, low technical confidence, time pressure, complex situation. Design for the acid-test and the standard cases hold.
-6. **Prompt for paired persona (if any).** If this persona's outcomes are paired with another's — a customer who books an event and an organiser who receives the booking — capture the paired P-NNN. If no pair exists yet, the operator may file the paired persona next via a second `persona-new` invocation.
-7. **Apply the persona discipline checks:**
+Then ask for their name. Even a made-up one is fine.
 
-   - **Does this persona change a design decision?** If you could substitute this persona with a different one and the WU specification would be identical, the persona is decorative. Surface the gap and prompt for refinement.
-   - **Does this persona have specific triggers, not just a demographic profile?** A persona without triggers is a character in search of a plot. Surface and prompt for refinement.
-   - **Is the acid-test the hardest legitimate combination, or only a slightly harder version of the easy case?** The acid-test must be uncomfortable to design for — that is its point.
+## Step 2 — Walk the seven dimensions as conversation
 
-8. **Add a row to `docs/build/personas/_index.md`.** Status `🟢 active`. The "Used by WUs" cell stays empty until WUs cite it (which the `wu-new` protocol will update).
-9. **Surface to the operator:**
-   - The new persona file path (clickable)
-   - The row added to `_index.md`
-   - Any discipline checks that surfaced gaps (paired-persona suggestion; "this persona doesn't yet constrain a decision" warning)
-   - The next concrete action — typically: file a WU that serves this persona (`wu-new`), or file the paired persona
+Don't list "the seven dimensions" to the operator. Weave them into questions. Below are the dimensions and a conversational prompt each. Adapt to the operator's flow — if they answer two dimensions in one breath, capture both and skip ahead.
 
-**Discipline:** the persona is a design constraint or it is decoration. The seven dimensions exist to make every design decision answerable. If the persona file does not constrain at least one decision a future WU will need to make, rewrite it until it does.
+1. **Identity** — *"Tell me about them in the context of this project. What's their role? What account do they have? What systems are they used to? Just enough that someone reading this knows who they are in relation to what we're building."*
 
-**On the multi-month context (per D046):** in serious systems, personas are referenced from many WUs over many months. The seven-dimension shape is what makes the persona reusable — generic personas ("the user") force every WU to invent the persona inline; specific personas with stable handles let outcomes inherit the constraint. The persona register is the catalogue's commitment to this reuse.
+2. **Reality** — *"Where are they when they need this? What device? Are they at their desk, on the school playground, on a train, at home? Time of day? Noise? Pressure?"*
 
-If the operator wants to skip a dimension because it feels obvious, accommodate but record what was skipped — a future WU may need exactly that dimension and find it missing. The catalogue's value is that what was decided is recorded; what was not yet decided is also recorded, as a known gap.
+3. **Psychology** — *"How tech-confident are they? Are they patient when things don't make sense, or do they abandon fast? How much energy do they have when they're using this?"*
+
+4. **Trigger** — *"What's happening in their day that makes them need this? Not 'they open the app' — what comes before that? What's the moment in their life that creates the need?"*
+
+5. **History** — *"What have they done already by the time they reach this? Are they a returning user with saved details, or is this fresh every time? What previous experiences shape what they expect?"*
+
+6. **Success** — *"What does 'this worked' feel like from their side? Not what the system logs — what they actually feel. Relief? Confidence? Done with it?"*
+
+7. **Constraints** — *"What can they not (or will they not) do? What's the hard edge of acceptable for this person?"*
+
+## Step 3 — The acid-test refinement
+
+Ask one more question:
+
+> *"Now imagine the hardest legitimate version of this person — same role, same job, but with every realistic constraint at its worst at the same time. Slow device. Low confidence. Time pressure. Bad day. Tired. Distracted. The combination that's still real but makes everything harder. Design for that person and the easier cases hold."*
+
+Capture the acid-test as the last dimension on the persona file.
+
+## Step 4 — Discipline check (gentle)
+
+Look at what you've captured. Two questions to surface (gently, in plain language):
+
+- **Would swapping this person for a different one force you to change anything?** If no, the persona isn't constraining yet — ask one more sharpening question.
+- **Are the triggers specific real-life moments, or just "uses the system"?** Vague triggers produce vague designs.
+
+If either is weak, ask one more probing question — but don't force perfection. Captured-but-imperfect is much better than not captured.
+
+## Step 5 — File the persona
+
+1. **Number it.** Scan `docs/build/personas/` and `docs/build/personas/done/` for the highest P-NNN prefix; new number is max + 1.
+2. **Slugify the name** — lowercase, dashes for spaces, no special characters, max 60 chars.
+3. **Write the file** at `docs/build/personas/PNNN-slug.md`. Use the template at `docs/build/personas/001-template.md`. Fill in each dimension from the conversation.
+4. **Add a row** to `docs/build/personas/_index.md`. Status `🟢 active`. "Used by" column stays empty until work units reference this persona.
+
+## Step 6 — Tell the operator what happened
+
+Plain English:
+
+- Where the file landed (clickable path)
+- Anything you noticed during the conversation (e.g. "you mentioned a colleague who reviews this work — is that a paired persona we should file separately?")
+- The next concrete action — usually: file the paired persona if there is one; otherwise carry on with the active phase
+
+---
+
+## Why personas are first-class in this catalogue
+
+Many projects describe their users in passing — a vague "teachers" or "users" mentioned inside a feature spec, different every time. That works for small projects. For projects with real complexity, it doesn't: every feature spec re-invents who it's for; downstream features can't be designed coherently against a moving target.
+
+Personas as first-class catalogue entries fix this. **One sharp persona, referenced by stable handle, used across many work units over many months.** Every feature filed says who it's for by P-NNN handle. When the persona evolves, every reference updates with it.
+
+The seven dimensions are what make a persona sharp enough to carry that weight. The acid-test is what makes the design robust. If the catalogue has decorative personas — ones that don't change any design decision — they're worse than no personas at all, because they create the illusion of constraint without supplying any.
+
+If the operator skips a dimension because it feels obvious, accommodate but note what was skipped. A later work unit may need exactly that dimension and find it missing. The catalogue records what's decided AND what's not yet decided — both are load-bearing.

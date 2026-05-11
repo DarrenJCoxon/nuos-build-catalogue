@@ -61,6 +61,7 @@ const PROTOCOL_FILES = [
   'end-of-session.md',
   'wu-new.md',
   'persona-new.md',
+  'plan-orientation.md',
 ] as const;
 
 /**
@@ -69,10 +70,11 @@ const PROTOCOL_FILES = [
  * read as an imperative summary.
  */
 const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
-  'start-of-session': 'Read STATE, last session log, active WU; surface next action',
-  'end-of-session': 'Write session log, update STATE + indices, move ✅ WUs to done/, commit',
-  'wu-new': 'Create a new work unit with the six-field outcome shape (per D046)',
-  'persona-new': 'Create a new P-NNN persona with the seven dimensions and acid-test (per D046)',
+  'start-of-session': 'Read where the project is and propose the next concrete action',
+  'end-of-session': 'Capture what happened, update state, write session log, commit',
+  'wu-new': 'File a new work unit through a guided plain-English conversation',
+  'persona-new': 'File a new persona by walking the seven dimensions conversationally',
+  'plan-orientation': 'Phase A of planning — project description, personas, the horizon map',
 };
 
 /**
@@ -263,14 +265,24 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   prompt.print('');
   prompt.print(`✅ Catalogue initialised at ${path.join(cwd, 'docs/build')}`);
   prompt.print('');
-  prompt.print('Next steps:');
-  prompt.print('  1. Set env vars in your shell profile so the CLI knows where this catalogue lives:');
-  prompt.print(`       export NUOS_CATALOGUE_BUILD_ROOT="${path.join(cwd, 'docs/build')}"`);
-  prompt.print(`       export NUOS_CATALOGUE_WORKFLOWS="${path.join(cwd, '.nuos-catalogue/workflows.json')}"`);
-  prompt.print('  2. Edit docs/build/STATE.md to describe the actual current state of this project.');
-  prompt.print('  3. File the first WU: `nuos-catalogue wu create`');
+  prompt.print('Next step:');
+  prompt.print('  Run `/start-of-session` in Claude Code (or OpenCode, or Codex CLI).');
+  prompt.print('  The AI will detect this is a brand-new catalogue and walk you');
+  prompt.print('  through a 5-phase planning arc:');
   prompt.print('');
-  prompt.print('To refresh protocols only later (without re-running init): `nuos-catalogue install-protocols`');
+  prompt.print('    A. Orientation        — project description, personas, the horizon  (~30 min)');
+  prompt.print('    B. Architecture       — major pieces and their contracts            (~60-90 min)');
+  prompt.print('    C. UI/UX + Design     — surfaces and the design system              (~60-90 min)');
+  prompt.print('    D. Maps               — phases of work and near-term plan           (~45 min)');
+  prompt.print('    E. Initial work units — first 5-10 things to build                  (~60 min)');
+  prompt.print('');
+  prompt.print('  Each phase is its own session. Pause whenever you want.');
+  prompt.print('');
+  prompt.print('To read about the catalogue before starting:');
+  prompt.print(`  ${path.join(cwd, 'docs/build/WELCOME.md')}`);
+  prompt.print(`  ${path.join(cwd, 'docs/build/GLOSSARY.md')}`);
+  prompt.print('');
+  prompt.print('To refresh protocols and hooks later: `nuos-catalogue install-protocols`');
 
   return { output: '', exitCode: 0 };
 }
@@ -491,48 +503,40 @@ async function ensureGitignoreEntries(
 function renderCatalogueSection(projectName: string): string {
   return `## Build catalogue (NuOS Build Method)
 
-This repo runs **the NuOS Build Method**. The catalogue lives at [docs/build/](docs/build/) and tracks work units, decisions, open questions, personas, sessions, and risks.
+This project uses the **NuOS Build Method catalogue** at [docs/build/](docs/build/). It is the project's memory — who it's for, what's been built, what's been decided, what's still unknown, what's at risk. Eleven registers in plain Markdown. The catalogue stays current through two protocols that bookend every session.
 
-### At the start of every session
+**Start here** if you're new:
 
-Run \`/start-of-session\` (or follow [docs/build/START-OF-SESSION.md](docs/build/START-OF-SESSION.md)).
+- [docs/build/WELCOME.md](docs/build/WELCOME.md) — what this catalogue is, in 5 minutes
+- [docs/build/GLOSSARY.md](docs/build/GLOSSARY.md) — every term defined once
 
-### At the end of every session
+### Three commands
 
-Run \`/end-of-session\`. **Without it, work is lost.**
+That's it. Everything else is automatic.
 
-### Daily use via the CLI
-
-Set these env vars in your shell profile so commands work without flags:
-
-\`\`\`bash
-export NUOS_CATALOGUE_BUILD_ROOT="$(pwd)/docs/build"
-export NUOS_CATALOGUE_WORKFLOWS="$(pwd)/.nuos-catalogue/workflows.json"
+\`\`\`text
+/start-of-session       — every time you begin working
+/end-of-session         — every time you stop
 \`\`\`
 
-Then:
+(\`init\` runs once at the start; you've already done that.)
 
-\`\`\`bash
-nuos-catalogue wu create                          # interactive — file a new WU
-nuos-catalogue wu list                            # what's in flight
-nuos-catalogue wu advance <handle> --to=in_progress
-nuos-catalogue wu tick <handle> --index=N --evidence="commit abc123"
-nuos-catalogue decision create
-nuos-catalogue question create
-nuos-catalogue regenerate                         # check store-vs-disk drift
-nuos-catalogue summary                            # totals by register
-\`\`\`
+If this is a brand-new project, \`/start-of-session\` will detect the empty catalogue and walk you through 5 short planning phases (Orientation, Architecture, UI/UX + Design System, Maps, Initial Work Units) before any building starts. Each phase is its own session. Take them in order; pause whenever you need to.
 
-To refresh the protocol bodies later (after a CLI upgrade):
+### The principle that makes it work
 
-\`\`\`bash
-nuos-catalogue install-protocols
-\`\`\`
+**Project memory never drifts from project reality.** Every decision made in conversation gets saved before the session ends. Every change to an existing piece flows through a protocol. The pre-commit hook blocks silent edits to accepted decisions; the post-commit hook auto-refreshes the search index after every commit. What the AI finds when you ask "what did we decide about X?" is always current.
 
 ### What never to do
 
-- Never make architectural decisions without recording them in \`docs/build/decisions/\`
-- Never start work outside the active work unit without recording why
-- Never skip end-of-session
-- Never modify a committed \`accepted\` decision file (use \`decision supersede\` instead)`;
+- **Never close a session without \`/end-of-session\`.** Work that isn't written down is work that's lost.
+- **Never edit an accepted decision file.** If something changes, file a new decision that supersedes the old one. The pre-commit hook will block silent edits.
+- **Never make an architectural decision in conversation without filing it.** If you and the AI agree on "let's go with X", file it as a decision *before moving on*. Drift is the failure mode that makes the catalogue worthless.
+
+### If you need more
+
+- All registers and their templates live under [docs/build/](docs/build/)
+- The full CLI surface (creating work units / decisions / personas / questions / contracts / surfaces from the command line) is documented at [docs/build/WELCOME.md](docs/build/WELCOME.md)
+- To refresh protocols and hooks later (after a CLI upgrade): \`npx @nusoft/nuos-build-catalogue install-protocols\`
+`;
 }

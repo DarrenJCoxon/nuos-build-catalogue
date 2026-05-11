@@ -1,77 +1,43 @@
-# Personas Index
+# Personas
 
-> Master list of the personas this project's work units serve. Personas are P-NNN-numbered, written along the seven dimensions, and refined with the acid-test. Reusable across multiple WUs — a "paired outcome" (e.g., a customer-side outcome paired with an organiser-side one) cites two personas, both filed here.
+A **persona** is one specific person the project serves. Not a market segment, not a demographic — one person with a name, a situation, and a reason to need what you're building. Personas are first-class in this catalogue because everything downstream — work units, UI/UX surfaces, contracts, decisions — hangs off who specifically you're building for. See [the glossary](../GLOSSARY.md#persona) for the full definition.
 
-## What a persona is
+## Index
 
-A persona is a **specification of who will use an outcome and what situation they will be in when they use it.** It is not a demographic snapshot; it is a design constraint. A persona that does not change a design decision is decoration — rewrite it until it does.
-
-The seven dimensions every persona addresses:
-
-1. **Identity** — who they are in the context of *this system*. Not their age or job title in the abstract — their relationship to this particular system.
-2. **Reality** — physical environment when they use the outcome. Device, connection quality, noise level, time pressure.
-3. **Psychology** — technical confidence, stress level, tolerance for confusion.
-4. **Trigger** — what brought them to this outcome. A real-world event, not a UI click.
-5. **History** — what they have done before arriving at this outcome.
-6. **Success** — what "done" looks like from their perspective. Not what the system logs — what they feel.
-7. **Constraints** — what they cannot or will not do. Defines the outer boundary of acceptable design.
-
-Every persona is then refined into an **acid-test persona** — the hardest legitimate user, with the most demanding combination of real constraints. Design for the acid-test and the standard cases hold.
-
-## How a persona is filed
-
-```
-personas/
-├── _index.md          (this file)
-├── 001-template.md    (the template; copy when filing a new persona)
-├── P001-<slug>.md     (your first persona)
-├── P002-<slug>.md     ...
-└── done/              (when a persona retires — e.g., the user role no longer exists)
-```
-
-Personas are P-NNN-numbered. Numbers are stable: a retired persona moves to `done/` but keeps its number. Cross-WU references use the stable handle (`{repo}:P-NNN` for cross-catalogue references; `[P-NNN](../personas/P-NNN-slug.md)` within the same catalogue).
-
-## Personas — active
-
-| ID | Name | Used by WUs | Status |
+| ID | Name | Status | Used by |
 | --- | --- | --- | --- |
+| _none yet — file your first one with `/persona-new` or `nuos-catalogue persona create`_ | | | |
 
-[Add a row when you file a new persona. Status: `🟢 active`, `🟡 evolving` (the persona shape is being refined), `🟣 paired-with-PNNN` (this persona's outcomes are paired with another), `⚫ retired`.]
+## What status means
 
-## Status legend
+- 🟢 **active** — currently in use; referenced by one or more work units or surfaces
+- 🟡 **evolving** — the persona's shape is still being refined as you learn
+- ⚫ **retired** — no longer in use; lives in `done/` but keeps its handle
 
-- 🟢 `active` — in use; cited by one or more current WUs
-- 🟡 `evolving` — the seven dimensions are being refined as understanding deepens
-- 🟣 `paired-with-PNNN` — this persona pairs with another (e.g., customer + organiser)
-- ⚫ `retired` — no longer in use; moved to `done/`
+## The seven dimensions
 
-## How to write a persona
+When you file a persona, you describe seven things about this specific person:
 
-Use the file format established in `001-template.md`. A persona document has:
+1. **Identity** — who they are *in the context of this project*. Their role, their relationship to what you're building. Not their age in the abstract — their relationship to your project.
+2. **Reality** — where they are when they need this. Their device, their environment, their time pressure.
+3. **Psychology** — how confident they are, how stressed, how patient with confusion.
+4. **Trigger** — what's happening in their day or week that makes them need this. Not a click — a real-world moment.
+5. **History** — what they've already done, tried, or experienced before reaching this point.
+6. **Success** — what "done" looks like *from their perspective*. Not what your system logs; what they feel.
+7. **Constraints** — what they cannot or will not do. The outer edge of what's acceptable for them.
 
-- Identity dimension
-- Reality dimension
-- Psychology dimension
-- Trigger dimension
-- History dimension
-- Success dimension
-- Constraints dimension
-- Acid-test refinement (the worst legitimate combination of constraints)
-- Paired persona (if any) — the persona on the other side of any outcome this persona triggers
-- WUs this persona is cited by
+A persona is sharp when **swapping them for a different person would force at least one design decision to change**. If you can substitute the persona without changing anything, the persona is decorative — refine it until it constrains.
 
-A persona should be small enough to read in two minutes and specific enough that swapping it for a different persona would force at least one design decision to change. If you can substitute the persona without changing anything in the WU, the persona is decorative — rewrite it until it constrains.
+## When to file a persona
 
-## How personas connect to WUs
+You file the first 1-3 personas during the **Orientation** phase of planning. Most projects need 2-3 personas — primary user, secondary user, and sometimes an "operator" or "administrator" persona. More than 5-6 active personas usually means the project is overreaching; consider phasing.
 
-A WU's `Persona` field links the P-NNN that the outcome serves. A WU's `Trigger` field draws from the persona's Trigger dimension but specifies the *moment* (not just the class of event). A WU's `Walkthrough` is written from the persona's perspective, using their reality, psychology, and history to constrain what they need to be told and what they already know.
+Add new personas later if a new kind of user enters scope. Retire old ones (move to `done/`) when a role no longer exists.
 
-If a WU has no clear persona, it is one of two things:
-1. An infrastructure WU (build, publish, hardening) — mark the persona field `N/A — infrastructure WU`.
-2. An unanchored feature — the WU describes a category of capability without a person doing a thing. Rewrite as an outcome with a real persona, or split into smaller outcomes.
+## How to file one
 
-## How personas evolve
+Run `/persona-new` (or `nuos-catalogue persona create`). The AI walks you through each of the seven dimensions as conversation — give them a name, describe their situation, what makes them need this — and files the result with a fresh P-NNN handle.
 
-Personas evolve as understanding deepens. The seven dimensions get sharper; the acid-test gets harder; new constraints surface. Update the persona file in place — but record the *date* of each refinement in the file itself, so a future reader can see how the understanding changed.
+## How personas connect to everything else
 
-If a persona's role in the system changes substantially (e.g., "customer" splits into "registered customer" + "guest customer"), file two new personas with new P-NNN numbers and mark the original `⚫ retired` rather than amending it.
+Every work unit names a persona. Every UI/UX surface names a persona. Every contract is justified by what a persona needs. When you change a persona's reality or constraints, downstream artefacts referencing that persona may need updates — file open questions for any you're not sure about.

@@ -1,52 +1,77 @@
 # wu-new
 
-Create a new work unit (WU) for this NuOS Build Method project.
+You are filing a new **work unit** for a project that uses the **NuOS Build Method catalogue**. A work unit is one concrete thing the project will build. The catalogue's value compounds as work units accumulate notes — every session adds to the record of what was attempted, what worked, what didn't, what was learned.
 
-If arguments are provided (`$ARGUMENTS` for OpenCode/Claude Code, prompt-supplied for Codex), use them as the WU title; otherwise prompt the operator for the title.
+**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Use their words. Define any term you use that isn't obvious from context.
 
-The WU template carries the **six-field outcome shape** (per D046): persona link, trigger, walkthrough with failure paths, verification (= acceptance criteria), contracts produced, contracts consumed. For infrastructure WUs (build, publish, hardening, refactors) the persona/trigger/walkthrough fields are marked `N/A — infrastructure WU` and the rest is unchanged.
+---
 
-Steps:
+## Step 1 — Ask what kind of work unit this is
 
-1. **Determine the next available WU number.** Scan `docs/build/work-units/` and `docs/build/work-units/done/` for the maximum 3-digit prefix. The new number is max + 1.
-2. **Slugify the title** — lowercase, dashes for spaces, no special characters, max 60 chars.
-3. **Ask the operator: is this an outcome WU (a user-facing capability) or an infrastructure WU (build, publish, hardening, refactor)?** If outcome, walk the full six-field flow. If infrastructure, skip persona/trigger/walkthrough and ask for the technical artefacts directly.
-4. **Generate the file** at `docs/build/work-units/<NNN>-<slug>.md` from the template at `starter-kit/docs/build/work-units/001-template.md`. Replace placeholders with operator-supplied values.
-5. **Prompt the operator (outcome WU) for:**
-   - **Persona** — which P-NNN persona does this outcome serve? If none exists yet, prompt to run `persona-new` first. For paired outcomes (a customer-side outcome paired with an organiser-side one), capture both persona links.
-   - **Trigger** — the real-world event that makes this outcome necessary. Not a UI click; the event in the persona's life that created the need.
-   - **Outcome** — one paragraph. Apply the single-sentence test: *"What will be true when this is done that is not true now?"* That sentence is the outcome.
-   - **Walkthrough** — numbered steps from the persona's perspective. For each step, surface the **five failure-path injection points**: (1) what if the persona cannot complete this step in one sitting? (2) what if the information is incorrect or missing? (3) what if the system itself fails? (4) what if the persona makes a mistake? (5) what if they realise immediately afterwards they used the wrong information? Failure handling lives inline at each step, not as a separate section.
-   - **Acceptance criteria (= verification)** — 5 to 10 criteria, each phrased as an inspection that passes or fails. Apply the auditor's-question test: *"Can a third-party reader confirm 'yes, this is shipped' by inspection alone?"* Each criterion must be evaluable by a person looking at the running system, not inferred from technical state.
-   - **Contracts produced** — what this WU makes available to other WUs once it lands, in domain language. Not "a row in the bookings table"; "a confirmed booking record, linked to a specific customer and a specific event".
-   - **Contracts consumed** — what must already exist before this WU can run. Each entry should map to another WU's `Contracts produced` field. If something this WU consumes is not produced by any WU in the plan, surface that gap immediately — file it as an open question or a new WU before this one starts.
-   - **Dependencies** — existing WU numbers this depends on (drawn from the contracts-consumed mapping; blank if none).
-   - **Decision implemented** — D-NNN if any (blank for none).
-   - **Forward-compatibility commitments** — if this WU's shape decisions affect later WUs, name them (per Pattern C).
-6. **Prompt the operator (infrastructure WU) for:**
-   - **Outcome** — single-sentence test as above.
-   - **Acceptance criteria** — same discipline.
-   - **Dependencies, decision implemented, forward-compatibility commitments** — same as outcome WU.
-   - **Persona / Trigger / Walkthrough** — auto-filled with `N/A — infrastructure WU.`
-   - **Contracts produced** — list the technical artefacts (e.g., "`@nusoft/nuwiki@0.1.4` published privately on npm").
-   - **Contracts consumed** — list the WUs whose output this WU builds on.
-7. **Apply the four quality traps** to the outcome before saving (operator review, not enforced by tooling today):
-   - **Vagueness:** could this outcome be implemented in more than one way that satisfies its wording but produces different user experiences?
-   - **Technical language:** does any part describe implementation rather than behaviour?
-   - **Happy path only:** does the walkthrough describe only what happens when everything goes right?
-   - **Kitchen sink:** does this WU try to do more than one thing? Could it be split into two outcomes with separate triggers and separate verification?
+By default, walk the **simple shape** — four conversational questions. Use it for everyday product work. The full shape (13 fields, infrastructure language, contracts produced/consumed) is opt-in via `--full`; suggest it only if the operator is filing infrastructure work (build pipelines, publishing flow, refactors).
 
-   Surface any traps that fired and offer to rewrite the affected section before saving.
-8. **Add a row to `docs/build/work-units/_index.md`** in the appropriate phase section, with status `🟢 ready` (or `🔵 proposed` if dependencies aren't met).
-9. **If the WU cites a P-NNN, update that persona's `Used by WUs` list** to include the new WU.
-10. **Surface to the operator:**
-    - The new WU file path (clickable)
-    - The row added to `_index.md`
-    - Any inferred dependencies that should be confirmed
-    - Any quality traps that fired and were addressed (or deferred to a later refinement)
+> "Quick check before we file this: is this one piece of user-facing work — a feature, a screen, an outcome someone will use — or is it infrastructure (a build pipeline, a refactor, a publish flow)?"
 
-**Discipline:** every acceptance criterion must be checkable by inspection, not described as a feature. *"The login page works"* is not an acceptance criterion. *"When a user submits a valid form, a row appears in `users` and an audit entry in `audit_events`"* is.
+If user-facing → simple shape. If infrastructure → full shape.
 
-**On the six-field shape (per D046):** the planning depth is what makes the catalogue durable. Skipping persona/trigger/walkthrough for an outcome WU produces a feature wearing an outcome-shaped name. Skipping contracts produced/consumed produces an outcome that integrates with nothing. The fields are not bureaucracy; each one closes a category of silent assumption the LLM teammate would otherwise fill in invisibly.
+## Step 2 — Walk the four-field simple shape (the default)
 
-If the operator pushes back on the auto-numbered slug or wants to adjust acceptance criteria, accommodate. The catalogue's strength is that the operator is in charge of the substance; the protocol just makes sure the substance is recorded properly.
+Ask in conversation; don't read out the four fields as a list. Weave them.
+
+1. **Title** — *"In five words or so, what's this work unit about?"*
+2. **Outcome** — *"What's true after this ships that isn't true now? Just a sentence."*
+3. **Walkthrough** — *"Tell me a story. Walk me through what [persona name] does when this is in place. What do they see? What do they do? And what could go wrong — what if information's missing, or the system fails, or they make a mistake?"*
+4. **How we'll know it's done** — *"List 3 to 6 things we could check to know this is done. Each one should be either yes or no — not 'better' or 'worse'."*
+
+Also ask:
+
+- **Which persona is this for?** Show them the list from `docs/build/personas/`. If none yet, file a persona first via `/persona-new`.
+
+## Step 3 — Walk the full shape (only when --full or for infrastructure work)
+
+The full shape has the four fields above plus:
+
+- **Trigger** — the real-world event in someone's day that makes them need this
+- **Contracts produced** — what this work unit makes available to other work units once it lands; in everyday language
+- **Contracts consumed** — what must already be in place for this work unit to start
+- **Dependencies** — other work units this depends on
+- **Decision implemented** — D-NNN if this work unit realises a specific decision
+- **Forward-compatibility commitments** — any choices made here that affect later work units
+
+For infrastructure work, persona / trigger / walkthrough are marked `N/A — infrastructure work`.
+
+## Step 4 — File the work unit
+
+1. **Number it.** Scan `docs/build/work-units/` and `docs/build/work-units/done/` for the highest existing 3-digit prefix; new number is max + 1.
+2. **Slugify the title.** Lowercase; dashes for spaces; no special characters; cap at 60 chars.
+3. **Write the file** at `docs/build/work-units/NNN-slug.md`. Use `001-template-simple.md` for the simple shape, `001-template-full.md` for the full shape.
+4. **Add a row** to `docs/build/work-units/_index.md`. Status `🔵 proposed` if dependencies aren't met yet, otherwise `🟡 in flight` (if work is starting now) or leave `🔵 proposed` if it's queued.
+5. **If a persona is cited**, update that persona's "Used by" list to include this work unit.
+
+## Step 5 — Surface to the operator
+
+Tell them in plain English:
+
+- Where the file landed (clickable path)
+- That the index was updated
+- Anything you noticed during the conversation that's worth flagging (e.g. "this work unit and WU 007 both touch the morning briefing — they might depend on each other; do you want to link them?")
+- The next concrete action
+
+## What to watch for
+
+Four quality issues come up during a work-unit conversation. Surface them gently, don't lecture:
+
+- **Vagueness** — *"Could this be built in two different ways and both satisfy what you've said? Worth tightening?"*
+- **Technical language slipping in** — *"You said 'an API endpoint that returns a JSON response' — what does the teacher actually see or do?"*
+- **Only the happy path** — *"What happens if the data isn't ready, or they hit save twice?"*
+- **Too big** — *"This feels like two work units to me. Want to split it?"*
+
+The catalogue's strength is that the operator is in charge of the substance; the protocol just makes sure the substance gets captured properly.
+
+---
+
+## Why this matters
+
+Work units are how the project's work compounds. A work unit filed today is a hook for a future session to add notes against, a contract for other work units to plug into, an entry in the project's audit trail. Sloppy work units rot. Sharp work units accumulate value.
+
+If the operator wants to skip a question because the answer feels obvious, ask one more time gently — and then let them skip. The catalogue doesn't enforce content quality; it enforces *capture*. Captured-but-thin is better than not captured at all.

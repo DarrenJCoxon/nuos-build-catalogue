@@ -1,7 +1,7 @@
 {
   "$schema": "https://nusoft.dev/schemas/methodfile/v1.json",
   "method": {
-    "version": "1.0",
+    "version": "1.1",
     "lastValidatedAt": "{{TODAY}}"
   },
   "project": {
@@ -12,22 +12,33 @@
   "catalogue": {
     "root": "docs/build/",
     "registers": {
+      "personas": "personas/",
+      "maps": "maps/",
+      "architecture": "architecture/",
+      "contracts": "contracts/",
+      "uiUx": "ui-ux/",
+      "designSystem": "design-system/",
       "decisions": "decisions/",
+      "openQuestions": "open-questions/",
       "workUnits": "work-units/",
-      "sessions": "sessions/",
       "risks": "risks/",
-      "openQuestions": "open-questions/"
+      "sessions": "sessions/"
     },
     "snapshot": "STATE.md",
+    "welcome": "WELCOME.md",
+    "glossary": "GLOSSARY.md",
     "protocols": {
       "startOfSession": "START-OF-SESSION.md",
       "endOfSession": "END-OF-SESSION.md"
-    },
-    "supportingLayers": {
-      "philosophy": "../philosophy/",
-      "contracts": "../contracts/",
-      "guides": "../guides/"
     }
+  },
+  "planning": {
+    "phaseA_orientation": "not_started",
+    "phaseB_architecture": "not_started",
+    "phaseC_uiUxDesignSystem": "not_started",
+    "phaseD_maps": "not_started",
+    "phaseE_initialWorkUnits": "not_started",
+    "completedAt": null
   },
   "harness": {
     "wired": false,

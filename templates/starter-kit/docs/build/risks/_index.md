@@ -1,28 +1,35 @@
 # Risks
 
-> Tracked risks to the project. Each risk is R-NNN. A risk is anything that could prevent a work unit from shipping, prevent a phase from completing, or invalidate an architectural commitment if it materialises.
+A **risk** is something that could go wrong and would matter if it did. Filed here so it's visible — both to you and to anyone else looking at the project. Zero risks on a real project usually means underthinking, not zero risk. See [the glossary](../GLOSSARY.md#risk) for the full definition.
 
 ## Index
 
 | ID | Risk | Severity | Status | Date opened |
 | --- | --- | --- | --- | --- |
-| _none yet_ | | | | |
+| _none yet — add a row when you spot something to watch_ | | | | |
 
-## Severity scale
+## Severity
 
-- **High** — blocks active work or threatens an architectural commitment
-- **Medium** — would slow work materially if it materialises
-- **Low** — worth tracking; not blocking
+- **High** — would block work or invalidate a major decision if it happens
+- **Medium** — would slow things down materially
+- **Low** — worth knowing about; not blocking
 
 ## Status
 
 - **open** — being watched
-- **mitigated** — action taken; risk reduced
-- **materialised** — happened; see linked WU or session for response
-- **closed** — no longer applicable
+- **mitigated** — something's been done to reduce it
+- **materialised** — it happened; see the linked work unit or session for what we did
+- **closed** — no longer relevant
 
-## How to add a risk
+## When to file a risk
 
-1. Add a new row to the table with R-NNN (next available number)
-2. If the risk is large enough to warrant detail, write a `R-NNN-short-title.md` file beside this index
-3. Reference the risk from any work unit it affects
+- You can imagine something going wrong and want it surfaced rather than forgotten
+- You're about to commit to a path and there's a known downside
+- An open question has implications if it resolves the wrong way — file the risk separately so the project tracks it even before the question resolves
+- A dependency (a person, a service, a piece of hardware) might not be available when you need it
+
+> Example: "R002 — School wifi is unreliable on Mondays after maintenance; the morning briefing must degrade gracefully when offline."
+
+## How to file one
+
+Add a row to the table above with the next R-NNN number. If the risk is large enough to warrant detail (options for mitigation, escalation plan), write a `RNNN-short-title.md` file beside this index too. Reference the risk from any work unit it affects.

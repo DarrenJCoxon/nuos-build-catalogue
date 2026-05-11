@@ -1,14 +1,26 @@
-# {{PROJECT_NAME}} — Always-Current State
+# {{PROJECT_NAME}} — where we are right now
 
-> The single snapshot read at the start of every session. If anything important is not here, it is not real. Update this file at the end of every session via the end-of-session protocol.
+> This file is the snapshot read at the start of every session. If anything important about the project's current state is not here, it is not real. The end-of-session protocol updates this file every time work stops.
 
 **Last updated:** {{TODAY}}
-**Active phase:** Phase 0 — bootstrap
-**Active work unit:** WU 001 — [first work unit name]
+
+## Planning progress
+
+This project is at the start of its planning arc. The AI will walk you through five phases before you begin building. Each phase is its own session.
+
+| Phase | What it produces | Status |
+| --- | --- | --- |
+| A — Orientation | Project description, 1-3 personas, the horizon map | 🔵 not yet started |
+| B — Architecture & Contracts | The major pieces of the project and what they exchange | 🔵 not yet started |
+| C — UI/UX + Design System | The user-facing surfaces and the shared visual language | 🔵 not yet started |
+| D — Maps | Phases of work and the near-term plan | 🔵 not yet started |
+| E — Initial Work Units | The first 5-10 things to build, in dependency order | 🔵 not yet started |
+
+When you run `/start-of-session` on this fresh project, the AI will see this tracker and offer to begin Phase A.
 
 ## What is currently in flight
 
-[One paragraph describing what work is happening right now. Edit when work changes shape.]
+[Filled in once Phase A is underway. Today, this is a brand-new catalogue with no work in flight yet.]
 
 ## What just shipped
 
@@ -16,7 +28,7 @@ Nothing yet — this catalogue was just adopted on {{TODAY}}.
 
 ## What is next
 
-[The next concrete action. Should be specific enough that an LLM teammate can pick it up and start without further context.]
+Run `/start-of-session` to begin. The AI will read this file and walk you through Phase A of planning.
 
 ## Open questions blocking progress
 
@@ -32,16 +44,18 @@ None currently filed. Filed risks live in [`risks/_index.md`](risks/_index.md).
 | --- | --- | --- |
 | _none yet_ | | |
 
-## Work units in flight
+## Active work units
 
-| WU | Status | Owner | Notes |
-| --- | --- | --- | --- |
-| WU 001 | 🟡 in flight | — | First work unit |
+| Work Unit | Status | Notes |
+| --- | --- | --- |
+| _none yet — phase E of planning produces the first batch_ | | |
 
-## Status legend
+## How to read this file
 
-- 🔵 **proposed** — written down, not yet started
-- 🟡 **in flight** — actively being worked on
-- 🟣 **built / awaiting review** — implementation done, review pending
-- ✅ **merged / shipped** — complete and integrated
-- 🔴 **blocked** — cannot proceed; see notes for blocker
+- **Planning progress** shows where you are in the 5-phase arc that takes a brand-new project to "ready to build"
+- **What is currently in flight** describes ongoing work; updated when work changes shape
+- **What just shipped** notes the most recent completion(s)
+- **What is next** points at the immediate concrete action
+- Below: open questions, risks, decisions, and active work units — pulled from their respective registers for quick scanning
+
+This file is the project's executive summary. The detail lives in the register files; this is the one-screen view that says where the project is.

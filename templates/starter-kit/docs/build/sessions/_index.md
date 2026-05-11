@@ -1,27 +1,29 @@
 # Sessions
 
-> Chronological audit trail of every session run on this project. One entry per session, named `YYYY-MM-DD-short-description.md`. The session log is the catalogue's replay history; a fresh operator (human or agent) should be able to read the most recent entries and pick up exactly where work stopped.
+A **session** is a period of focused work — could be an hour, could be an afternoon. Each session starts with `/start-of-session` (which tells you where the project is) and ends with `/end-of-session` (which writes down what just happened). One file per session lives here in date order, named `YYYY-MM-DD-short-description.md`. See [the glossary](../GLOSSARY.md#session) for the full definition.
+
+The session log is the project's **replay history**. Anyone joining mid-project — or future-you opening this folder six months later — should be able to read the most recent entries and pick up exactly where work stopped, without needing to ask.
 
 ## Index
 
-| Date | Session | Active WU | Notes |
+| Date | Session | Active work unit | Notes |
 | --- | --- | --- | --- |
-| {{TODAY}} | [Adopt the catalogue scaffold](0000-00-00-template.md) | WU 001 | First session; catalogue bootstrapped |
+| _filled in automatically when you run `/end-of-session`_ | | | |
 
-## How to add a session entry
+## What a session entry captures
 
-1. Copy `0000-00-00-template.md` to `YYYY-MM-DD-short-description.md` (today's date, dashes-not-spaces description)
-2. Fill in the template
-3. Add a row to the table above
-4. Link the entry from STATE.md if the session significantly shifted state
+- **What this session was about** — one paragraph
+- **What was done** — chronological, in plain language
+- **Decisions made** — linked to the D-NNN files filed in this session
+- **Open questions raised** — linked to the Q-NNN files
+- **Risks identified** — linked
+- **What's next** — the next concrete action; what the next session should start with
+- **Resume hint** — if mid-phase (planning or work) when this session ended, a one-paragraph note of where you were so the next session picks up cleanly
 
-## What a session entry must include
+The honest test for a good session entry: **could a future-you (or anyone joining the project) read it and answer "what happened, why, and what's next?" without contacting you?** If yes, the entry is sufficient.
 
-- What this session was about (one paragraph)
-- What was done (chronological narrative)
-- Decisions that surfaced (linked)
-- Open questions raised (linked)
-- Risks identified (linked)
-- What's next (the concrete next action)
+## How session entries are filed
 
-The auditor's-question test: *could a third-party auditor read this entry and answer "what happened, why, and what's next?" without contacting the team?* If yes, sufficient.
+Run `/end-of-session`. It writes the entry, updates this index, refreshes STATE.md, commits everything in one atomic step, and the post-commit hook refreshes the search index in the background.
+
+**Never close a session without `/end-of-session`.** Work that isn't written down is work that's lost. The whole catalogue is built on the assumption that every period of work gets captured before it closes.

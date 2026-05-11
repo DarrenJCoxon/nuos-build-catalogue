@@ -453,6 +453,8 @@ Usage:
   nuos-catalogue persona   show      <handle> [--json]
   nuos-catalogue persona   create    (interactive — seven dimensions + acid-test per D046)
 
+  nuos-catalogue plan      status    show planning progress across the 5-phase arc
+
   nuos-catalogue help
 
 Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
@@ -530,6 +532,18 @@ async function main(): Promise<void> {
     case 'persona':
       await cmdRegisterDispatch(args.command, args.positional, args.flags);
       break;
+    case 'plan': {
+      const sub = args.positional[0];
+      if (sub === 'status') {
+        const { cmdPlanStatus } = await import('./commands/plan.js');
+        const code = await cmdPlanStatus({ cwd: process.cwd() });
+        if (code !== 0) process.exit(code);
+        break;
+      }
+      console.error(`unknown plan subcommand: ${sub ?? '(none)'}`);
+      console.error('available: plan status');
+      process.exit(1);
+    }
     case 'help':
     case '--help':
     case '-h':
