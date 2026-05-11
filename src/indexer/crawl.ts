@@ -1,13 +1,21 @@
 /**
- * Crawler — walks the NuOS catalogue tree picking up indexable .md files.
+ * Crawler — walks the catalogue's `docs/` tree picking up indexable .md files.
  *
- * Per WU 110 spec:
- *   - includes: docs/build/**, docs/contracts/**, docs/philosophy/**,
- *     docs/guides/**, plus top-level docs/build/STATE.md, BUILD-ORDER.md,
- *     README.md, reference-index.md
- *   - skips: _index.md (derived; adds noise), done/, archive/, superseded/
- *     subdirs (opt-in via includeArchived)
- *   - skips: .excalidraw, binary
+ * Default behaviour (0.14.2+): recursive crawl of EVERYTHING under
+ * `docs/`, including top-level loose markdown files and every subdirectory.
+ * The earlier hardcoded allowlist of four subdirs (`build/`, `contracts/`,
+ * `philosophy/`, `guides/`) silently excluded strategic content that lives
+ * elsewhere — top-level docs like `THE-NUOS-BUILD-METHOD.md`,
+ * `MVP-NEXT-STEPS.md`, `PHASE-4-SIGNOFF.md`, and subdirs like
+ * `architecture/`, `integration/`, `investor/`, `wireframes/`. Those are
+ * load-bearing strategic context and need to be searchable.
+ *
+ * Skipped:
+ *   - `_index.md` (derived; adds noise to ranking)
+ *   - `*-template.md` (templates, not real content)
+ *   - `done/`, `archive/`, `superseded/` subdirs (opt-in via includeArchived)
+ *   - `node_modules/`, `.git/`, `.nuos-catalogue/`
+ *   - non-`.md` files (binaries, .excalidraw, etc.)
  */
 
 import { readdir, stat } from 'node:fs/promises';
@@ -23,20 +31,26 @@ export interface CrawledFile {
   relativePath: string; // relative to catalogueRoot
 }
 
-const TOP_LEVEL_INCLUDES = ['build', 'contracts', 'philosophy', 'guides'];
-
-const SKIPPED_DIR_NAMES = new Set(['node_modules', '.git', '.nuos-catalogue']);
+const SKIPPED_DIR_NAMES = new Set([
+  'node_modules',
+  '.git',
+  '.nuos-catalogue',
+  '.opencode',
+  '.claude',
+  '.agents',
+]);
 const ARCHIVED_DIR_NAMES = new Set(['done', 'archive', 'superseded']);
 const INDEX_FILENAMES = new Set(['_index.md']);
 
+function isTemplateName(name: string): boolean {
+  // Catches `001-template-simple.md`, `module-template.md`, `_template.md`,
+  // `99-template-power-user-operational-plan.md`, etc.
+  return /template\.md$/.test(name) || name === '_template.md';
+}
+
 export async function crawl(options: CrawlOptions): Promise<CrawledFile[]> {
   const out: CrawledFile[] = [];
-  for (const top of TOP_LEVEL_INCLUDES) {
-    const start = path.join(options.catalogueRoot, top);
-    if (await exists(start)) {
-      await walkDir(start, options, out);
-    }
-  }
+  await walkDir(options.catalogueRoot, options, out);
   return out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 }
 
@@ -63,6 +77,7 @@ async function walkDir(
     if (!entry.isFile()) continue;
     if (!entry.name.endsWith('.md')) continue;
     if (INDEX_FILENAMES.has(entry.name)) continue;
+    if (isTemplateName(entry.name)) continue;
 
     out.push({
       absolutePath: full,
