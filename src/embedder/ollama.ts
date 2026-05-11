@@ -1,10 +1,16 @@
 /**
  * Ollama embedder — local inference, no network egress.
  *
- * Default model: qwen3-embedding:8b (4096 dims, 32k context). Config via
- * NUOS_CATALOGUE_OLLAMA_MODEL. Smaller variants (qwen3-embedding:4b,
- * qwen3-embedding:0.6b) work the same way; switching variants requires
- * a full reindex if the dimension changes.
+ * Default model: qwen3-embedding:0.6b (1024 dims). Picked as default
+ * because it runs on the broad majority of developer machines without
+ * meaningful CPU strain — the prior 8b default produced noticeable load
+ * on Apple Silicon during a catalogue reindex, and the build harness
+ * ships to projects whose maintainers won't necessarily have an
+ * M-series Mac. Higher-fidelity variants (qwen3-embedding:4b at 2560
+ * dims, qwen3-embedding:8b at 4096 dims) are available via
+ * NUOS_CATALOGUE_OLLAMA_MODEL when the user wants better recall and
+ * has the headroom. Switching variants requires a full reindex because
+ * dimensions change.
  *
  * Why local: keeps the catalogue's content (and any future workload that
  * uses the same Embedder interface) inside whatever boundary Ollama is
@@ -26,15 +32,15 @@
  * idle-timeout (the keep_alive: "1m" we sent) cleans up within a
  * minute.
  *
- * Sizing note — the 8b model at Q4_K_M is ~4.7GB on disk and benefits
- * from ~16GB of RAM. Apple Silicon Metal acceleration helps a lot. On
- * smaller boxes drop to qwen3-embedding:4b (better accuracy/RAM ratio)
- * or qwen3-embedding:0.6b (CPU-only friendly).
+ * Sizing note — the new 0.6b default is ~600MB on disk and runs
+ * comfortably on any modern laptop, including CPU-only. The 4b variant
+ * (~2.5GB) and 8b variant (~4.7GB, benefits from ~16GB RAM + Metal)
+ * are upgrades for users who want better recall and have the headroom.
  */
 
 import type { Embedder } from './types.js';
 
-const DEFAULT_MODEL = 'qwen3-embedding:8b';
+const DEFAULT_MODEL = 'qwen3-embedding:0.6b';
 const DEFAULT_HOST = 'http://localhost:11434';
 
 // Qwen3-Embedding produces Matryoshka representations 32–4096 dims.
