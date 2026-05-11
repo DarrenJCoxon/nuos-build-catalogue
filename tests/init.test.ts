@@ -138,6 +138,21 @@ describe('§1 init on a fresh directory', () => {
     // .gitignore created with catalogue rules
     const gitignore = await readFile(path.join(cwd, '.gitignore'), 'utf8');
     assert.match(gitignore, /\.nuos-catalogue\//);
+
+    // scripts/hooks/ source-of-truth files exist
+    assert.ok(existsSync(path.join(cwd, 'scripts', 'hooks', 'pre-commit')));
+    assert.ok(existsSync(path.join(cwd, 'scripts', 'hooks', 'post-commit')));
+    assert.ok(existsSync(path.join(cwd, 'scripts', 'install-hooks.sh')));
+
+    // .git/hooks/ active copies are only installed when .git/ exists.
+    // The synthetic test dir doesn't have .git/, so we expect a log line
+    // noting the skip but the source files should still be in scripts/hooks/.
+    assert.ok(
+      prompt.output.some((l) =>
+        /scripts\/hooks\/pre-commit/.test(l)
+      ),
+      'expected log to mention pre-commit installation'
+    );
   });
 });
 

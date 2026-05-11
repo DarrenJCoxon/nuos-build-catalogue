@@ -231,6 +231,13 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
     }
   }
 
+  // Step 3b: install the git hooks (pre-commit enforcement + post-commit
+  // auto-reindex). Two source files land in scripts/hooks/ so the consumer
+  // has the version-controlled source-of-truth; copies are pushed into
+  // .git/hooks/ so they fire immediately without the user re-running an
+  // installer.
+  await installHooks(cwd, log_line);
+
   // Step 4: CLAUDE.md
   const claudeMdPath = path.join(cwd, 'CLAUDE.md');
   const catalogueSection = renderCatalogueSection(name);
@@ -309,7 +316,92 @@ export async function cmdInstallProtocols(
   }
   prompt.print(`Refreshing protocols (Claude Code / OpenCode / Codex CLI):`);
   for (const l of lines) prompt.print(l);
+
+  // Refresh hooks too — same idempotent shape.
+  prompt.print('');
+  prompt.print(`Refreshing git hooks (pre-commit enforcement, post-commit auto-reindex):`);
+  await installHooks(cwd, (msg) => prompt.print(msg));
+
   return { output: '', exitCode: 0 };
+}
+
+// ---------------------------------------------------------------------------
+// installHooks — copy bundled hook sources into the consumer + activate them
+// ---------------------------------------------------------------------------
+
+/**
+ * Bundled hooks ship in templates/hooks/. Two source files (pre-commit,
+ * post-commit) land in the consumer's scripts/hooks/ so the maintainer
+ * has the version-controlled source. Copies also land in .git/hooks/ so
+ * they fire immediately. The bash install-hooks.sh script also lands in
+ * scripts/ so re-running it after a fresh clone reconstitutes .git/hooks/.
+ *
+ * Idempotent: byte-identical sources are skipped silently. Permissions
+ * are set executable on every install so a chmod isn't required.
+ */
+async function installHooks(
+  cwd: string,
+  log_line: (msg: string) => void
+): Promise<void> {
+  const hooksTemplatesRoot = path.join(TEMPLATES_ROOT, 'hooks');
+  if (!existsSync(hooksTemplatesRoot)) {
+    log_line('  · (hooks bundle not present in this CLI install — skipping)');
+    return;
+  }
+
+  // 1) Source-of-truth files in <cwd>/scripts/
+  const scriptsDir = path.join(cwd, 'scripts');
+  const scriptsHooksDir = path.join(scriptsDir, 'hooks');
+  await mkdir(scriptsHooksDir, { recursive: true });
+
+  const hookFiles = ['pre-commit', 'post-commit'] as const;
+  for (const name of hookFiles) {
+    const src = path.join(hooksTemplatesRoot, name);
+    const dest = path.join(scriptsHooksDir, name);
+    await writeHookFile(src, dest, log_line, `  · `, `scripts/hooks/${name}`);
+  }
+
+  // install-hooks.sh — convenience bash installer; sits next to scripts/hooks/
+  const installerSrc = path.join(hooksTemplatesRoot, 'install-hooks.sh');
+  const installerDest = path.join(scriptsDir, 'install-hooks.sh');
+  await writeHookFile(installerSrc, installerDest, log_line, `  · `, `scripts/install-hooks.sh`);
+
+  // 2) Active copies in <cwd>/.git/hooks/ — only if .git/ exists. Some
+  // tests run init in a non-git directory; that's fine, skip the active
+  // install and let the user run install-hooks.sh later.
+  const gitHooksDir = path.join(cwd, '.git', 'hooks');
+  if (!existsSync(path.join(cwd, '.git'))) {
+    log_line(`  · (no .git/ found at ${cwd} — skipping active hook install; run scripts/install-hooks.sh after \`git init\`)`);
+    return;
+  }
+  await mkdir(gitHooksDir, { recursive: true });
+  for (const name of hookFiles) {
+    const src = path.join(hooksTemplatesRoot, name);
+    const dest = path.join(gitHooksDir, name);
+    await writeHookFile(src, dest, log_line, `  · `, `.git/hooks/${name}`);
+  }
+}
+
+async function writeHookFile(
+  src: string,
+  dest: string,
+  log_line: (msg: string) => void,
+  prefix: string,
+  label: string
+): Promise<void> {
+  const srcContent = await readFile(src, 'utf8');
+  let action: 'created' | 'updated' | 'unchanged' = 'created';
+  if (existsSync(dest)) {
+    const destContent = await readFile(dest, 'utf8');
+    action = destContent === srcContent ? 'unchanged' : 'updated';
+  }
+  if (action !== 'unchanged') {
+    await writeFile(dest, srcContent, 'utf8');
+  }
+  // chmod +x — required for git to actually run them
+  const { chmod } = await import('node:fs/promises');
+  await chmod(dest, 0o755);
+  log_line(`${prefix}${action} ${label}`);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+#
+# NuOS catalogue pre-commit hook (WU 111 enforcement phase).
+#
+# Catches drift before commit. After WU 111's Phase J ship, the
+# accepted-decision rule has flipped from warning → block (per the
+# pack's narrower-than-originally-planned enforcement scope, recorded
+# in WU 111's "Forward-compatibility commitments" section). Other
+# rules described in WU 128's original aggressive list are NOT shipping
+# — distinguishing tool-written from human-written content was deemed
+# overengineering for a planning-artefact catalogue.
+#
+# Active rules:
+#   1. index-drift detection — every WU/decision/open-question/risk file
+#      must have a matching row in its _index.md (and vice versa)
+#   2. active-decision modification block — modifying a committed
+#      `accepted` decision file is BLOCKED (not just warned). The
+#      discipline is to write a superseding D-NNN+1 and link forward.
+#      To deliberately fix a typo or link in an accepted decision,
+#      use `git commit --no-verify` (CLAUDE.md prohibits this for
+#      substantive changes; reserve it for typo-only fixes).
+#
+# Sentinel-protected sections (e.g. STATE.md's `nuos:sentinel`) remain
+# protected via the existing `.claude/hooks/check-catalogue-write.sh`
+# Claude Code hook. That rule continues unchanged at WU 111 ship.
+#
+# Bypass: this hook respects --no-verify like any other. The CLAUDE.md
+# policy explicitly prohibits --no-verify use for substantive changes;
+# the technical block fires at the CI server-side check (a future WU).
+
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+ENFORCEMENT_LOG="$REPO_ROOT/.nuos-enforcement.log"
+EXIT_CODE=0
+
+red()    { printf '\033[31m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+green()  { printf '\033[32m%s\033[0m\n' "$*"; }
+dim()    { printf '\033[2m%s\033[0m\n' "$*"; }
+
+log_event() {
+  printf '%s | %s | %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$1" "$2" >> "$ENFORCEMENT_LOG"
+}
+
+# ---------- Generic index-drift checker ---------------------------------
+#
+# Args:
+#   $1 — kind label (for messages)
+#   $2 — directory (relative to repo root)
+#   $3 — _index.md path (relative to repo root)
+#   $4 — filename regex (matches IDs the directory contains)
+#   $5 — index-row ID regex (a Perl-compatible regex that anchors on the
+#        leftmost column of an index table row)
+#
+# The two regexes must extract the SAME set of IDs (e.g. "001", "030g",
+# "D042") so set comparison works.
+
+check_index_drift() {
+  local kind="$1" dir="$2" index="$3" file_regex="$4" row_regex="$5"
+
+  if [[ ! -d "$REPO_ROOT/$dir" ]]; then return 0; fi
+  if [[ ! -f "$REPO_ROOT/$index" ]]; then return 0; fi
+
+  # IDs extracted from filenames in the directory (top-level + one subdir
+  # like done/, resolved/, superseded/)
+  local ids_in_tree
+  ids_in_tree=$(cd "$REPO_ROOT/$dir" && {
+    find . -maxdepth 2 -type f -name "*.md" \
+      -not -name "_index.md" \
+      -not -name "*-template.md" 2>/dev/null \
+      | sed -nE "$file_regex" \
+      | sort -u
+  })
+
+  # IDs extracted from leftmost column of table rows in the index
+  local ids_in_index
+  ids_in_index=$(sed -nE "$row_regex" "$REPO_ROOT/$index" | sort -u)
+
+  local missing_from_index
+  missing_from_index=$(comm -23 <(printf '%s\n' "$ids_in_tree") <(printf '%s\n' "$ids_in_index"))
+
+  if [[ -n "$missing_from_index" ]]; then
+    red "✖ index-drift ($kind): on disk but missing from $index:"
+    while IFS= read -r id; do echo "    — $id"; done <<< "$missing_from_index"
+    log_event "index-drift" "$kind missing from index: $(echo "$missing_from_index" | tr '\n' ',')"
+    EXIT_CODE=1
+  fi
+}
+
+dim "[nuos:pre-commit] index-drift check"
+
+# Note: BSD sed (macOS default) is fussy about `|` as both delimiter and
+# regex content. Using `#` as the s/// delimiter sidesteps the collision.
+
+# Work units: filenames are NNN-slug.md or NNNa-slug.md (with optional letter).
+# Index rows are `| NNN |` or `| NNNa |` in the leftmost column.
+check_index_drift \
+  "work-units" \
+  "docs/build/work-units" \
+  "docs/build/work-units/_index.md" \
+  's#^\./(done/)?([0-9]{3}[a-z]?)-[^/]*\.md$#\2#p' \
+  's#^\| ([0-9]{3}[a-z]?) \|.*$#\1#p'
+
+# Decisions: filenames are DNNN-slug.md.
+# Index rows: `| DNNN |` or `| [DNNN](...) |`.
+check_index_drift \
+  "decisions" \
+  "docs/build/decisions" \
+  "docs/build/decisions/_index.md" \
+  's#^\./(done/|superseded/)?(D[0-9]{3})-[^/]*\.md$#\2#p' \
+  's#^\| \[?(D[0-9]{3}).*$#\1#p'
+
+# Open questions: filenames are QNNN-slug.md.
+check_index_drift \
+  "open-questions" \
+  "docs/build/open-questions" \
+  "docs/build/open-questions/_index.md" \
+  's#^\./(resolved/)?(Q[0-9]{3})-[^/]*\.md$#\2#p' \
+  's#^\| \[?(Q[0-9]{3}).*$#\1#p'
+
+# Risks: per current convention, individual risk files are inline in
+# risks/_index.md (no per-risk .md files yet). Skip the check entirely
+# until that pattern changes.
+if compgen -G "$REPO_ROOT/docs/build/risks/R[0-9][0-9][0-9]-*.md" > /dev/null; then
+  check_index_drift \
+    "risks" \
+    "docs/build/risks" \
+    "docs/build/risks/_index.md" \
+    's#^\./(R[0-9]{3})-[^/]*\.md$#\1#p' \
+    's#^\| \[?(R[0-9]{3}).*$#\1#p'
+fi
+
+# ---------- Rule 2: active-decision modification block (WU 111 ship) ---
+
+dim "[nuos:pre-commit] active-decision modification check"
+modified_decisions=$(git diff --cached --name-only --diff-filter=M \
+  | grep -E '^docs/build/decisions/D[0-9]+.*\.md$' \
+  | grep -v '/superseded/' \
+  || true)
+
+if [[ -n "$modified_decisions" ]]; then
+  red "✖ active-decision modification — BLOCKED (WU 111 enforcement):"
+  while IFS= read -r f; do echo "    — $f"; done <<< "$modified_decisions"
+  red "  Decisions are immutable once accepted. The discipline is to write a"
+  red "  superseding D-NNN+1 and link forward. Use:"
+  red "    nuos-catalogue decision supersede <target> --by=<new-D> --reason=\"...\""
+  red ""
+  red "  If this edit is a non-substantive typo fix or link cleanup that does"
+  red "  not change the decision's meaning, you may bypass this block with"
+  red "  --no-verify. CLAUDE.md prohibits --no-verify for substantive changes."
+  log_event "active-decision-block" "$(echo "$modified_decisions" | tr '\n' ',')"
+  EXIT_CODE=1
+fi
+
+# ---------- Result ------------------------------------------------------
+
+if [[ $EXIT_CODE -eq 0 ]]; then
+  green "[nuos:pre-commit] all rules pass (WU 111 enforcement)"
+  log_event "pre-commit-pass" "$(git diff --cached --name-only | wc -l | tr -d ' ') files"
+fi
+exit $EXIT_CODE
