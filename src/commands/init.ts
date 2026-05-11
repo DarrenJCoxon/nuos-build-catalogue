@@ -33,7 +33,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Prompt } from './prompt.js';
-import { askUntilValid, validate } from './prompt.js';
+import type {} from './prompt.js'; // ensures path resolution stays stable across bundling
 
 const __filename = fileURLToPath(import.meta.url);
 const PACKAGE_ROOT = path.resolve(path.dirname(__filename), '..', '..');
@@ -42,12 +42,22 @@ const TEMPLATES_ROOT = path.resolve(PACKAGE_ROOT, 'templates');
 export interface InitOptions {
   /** Target project root (default: cwd). */
   cwd?: string;
-  /** Pre-supplied values; if any are missing, the prompt fills them in. */
+  /** Pre-supplied values; if omitted, sensible defaults are used. */
   name?: string;
   tagline?: string;
   domain?: string;
   role?: string;
-  /** When true, runs all steps without prompts (uses defaults / supplied values). */
+  /**
+   * Opt into the prompt flow (project name, tagline, role, confirm).
+   * Default is non-interactive: scaffolds immediately with sensible
+   * defaults. The real configuration happens during Phase A of the
+   * planning arc, not at init time.
+   */
+  interactive?: boolean;
+  /**
+   * @deprecated kept only for backward compat with the older `--yes` flag;
+   * has no effect — init is always non-interactive unless `interactive` is set.
+   */
   nonInteractive?: boolean;
 }
 
@@ -143,48 +153,43 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   }
 
   // Gather inputs.
+  //
+  // Init is **zero-prompt by default**. The user wants `npx ... init` to
+  // just work — sensible defaults fill in everything, the scaffold goes
+  // down, and the real planning happens in /start-of-session (Phase A of
+  // the planning arc), where the AI walks the user through the project
+  // description, personas, and the horizon map IN CONTEXT.
+  //
+  // Old behavior (4 prompts: name, tagline, domain, role) wasn't load-
+  // bearing — tagline gets produced during Phase A; domain is a relic;
+  // role is a planning-time annotation rarely used downstream. Users who
+  // want the prompts back can pass --interactive.
   const projectDefault = path.basename(cwd);
-  let name = options.name;
-  let tagline = options.tagline;
-  let domain = options.domain;
-  let role = options.role;
+  let name = options.name ?? projectDefault;
+  let tagline = options.tagline ?? '';
+  let domain = options.domain ?? '';
+  let role = options.role ?? 'consumer';
 
-  if (!options.nonInteractive) {
-    prompt.print('Initialising a NuOS Build Method catalogue.');
+  if (options.interactive) {
+    prompt.print('Setting up the catalogue.');
     prompt.print('');
-    if (!name) {
-      name = await askUntilValid(
-        prompt,
-        `Project name [${projectDefault}]: `,
-        (v) => (v.trim().length === 0 ? null : null) // empty allowed; default applied below
-      );
-      if (!name.trim()) name = projectDefault;
+    if (!options.name) {
+      const answer = (await prompt.ask(`Project name [${projectDefault}]: `)).trim();
+      if (answer) name = answer;
     }
-    if (!tagline) {
-      tagline = await askUntilValid(
-        prompt,
-        'One-sentence tagline (what this project is): ',
-        (v) => validate.nonEmpty(v, 'tagline')
-      );
+    if (!options.tagline) {
+      tagline = (await prompt.ask('One-line description (or empty — Phase A will fill it in): ')).trim();
     }
-    if (!domain) {
-      domain = (await prompt.ask('Domain (e.g. example.com; empty for none): ')).trim() || 'n/a';
-    }
-    if (!role) {
+    if (!options.role) {
       role = await prompt.askChoice('Project role?', ['consumer', 'standalone', 'harness']);
     }
     const confirm = await prompt.confirm(
-      `About to create docs/build/, methodfile.json, .claude/commands/<protocols>, append to CLAUDE.md, update .gitignore, and run first migrate. Proceed?`,
+      `Create docs/build/, install protocols + hooks, set up the catalogue. Proceed?`,
       true
     );
     if (!confirm) {
-      return { output: 'init cancelled by operator.', exitCode: 1 };
+      return { output: 'init cancelled.', exitCode: 1 };
     }
-  } else {
-    if (!name) name = projectDefault;
-    if (!tagline) tagline = '';
-    if (!domain) domain = 'n/a';
-    if (!role) role = 'consumer';
   }
 
   const subs: Record<string, string> = {
@@ -195,10 +200,14 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
     '{{TODAY}}': today,
   };
 
+  // Per-step "· created X" messages are kept as an in-memory audit trail
+  // but NOT printed by default. The end-user-facing output is just a
+  // single "Done. Type /start-of-session" at the close. Pass `interactive`
+  // to see the per-step lines (useful for debugging).
   const log: string[] = [];
   const log_line = (msg: string) => {
     log.push(msg);
-    prompt.print(msg);
+    if (options.interactive) prompt.print(msg);
   };
 
   // Step 1: docs/build/ scaffold from starter-kit
@@ -263,26 +272,10 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   await ensureGitignoreEntries(gitignorePath, log_line);
 
   prompt.print('');
-  prompt.print(`✅ Catalogue initialised at ${path.join(cwd, 'docs/build')}`);
+  prompt.print('✅ Done.');
   prompt.print('');
-  prompt.print('Next step:');
-  prompt.print('  Run `/start-of-session` in Claude Code (or OpenCode, or Codex CLI).');
-  prompt.print('  The AI will detect this is a brand-new catalogue and walk you');
-  prompt.print('  through a 5-phase planning arc:');
+  prompt.print('Now type  /start-of-session  into Claude Code to begin.');
   prompt.print('');
-  prompt.print('    A. Orientation        — project description, personas, the horizon  (~30 min)');
-  prompt.print('    B. Architecture       — major pieces and their contracts            (~60-90 min)');
-  prompt.print('    C. UI/UX + Design     — surfaces and the design system              (~60-90 min)');
-  prompt.print('    D. Maps               — phases of work and near-term plan           (~45 min)');
-  prompt.print('    E. Initial work units — first 5-10 things to build                  (~60 min)');
-  prompt.print('');
-  prompt.print('  Each phase is its own session. Pause whenever you want.');
-  prompt.print('');
-  prompt.print('To read about the catalogue before starting:');
-  prompt.print(`  ${path.join(cwd, 'docs/build/WELCOME.md')}`);
-  prompt.print(`  ${path.join(cwd, 'docs/build/GLOSSARY.md')}`);
-  prompt.print('');
-  prompt.print('To refresh protocols and hooks later: `nuos-catalogue install-protocols`');
 
   return { output: '', exitCode: 0 };
 }

@@ -295,25 +295,6 @@
       "build/decisions/D031-epistemic-discipline-as-method-commitment.md#d031-epistemic-discipline-patterns-j-n-is-the-central-post-p/related"
     ]
   },
-  "build/decisions/D032-narrative-polish-as-nuflow-primitive.md": {
-    "sha": "464664291c5daf252914798fa01d4a94360868f755d9373386ca36b6267a1022",
-    "chunkIds": [
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/context",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision~1",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision~2",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/rationale",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-1-polish-inside-each-pack-rejected",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-2-polish-in-the-consumer-s-upstream-agent-rejected",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-3-polish-on-commit-after-the-user-reviews-the-card-rejec",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-4-polish-the-narrative-field-only-not-the-whole-capture-",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/what-this-changes",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/what-this-does-not-change",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/consequences",
-      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/related"
-    ]
-  },
   "build/decisions/D033-mis-module-single-deep-module.md": {
     "sha": "d83fbdb5a20557ecbd72f138f9738ca2211a8c769a77a12838698f83df4d5fb9",
     "chunkIds": [
@@ -565,46 +546,6 @@
       "build/maps/03-the-next-three-weeks.md#map-3-the-next-three-weeks-original/what-wu-001-is-in-one-paragraph",
       "build/maps/03-the-next-three-weeks.md#map-3-the-next-three-weeks-original/why-we-are-doing-this-and-not-something-else-first",
       "build/maps/03-the-next-three-weeks.md#map-3-the-next-three-weeks-original/final-note"
-    ]
-  },
-  "build/maps/04-integrating-nuos-into-sensight.md": {
-    "sha": "101f0b6dd0ea3a43f5d90efcc903b7db3baafc6d427d85a5add25745df50a9e6",
-    "chunkIds": [
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/how-to-read-this-map",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/the-five-agentic-age-patterns-this-map-enforces",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-scope-reframe-net-new-vs-migration-audit",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-continued-chat-as-only-input-principle",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-continued-chat-as-only-input-principle~1",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-fully-integrated-means",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/critical-path",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-082-nuflow-deidentifier-structured-rehydration",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072a-sen-pack-v0-3-capture-family",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-1-schema-defense-in-depth-rls",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end~1",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end~2",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-3-per-pupil-read-surfaces-record-tabs",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-3-per-pupil-read-surfaces-record-tabs~1",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-4-remaining-4-workflows-wired-into-chat",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-4-remaining-4-workflows-wired-into-chat~1",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-5-operational-hardening",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-5-operational-hardening~1",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072c-legacy-record-migration-obsolete",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-1-pupil-profile-documenttype-knowledgeadapter-wiring",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-2-three-more-documenttypes",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-3-chat-retrieval-ordering-role-aware-article-rendering",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/mis-critical-path",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/what-mis-complete-means",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/conversation-first-constraints-on-all-mis-steps",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-runs-in-parallel",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/trigger-conditions-for-deferred-wus",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-this-map-is-not",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/how-to-use-this-map",
-      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/pointers"
     ]
   },
   "build/open-questions/Q001-rename-rust-crates.md": {
@@ -966,87 +907,6 @@
       "build/START-OF-SESSION.md#start-of-session-protocol/what-this-protocol-guarantees",
       "build/START-OF-SESSION.md#start-of-session-protocol/what-this-protocol-does-not-include",
       "build/START-OF-SESSION.md#start-of-session-protocol/after-this-protocol"
-    ]
-  },
-  "build/STATE.md": {
-    "sha": "489ef0a98a9460b714e414abdfa04f2dd336f818fa455f1f60520dd73b358c25",
-    "chunkIds": [
-      "build/STATE.md#nuos-build-state-always-current",
-      "build/STATE.md#nuos-build-state-always-current~1",
-      "build/STATE.md#nuos-build-state-always-current/what-was-just-done",
-      "build/STATE.md#nuos-build-state-always-current/what-was-just-done~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously~2",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next/critical-path-toward-sensight-integration",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next/parallel-productisation-of-the-build-method",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next/immediate-next-moves",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next/deferred-known-limitations",
-      "build/STATE.md#nuos-build-state-always-current/phase-4-final-state-preserved-from-session-52",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously~1",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/previously",
-      "build/STATE.md#nuos-build-state-always-current/phase-4-findings-register-for-wu-062-to-address-strictly",
-      "build/STATE.md#nuos-build-state-always-current/phase-4-findings-register-for-wu-062-to-address-strictly/resolved",
-      "build/STATE.md#nuos-build-state-always-current/strategic-commitment-the-build-method-itself",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next~1",
-      "build/STATE.md#nuos-build-state-always-current/what-is-next~2",
-      "build/STATE.md#nuos-build-state-always-current/open-questions-blocking-active-or-next-work",
-      "build/STATE.md#nuos-build-state-always-current/recent-decisions",
-      "build/STATE.md#nuos-build-state-always-current/risks-currently-being-watched",
-      "build/STATE.md#nuos-build-state-always-current/health-check",
-      "build/STATE.md#nuos-build-state-always-current/how-to-use-this-file",
-      "build/STATE.md#nuos-build-state-always-current/architectural-commitment-the-catalogue-dogfoods-nuos",
-      "build/STATE.md#nuos-build-state-always-current/open-questions-blocking-active-or-next-work",
-      "build/STATE.md#nuos-build-state-always-current/recent-decisions",
-      "build/STATE.md#nuos-build-state-always-current/risks-currently-being-watched",
-      "build/STATE.md#nuos-build-state-always-current/health-check",
-      "build/STATE.md#nuos-build-state-always-current/how-to-use-this-file",
-      "build/STATE.md#nuos-build-state-always-current/architectural-commitment-the-catalogue-dogfoods-nuos"
     ]
   },
   "build/work-units/029-nuflow-pack-authoring-guide.md": {
@@ -1521,19 +1381,6 @@
       "build/work-units/109-pilot-readiness-signoff.md#wu-109-pilot-readiness-sign-off/related"
     ]
   },
-  "build/work-units/111-work-units-as-nuflow-instances.md": {
-    "sha": "9dd01e4cc4cc82d899d911b401872349b67bd4d39679e412c7fa3bb568d23d13",
-    "chunkIds": [
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/objective",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/nuflow-pack-nuos-build-catalogue",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/state-stored-in-nuflow-workflow-records",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/cli-surface",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/markdown-generation",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/acceptance-criteria",
-      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/related"
-    ]
-  },
   "build/work-units/112-end-of-session-as-nuflow-workflow.md": {
     "sha": "c7d8c5cafcdbb74ad72e2f5c8e19f7f30a9a68f3b3ade84db8c2016faf5dabcb",
     "chunkIds": [
@@ -1756,22 +1603,6 @@
       "build/work-units/127-audit-trail-external-verification.md#wu-127-audit-trail-external-verification/related"
     ]
   },
-  "build/work-units/128-nuos-led-build-enforcement-infrastructure.md": {
-    "sha": "cf041a94f7186e4192be0ea7ad64b05221d2a20f17d9323c6d79fa2f19919a74",
-    "chunkIds": [
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/objective",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/layer-1-pre-commit-hooks-the-unmissable-gate",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/layer-2-claude-code-hooks-immediate-feedback",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/layer-3-file-level-sentinels",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/layer-4-claude-md-policy-additions",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/verification-of-the-enforcement",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/what-gets-built/failure-mode-handling",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/acceptance-criteria",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/why-this-wu-is-non-negotiable",
-      "build/work-units/128-nuos-led-build-enforcement-infrastructure.md#wu-128-nuos-led-build-enforcement-infrastructure/related"
-    ]
-  },
   "build/work-units/129-overnight-consolidation-on-build-catalogue.md": {
     "sha": "2cf0800c7cfa20df7ef8e94843d88342a2c3ea2c9b7171966d2be7c369996a5d",
     "chunkIds": [
@@ -1784,83 +1615,6 @@
       "build/work-units/129-overnight-consolidation-on-build-catalogue.md#wu-129-overnight-consolidation-on-the-build-catalogue-self-l/acceptance-criteria",
       "build/work-units/129-overnight-consolidation-on-build-catalogue.md#wu-129-overnight-consolidation-on-the-build-catalogue-self-l/why-this-matters-beyond-the-build",
       "build/work-units/129-overnight-consolidation-on-build-catalogue.md#wu-129-overnight-consolidation-on-the-build-catalogue-self-l/related"
-    ]
-  },
-  "build/work-units/130-nuos-meta-package.md": {
-    "sha": "002b37ebb400fceac73ead5acbdd71f691caab5dd70fecf85f39c4f1fc3ee74c",
-    "chunkIds": [
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/objective",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/package-scaffolding",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/createnuos-factory",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/pre-wired-integration",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/cross-module-integration-helpers",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/conformance-suite",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/integration-tests",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/documentation",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/what-gets-built/publish",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/acceptance-criteria",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/out-of-scope",
-      "build/work-units/130-nuos-meta-package.md#wu-130-nusoft-nuos-integration-package/related"
-    ]
-  },
-  "build/work-units/131-cross-package-coordination-cleanups.md": {
-    "sha": "801e995136677ed1be1e372d737497d954887ddd310bc84b10be18e9485b9808",
-    "chunkIds": [
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/objective",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/items/1-nuflow-s-nuvector-dependency-uses-an-exact-pin-instead-of-",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/items/2-nuvector-s-searchknowledge-returns-layer-1-records-only-th",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/acceptance-criteria",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/out-of-scope",
-      "build/work-units/131-cross-package-coordination-cleanups.md#wu-131-cross-package-coordination-cleanups-before-nusoft-nuo/related"
-    ]
-  },
-  "contracts/method-harness.md": {
-    "sha": "6e2d84463fc27f8a99e94ce0cf36ca1d2852f04f8208ed1a105f1254bb589a48",
-    "chunkIds": [
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/what-this-contract-covers",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/the-four-catalogue-surfaces-and-their-nuos-counterparts",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuvector-the-catalogue-s-memory",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuflow-the-catalogue-s-workflow",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuwiki-the-catalogue-s-compiled-understanding",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/the-deidentifier-confidentiality-flow-across-the-catalogue",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/the-methodfile-json-schema",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-1-stable-handles-only-across-catalogues",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-2-foundation-decisions-propagate-never-override",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-3-phase-boundary-re-validation",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/phase-boundary-rituals",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/adoption-what-a-project-does-to-run-on-this-contract",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/what-this-contract-does-not-cover",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/why-this-is-a-contract-not-a-guideline",
-      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/pointers"
-    ]
-  },
-  "contracts/mis-module.md": {
-    "sha": "9054aaad35f8ea9a58450923cecfe307aa427f2d2ffed7a5d5836a002e263d09",
-    "chunkIds": [
-      "contracts/mis-module.md#mismodule-contract",
-      "contracts/mis-module.md#mismodule-contract/module-identity",
-      "contracts/mis-module.md#mismodule-contract/purpose",
-      "contracts/mis-module.md#mismodule-contract/what-mismodule-is-not",
-      "contracts/mis-module.md#mismodule-contract/public-interface",
-      "contracts/mis-module.md#mismodule-contract/public-interface/contexthints",
-      "contracts/mis-module.md#mismodule-contract/entities-at-the-interface",
-      "contracts/mis-module.md#mismodule-contract/entities-at-the-interface~1",
-      "contracts/mis-module.md#mismodule-contract/what-the-module-hides",
-      "contracts/mis-module.md#mismodule-contract/domain-coverage",
-      "contracts/mis-module.md#mismodule-contract/approval-typology",
-      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration",
-      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuvector",
-      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuflow",
-      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuwiki",
-      "contracts/mis-module.md#mismodule-contract/workflow-types",
-      "contracts/mis-module.md#mismodule-contract/institutional-configuration",
-      "contracts/mis-module.md#mismodule-contract/conversation-first-constraints",
-      "contracts/mis-module.md#mismodule-contract/contract-enforcement",
-      "contracts/mis-module.md#mismodule-contract/related"
     ]
   },
   "contracts/nuflow.md": {
@@ -2309,6 +2063,654 @@
       "philosophy/04-pii-isolation.md#pii-isolation-personal-data-never-crosses-the-model-boundary/what-this-means-for-product-positioning",
       "philosophy/04-pii-isolation.md#pii-isolation-personal-data-never-crosses-the-model-boundary/the-deployment-shape",
       "philosophy/04-pii-isolation.md#pii-isolation-personal-data-never-crosses-the-model-boundary/summary"
+    ]
+  },
+  "build/decisions/D032-narrative-polish-as-nuflow-primitive.md": {
+    "sha": "8cb7bf483c96a34eb51bfbaf7c4a267a27ee16b72dd0aaee0d4ccaa88126708b",
+    "chunkIds": [
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/context",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision~1",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/decision~2",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/rationale",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-1-polish-inside-each-pack-rejected",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-2-polish-in-the-consumer-s-upstream-agent-rejected",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-3-polish-on-commit-after-the-user-reviews-the-card-rejec",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/alternatives-considered/alt-4-polish-the-narrative-field-only-not-the-whole-capture-",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/what-this-changes",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/what-this-does-not-change",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/consequences",
+      "build/decisions/D032-narrative-polish-as-nuflow-primitive.md#d032-narrative-polish-ships-as-a-nuflow-primitive-not-a-per-/related"
+    ]
+  },
+  "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md": {
+    "sha": "9f1cb9d6b640a4c5dc4f315c5b2791033e6b30e6b589bc0ccd356e18dd05310e",
+    "chunkIds": [
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/decision",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/why/reason-1-pattern-i-says-the-foundation-must-be-consumed-by-a",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/why/reason-2-the-harness-commands-specifically-need-orchestratio",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/why-not-ship-a-v0-1-now-and-iterate",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/why-not-even-later",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/consequences",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/alternatives-considered",
+      "build/decisions/D044-nuos-build-deferred-until-real-consumer-evidence.md#d044-nusoft-nuos-build-is-built-only-after-a-real-consumer-h/related"
+    ]
+  },
+  "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md": {
+    "sha": "f8860e263d476d3fce6c7d43c2e8ba23377295d07f80c38c33b30c73750e5a3e",
+    "chunkIds": [
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/decision",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/why",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/why-caret-not-exact",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/what-this-commits-us-to",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/alternatives-considered",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/consequences",
+      "build/decisions/D045-nuos-packages-caret-ranges-never-exact-pins.md#d045-nuos-packages-express-transitive-deps-with-caret-ranges/related"
+    ]
+  },
+  "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md": {
+    "sha": "06057137168c79f228208318bf13c355e13e3d5b6e57d470a25b84a7dbaa1562",
+    "chunkIds": [
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/decision",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/why",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/alternatives-considered",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/what-this-commits-us-to",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/relationship-to-odd",
+      "build/decisions/D046-odd-planning-becomes-phase-1-of-nuos-build.md#d046-odd-planning-becomes-phase-1-of-the-nuos-build-harness/related"
+    ]
+  },
+  "build/decisions/D047-migration-json-storage-nuvector-deferred.md": {
+    "sha": "46359e184e26776c0534415c13e18e3a789f6c1a5a5208cd07c2838101ab28b4",
+    "chunkIds": [
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/context",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/decision",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/rationale",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/alternatives-considered",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/consequences",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/related",
+      "build/decisions/D047-migration-json-storage-nuvector-deferred.md#d047-migration-runner-uses-json-backed-storage-nuvector-cuto/how-to-apply"
+    ]
+  },
+  "build/decisions/D048-work-unit-sub-artefacts-directory.md": {
+    "sha": "96b1eabbc63966b408d419590ee2b8d075df23bd03a60493a4b7392a819e5661",
+    "chunkIds": [
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/context",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/decision",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/rationale",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/alternatives-considered",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/consequences",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/related",
+      "build/decisions/D048-work-unit-sub-artefacts-directory.md#d048-work-unit-sub-artefacts-live-in-docs-build-work-unit-ar/how-to-apply"
+    ]
+  },
+  "build/decisions/D049-public-repos-for-actions-cost-relief.md": {
+    "sha": "c4aa07a68219992458467874575b1af97669dead6c821b831d439e65cd9dc09f",
+    "chunkIds": [
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/context",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/decision",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/why-this-is-right",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/trade-offs-accepted",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/what-this-does-not-decide",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/consequences",
+      "build/decisions/D049-public-repos-for-actions-cost-relief.md#d049-nuos-core-repos-nuvector-nuflow-nuwiki-are-public-on-gi/references"
+    ]
+  },
+  "build/decisions/D050-local-mac-publish-flow.md": {
+    "sha": "e8784f7b3ff90fcfc93858879e85cf3d91481b5e5cf85bb22df96473147d3861",
+    "chunkIds": [
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/context",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/decision",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/why-this-is-right",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/trade-offs-accepted",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/what-this-does-not-decide",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/consequences",
+      "build/decisions/D050-local-mac-publish-flow.md#d050-cross-platform-nuvector-ships-from-the-maintainer-s-mac/references"
+    ]
+  },
+  "build/maps/04-integrating-nuos-into-sensight.md": {
+    "sha": "ef27170b0adbd9e9eee923fb121dd00910382069e3c84d83bfc2d3f0fee69ea0",
+    "chunkIds": [
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/how-to-read-this-map",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/the-five-agentic-age-patterns-this-map-enforces",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-scope-reframe-net-new-vs-migration-audit",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-continued-chat-as-only-input-principle",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/where-we-are-now-2026-05-07-mid-phase-2-scope-reframe/2026-05-07-continued-chat-as-only-input-principle~1",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-fully-integrated-means",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/critical-path",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-082-nuflow-deidentifier-structured-rehydration",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072a-sen-pack-v0-3-capture-family",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-1-schema-defense-in-depth-rls",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end~1",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-2-miswriteadapter-first-workflow-end-to-end~2",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-3-per-pupil-read-surfaces-record-tabs",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-3-per-pupil-read-surfaces-record-tabs~1",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-4-remaining-4-workflows-wired-into-chat",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-4-remaining-4-workflows-wired-into-chat~1",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-5-operational-hardening",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072b-sensight-per-student-propose-mode-wiring/phase-5-operational-hardening~1",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-072c-legacy-record-migration-obsolete",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-1-pupil-profile-documenttype-knowledgeadapter-wiring",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-2-three-more-documenttypes",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/wu-081-nuwiki-compiled-articles/phase-3-chat-retrieval-ordering-role-aware-article-rendering",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/mis-critical-path",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/what-mis-complete-means",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/mis-workstream-sensight-as-full-sen-mis-wu-083-093/conversation-first-constraints-on-all-mis-steps",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-runs-in-parallel",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/trigger-conditions-for-deferred-wus",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/what-this-map-is-not",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/how-to-use-this-map",
+      "build/maps/04-integrating-nuos-into-sensight.md#map-4-integrating-nuos-into-sensight/pointers"
+    ]
+  },
+  "build/open-questions/Q003-mobile-capture-surface.md": {
+    "sha": "a02d7ef4b3d85e34b2f79fff223b98e704e47dc812c3385aeca9414dfab5e1e9",
+    "chunkIds": [
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na",
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na/question",
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na/why-it-matters",
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na/options-under-consideration",
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na/what-evidence-would-resolve-this",
+      "build/open-questions/Q003-mobile-capture-surface.md#q003-mobile-capture-surface-pwa-teams-app-dedicated-react-na/resolution"
+    ]
+  },
+  "build/open-questions/Q004-voice-transcription-provider.md": {
+    "sha": "fd9b5a231b11e0bafa7803fa4a1ef65e75fed97ce2f43fee7472d251a8237bff",
+    "chunkIds": [
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i",
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i/question",
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i/why-it-matters",
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i/options-under-consideration",
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i/what-evidence-would-resolve-this",
+      "build/open-questions/Q004-voice-transcription-provider.md#q004-voice-transcription-provider-vertex-ai-speech-to-text-i/resolution"
+    ]
+  },
+  "build/open-questions/Q005-identity-resolution-ambiguous-names.md": {
+    "sha": "4897b921c3c08e034001c6d0c42b0000b8c09439a3fa571c97ab2a7934a15dc5",
+    "chunkIds": [
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m",
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m/question",
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m/why-it-matters",
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m/options-under-consideration",
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m/what-evidence-would-resolve-this",
+      "build/open-questions/Q005-identity-resolution-ambiguous-names.md#q005-identity-resolution-strategy-when-names-are-ambiguous-m/resolution"
+    ]
+  },
+  "build/open-questions/Q007-uk-regulatory-framework-scope.md": {
+    "sha": "788353e27a5c7eb0ef0a352f00a1ae5637e198e9fe41c7359420b6c57adce20d",
+    "chunkIds": [
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat",
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat/question",
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat/why-it-matters",
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat/options-under-consideration",
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat/what-evidence-would-resolve-this",
+      "build/open-questions/Q007-uk-regulatory-framework-scope.md#q007-uk-regulatory-framework-scope-dfe-equivalent-accreditat/resolution"
+    ]
+  },
+  "build/open-questions/Q019-resolve-072b-prefix-collision.md": {
+    "sha": "c3376701595720ae394c6ac75a64c24fb3c38f0df9021c842fe96578e0d3566d",
+    "chunkIds": [
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/the-question",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/why-it-matters",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/options-under-consideration",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/what-evidence-would-resolve-this",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/lean",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/resolution-path",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/what-actually-happened",
+      "build/open-questions/Q019-resolve-072b-prefix-collision.md#q019-resolve-the-three-072b-prefix-wus-in-work-units-done/related"
+    ]
+  },
+  "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md": {
+    "sha": "e6a4e5180b071567ed2bbf50ccf9cb9537e7af89b4ad60061bef89e8002f9524",
+    "chunkIds": [
+      "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md#q020-bus-factor-of-the-maintainer-mac-publish-flow",
+      "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md#q020-bus-factor-of-the-maintainer-mac-publish-flow/the-question",
+      "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md#q020-bus-factor-of-the-maintainer-mac-publish-flow/possible-resolutions-to-evaluate-when-this-becomes-pressing",
+      "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md#q020-bus-factor-of-the-maintainer-mac-publish-flow/triggers-for-revisiting",
+      "build/open-questions/Q020-maintainer-mac-publish-bus-factor.md#q020-bus-factor-of-the-maintainer-mac-publish-flow/pointers"
+    ]
+  },
+  "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md": {
+    "sha": "3d44a2b02e46150ed1e616d863b75a0227f0a7dd4b7a45bf5781f996a28dfd8f",
+    "chunkIds": [
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/what-this-session-was",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/what-was-decided-d046-in-summary",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/what-was-built-concrete-artefacts",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/the-mesh-made-explicit",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/why-this-is-durable",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/what-s-deliberately-not-in-this-session",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/decisions-surfaced-this-session",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/open-questions-surfaced-this-session",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/active-wu-at-end-of-session",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/closing-addendum-end-of-session-protocol",
+      "build/sessions/2026-05-09-d046-and-wu-134-odd-planning-as-phase-1.md#session-68-d046-wu-134-odd-planning-becomes-phase-1-of-the-n/pointers"
+    ]
+  },
+  "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md": {
+    "sha": "4a2079b662965130bb165e7e81f8f97e2b459064590fb31395405a1547b28440",
+    "chunkIds": [
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/summary",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-was-done/track-1-the-package-corrections-the-package-working-end-to-e",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-was-done/track-2-the-chunker-noise-fix",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-was-done/track-3-the-book-replan",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-was-done/track-4-the-publish-wave",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-was-done/track-5-catalogue-closeout",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/decisions-made",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/risks-identified",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/documents-created-or-edited",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/what-s-next",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/notes-for-future-sessions",
+      "build/sessions/2026-05-09-v0.1.0-publish-wave-and-book-deliverables.md#session-65-v0-1-0-publish-wave-book-deliverables/state-at-session-end"
+    ]
+  },
+  "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md": {
+    "sha": "7e0a9d2ff6ca775d62073a4cff3b2f65958754f4c6343e2198aef0eaa8139dc3",
+    "chunkIds": [
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/summary",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/what-was-done/wu-128-light-touch-enforcement-thread-1",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/what-was-done/sequencing-correction-thread-2",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/what-was-done/sequencing-correction-thread-2~1",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/what-was-done/catalogue-close-out-thread-3",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/decisions-made",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/risks-identified",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/documents-created-or-edited",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/what-s-next",
+      "build/sessions/2026-05-09-wu-128-light-touch-and-sequencing-correction.md#session-66-wu-128-light-touch-enforcement-sequencing-correct/notes-for-future-sessions"
+    ]
+  },
+  "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md": {
+    "sha": "8dd9d998548fa45dcdf4ded812eb75859c7ec057279550f4686e92532f8ec3cb",
+    "chunkIds": [
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/summary",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/wu-133-trifecta-test-refactor-thread-1",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/nuos-package-conformance-test-thread-1-continued",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/nuwiki-caret-fix-thread-2",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/meta-package-fixtures-rewrite-thread-2-continued",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/llm-intersection-type-concern-thread-2-continued",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/nusoft-nuos-0-1-1-shipped-thread-2-conclusion",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/d045-filed-thread-3",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-was-done/catalogue-close-out-thread-3-continued",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/decisions-made",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/risks-identified",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/documents-created-or-edited",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/what-s-next",
+      "build/sessions/2026-05-09-wu-133-trifecta-integration-and-d045.md#session-67-wu-133-trifecta-integration-close-out-d045-caret-/notes-for-future-sessions"
+    ]
+  },
+  "build/sessions/2026-05-10-wu-111-phases-a-through-h.md": {
+    "sha": "162115a5e1a23296a25bb146272804b5556639809207d4e05d816a03f2d5631e",
+    "chunkIds": [
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/what-this-session-was",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/phase-by-phase-commits",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/architectural-decisions/pattern-n-decision-schema-first-capture-for-work-unit-create",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/architectural-decisions/approval-routing-divergence-between-create-and-advance-statu",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/architectural-decisions/composable-not-chained-for-open-question-resolve-phase-e",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/architectural-decisions/d047-migration-runner-uses-json-backed-storage-nuvector-cuto",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/architectural-decisions/q019-three-wus-share-072b-prefix-surfaced-by-phase-g-h-live-",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/concrete-artefacts-created-or-edited",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/live-validation-against-the-real-catalogue",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/what-s-deliberately-not-in-this-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/sibling-repo-count-update",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/method-discipline-observations-from-this-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/decisions-surfaced-this-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/open-questions-surfaced-this-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/risks-surfaced-this-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/active-wu-at-end-of-session",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/next-concrete-action",
+      "build/sessions/2026-05-10-wu-111-phases-a-through-h.md#session-69-wu-111-phases-a-h-landed-across-two-repos/pointers"
+    ]
+  },
+  "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md": {
+    "sha": "70d1adcc1b210515c61599e98bcfe8ddeb6ac843843fb93baeac4f938ec75521",
+    "chunkIds": [
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/what-this-session-was",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/phase-by-phase-commits",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/architectural-decisions/d047-was-filed-in-session-69-recap-for-the-arc",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/architectural-decisions/d048-work-unit-sub-artefacts-directory-filed-session-70",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/architectural-decisions/pattern-n-applied-at-three-points-this-session-per-d031-deci",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/what-was-learned",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/concrete-artefacts",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/concrete-artefacts~1",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/what-s-deliberately-not-in-this-session",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/decisions-surfaced-this-session",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/open-questions-surfaced-this-session",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/active-wu-at-end-of-session",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/next-concrete-action",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/auditor-s-question-test",
+      "build/sessions/2026-05-10b-wu-111-completion-arc-q019-to-phase-j.md#session-70-wu-111-completion-arc-q019-phase-j-ship-readiness/pointers"
+    ]
+  },
+  "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md": {
+    "sha": "6549d4f0a7722d5c5ee7e87772d4211aa5149a1bf4b6d878777351f5bfe4dd85",
+    "chunkIds": [
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/one-line-summary",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-was-attempted-by-intent",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-happened",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-happened~1",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-worked",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-did-not-work-and-why",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/decisions-filed",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/open-questions-raised",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/risks-raised",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/commits-across-repos",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/npm-registry-state-at-session-end",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/what-s-next",
+      "build/sessions/2026-05-11-cross-platform-publish-sensight-adoption.md#session-71-2026-05-11-cross-platform-nuvector-node-ship-sens/state-of-the-build-at-session-end"
+    ]
+  },
+  "build/STATE.md": {
+    "sha": "27550f2e4280e322b3527a346ecd868e7e535aba7128a0cf0113ec90067e9361",
+    "chunkIds": [
+      "build/STATE.md#nuos-build-state-always-current",
+      "build/STATE.md#nuos-build-state-always-current~1",
+      "build/STATE.md#nuos-build-state-always-current~2",
+      "build/STATE.md#nuos-build-state-always-current~3",
+      "build/STATE.md#nuos-build-state-always-current/what-was-just-done",
+      "build/STATE.md#nuos-build-state-always-current/what-was-just-done~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously~2",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously~2",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next/critical-path-toward-sensight-integration",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next/parallel-productisation-of-the-build-method",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next/immediate-next-moves",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next/deferred-known-limitations",
+      "build/STATE.md#nuos-build-state-always-current/phase-4-final-state-preserved-from-session-52",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously~1",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/previously",
+      "build/STATE.md#nuos-build-state-always-current/phase-4-findings-register-for-wu-062-to-address-strictly",
+      "build/STATE.md#nuos-build-state-always-current/phase-4-findings-register-for-wu-062-to-address-strictly/resolved",
+      "build/STATE.md#nuos-build-state-always-current/strategic-commitment-the-build-method-itself",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next~1",
+      "build/STATE.md#nuos-build-state-always-current/what-is-next~2",
+      "build/STATE.md#nuos-build-state-always-current/open-questions-blocking-active-or-next-work",
+      "build/STATE.md#nuos-build-state-always-current/recent-decisions",
+      "build/STATE.md#nuos-build-state-always-current/risks-currently-being-watched",
+      "build/STATE.md#nuos-build-state-always-current/health-check",
+      "build/STATE.md#nuos-build-state-always-current/how-to-use-this-file",
+      "build/STATE.md#nuos-build-state-always-current/architectural-commitment-the-catalogue-dogfoods-nuos",
+      "build/STATE.md#nuos-build-state-always-current/open-questions-blocking-active-or-next-work",
+      "build/STATE.md#nuos-build-state-always-current/recent-decisions",
+      "build/STATE.md#nuos-build-state-always-current/risks-currently-being-watched",
+      "build/STATE.md#nuos-build-state-always-current/health-check",
+      "build/STATE.md#nuos-build-state-always-current/how-to-use-this-file",
+      "build/STATE.md#nuos-build-state-always-current/architectural-commitment-the-catalogue-dogfoods-nuos"
+    ]
+  },
+  "build/work-unit-artefacts/072b/phase-2-step-6-design.md": {
+    "sha": "b0ecf58ca861455f10e262e45669c964339c348a6c6b032b2f73ad4fabbe5e51",
+    "chunkIds": [
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/what-this-step-delivers",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/what-s-in-scope-vs-what-s-deferred",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/three-chat-integration-shapes-considered",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/three-chat-integration-shapes-considered/shape-separate-log-panel-tab-in-the-chat-ui",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/three-chat-integration-shapes-considered/shape-inline-classification-inline-confirmation-chosen",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/three-chat-integration-shapes-considered/shape-slash-command-syntax-log-tyler-had-a-meltdown",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/api-integration-shape/chat-orchestrator-entry",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/api-integration-shape/classifier-prompt-sketch",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/api-integration-shape/workflow-state-between-classifier-and-user-confirmation",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/api-integration-shape/confirmation-card-response-shape",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/sub-steps-6a-6d/6a-mode-classifier-behind-a-feature-flag-decision-only",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/sub-steps-6a-6d/6b-workflowconfirmationcard-standalone-component",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/sub-steps-6a-6d/6c-wire-propose-action-path-end-to-end",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/sub-steps-6a-6d/6d-voice-input-path-scope-decision",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/error-handling",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/feature-flag-rollout-strategy",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/test-plan/unit-tests-jest-runs-from-sensight-monorepo-root",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/test-plan/integration-test",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/test-plan/manual-test-on-real-data",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/known-limitations-phase-3-follow-ups",
+      "build/work-unit-artefacts/072b/phase-2-step-6-design.md#wu-072b-phase-2-step-6-design-note-chat-driven-v2/implementation-order-checklist"
+    ]
+  },
+  "build/work-unit-artefacts/072b/production-wiring-spec.md": {
+    "sha": "d9829af2195224adf1a3d0d4758064391249bd8de11ee2f0f9b38b15c80bd1bb",
+    "chunkIds": [
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/why-this-spec-exists",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/scope",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/decision-new-tables-not-retrofit-of-existing-sensight-tables",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/decision-new-tables-not-retrofit-of-existing-sensight-tables~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/cross-table-conventions-apply-to-all-5-capture-tables",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/pupil-event-logs",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/pupil-observations",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/intervention-updates",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/intervention-updates~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/parent-interactions",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/schema-design/pupil-session-notes",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/rbac-and-confidentiality-routing",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/rbac-and-confidentiality-routing~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/audit-composition/1-sensight-auditlog-chain-hashed-operational",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/audit-composition/2-nuvector-provenancerecord-workflow-provenance-future-nuwik",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/audit-composition/reconciliation",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/retention-policy",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/nuwiki-forward-compat-wu-081",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/option-a-atomic-everything",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/option-b-transactional-core-best-effort-nuvector-chosen-for-",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/option-c-outbox-pattern-chosen-for-phase-5-follow-up",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/risk-mitigation-while-option-b-is-the-live-shape",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/pattern-n-actor-identity-propagation-recorded-2026-05-07",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/pattern-n-actor-identity-propagation-recorded-2026-05-07~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/design-notes-phase-2-miswriteadapter-shape-pattern-n-evaluat/risk-mitigation-while-asynclocalstorage-is-the-live-mechanis",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/miswriteadapter-implementation",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/miswriteadapter-implementation~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/miswriteadapter-implementation/confidentiality-resolution-and-consumer-overrides-per-d029",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/miswriteadapter-implementation/confidentiality-resolution-and-consumer-overrides-per-d029~1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/approval-state-machine",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/sensight-ui-integration/confirmation-view-in-chat-surface-c-propose-action-mode",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/sensight-ui-integration/approvals-queue",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/sensight-ui-integration/per-student-structured-record-surface",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/surface-c-chat-mode-classifier",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/migration-and-rollout-plan/phase-1-schema-week-1",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/migration-and-rollout-plan/phase-2-adapter-first-workflow-week-1-2",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/migration-and-rollout-plan/phase-3-confirmation-view-ui-week-2",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/migration-and-rollout-plan/phase-4-chat-mode-classifier-surface-c-week-3",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/migration-and-rollout-plan/phase-5-observability-polish-week-3-4",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/acceptance-criteria",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-1-intervention-model-who-creates-them",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-2-per-institution-retention-overrides-ui-now-or-later",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-3-statutory-retention-boundaries-25-years-post-18-require-",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-4-approval-timeouts-escalate-to-whom",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-5-confirmation-view-editing-scope-what-fields-should-be-ed",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-6-mode-classifier-feature-flag-rollout-per-institution-or-",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/open-questions/q-7-wonde-sync-interaction",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/pointers",
+      "build/work-unit-artefacts/072b/production-wiring-spec.md#wu-072b-production-wiring-specification-capture-records-sche/notes-log"
+    ]
+  },
+  "build/work-unit-artefacts/072b/README.md": {
+    "sha": "7fa0abfc14e6250d70185d20a3ed30f30499aa2410acef08e5fce6fe43a59dcc",
+    "chunkIds": [
+      "build/work-unit-artefacts/072b/README.md#sub-artefacts-of-wu-072b",
+      "build/work-unit-artefacts/072b/README.md#sub-artefacts-of-wu-072b/files-in-this-directory",
+      "build/work-unit-artefacts/072b/README.md#sub-artefacts-of-wu-072b/why-these-aren-t-separate-wus"
+    ]
+  },
+  "build/work-unit-artefacts/README.md": {
+    "sha": "7372d7640c3bfe55724d20c4db409bca719fff860f883e5b6057b943116d181f",
+    "chunkIds": [
+      "build/work-unit-artefacts/README.md#work-unit-artefacts",
+      "build/work-unit-artefacts/README.md#work-unit-artefacts/purpose",
+      "build/work-unit-artefacts/README.md#work-unit-artefacts/pattern",
+      "build/work-unit-artefacts/README.md#work-unit-artefacts/why-this-directory-and-not-work-units-done",
+      "build/work-unit-artefacts/README.md#work-unit-artefacts/decision"
+    ]
+  },
+  "build/work-units/111-work-units-as-nuflow-instances.md": {
+    "sha": "a719adff1b20c3014b63e6a34aa23ebe2f20dc91e45cec920d558e2abe213d99",
+    "chunkIds": [
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/outcome",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/contracts-produced",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/contracts-consumed",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/decision-implemented",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/forward-compatibility-commitments",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/nuflow-pack-nuos-build-catalogue-the-workflow-pack",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/what-gets-built/nuos-build-catalogue-the-cli-extended-in-place",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/day-by-day-plan",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/day-by-day-plan~1",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/helper-sketch",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/migration-strategy",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/acceptance-criteria-verification",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/acceptance-criteria-verification~1",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/related",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos~1",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos~2",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos~3",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos~4",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-phases-a-h-landed-across-two-repos~5",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi~1",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi~2",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi~3",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi~4",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-10-session-70-wu-111-completion-arc-q019-phase-j-shi~5",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-11-parallel-workstream-session-wu-111-unmoved-but-th",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-11-parallel-workstream-session-wu-111-unmoved-but-th~1",
+      "build/work-units/111-work-units-as-nuflow-instances.md#wu-111-work-units-as-nuflow-workflow-instances/notes-log/2026-05-11-parallel-workstream-session-wu-111-unmoved-but-th~2"
+    ]
+  },
+  "build/work-units/132-nuos-build-package.md": {
+    "sha": "6bcc57eb653922ca0cc0c5c95e840ac6104fbad6bb5e14c972f61ddaba8af55f",
+    "chunkIds": [
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/trigger-condition-per-d044-decisions-d044-nuos-build-deferre",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/objective",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/why-a-third-package-and-not-extending-one-of-the-existing-tw",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/package-layout",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/cli-surface-chapter-by-chapter",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/project-init-flow",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/local-first-inference-per-the-chapter-on-agent-teammates-but",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/test-strategy",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/documentation",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/what-gets-built/publish",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/acceptance-criteria",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/out-of-scope",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/lockstep-with-the-book",
+      "build/work-units/132-nuos-build-package.md#wu-132-nusoft-nuos-build-the-runnable-companion-to-the-book/related"
+    ]
+  },
+  "contracts/method-harness.md": {
+    "sha": "ed52e426e4db4a2e6b182ce4c75aa81ec78b73d3e6aec7e61b7ead39a1e18bbb",
+    "chunkIds": [
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/what-this-contract-covers",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/the-four-catalogue-surfaces-and-their-nuos-counterparts",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuvector-the-catalogue-s-memory",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuflow-the-catalogue-s-workflow",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/nuwiki-the-catalogue-s-compiled-understanding",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/how-each-nuos-module-plugs-into-a-catalogue/the-deidentifier-confidentiality-flow-across-the-catalogue",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/the-methodfile-json-schema",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-1-stable-handles-only-across-catalogues",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-2-foundation-decisions-propagate-never-override",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/cross-project-conventions-the-meta-patterns-layer/mp-3-phase-boundary-re-validation",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/phase-boundary-rituals",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/adoption-what-a-project-does-to-run-on-this-contract",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/what-this-contract-does-not-cover",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/why-this-is-a-contract-not-a-guideline",
+      "contracts/method-harness.md#method-harness-the-contract-by-which-a-project-s-catalogue-p/pointers"
+    ]
+  },
+  "contracts/mis-module.md": {
+    "sha": "24d8a05d2b3e7a7b2e64dcc090ecd6239581842ecbac9004825e3a7f4a611c87",
+    "chunkIds": [
+      "contracts/mis-module.md#mismodule-contract",
+      "contracts/mis-module.md#mismodule-contract/module-identity",
+      "contracts/mis-module.md#mismodule-contract/purpose",
+      "contracts/mis-module.md#mismodule-contract/what-mismodule-is-not",
+      "contracts/mis-module.md#mismodule-contract/public-interface",
+      "contracts/mis-module.md#mismodule-contract/public-interface/contexthints",
+      "contracts/mis-module.md#mismodule-contract/entities-at-the-interface",
+      "contracts/mis-module.md#mismodule-contract/entities-at-the-interface~1",
+      "contracts/mis-module.md#mismodule-contract/what-the-module-hides",
+      "contracts/mis-module.md#mismodule-contract/domain-coverage",
+      "contracts/mis-module.md#mismodule-contract/approval-typology",
+      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration",
+      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuvector",
+      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuflow",
+      "contracts/mis-module.md#mismodule-contract/nuos-primitive-integration/nuwiki",
+      "contracts/mis-module.md#mismodule-contract/workflow-types",
+      "contracts/mis-module.md#mismodule-contract/institutional-configuration",
+      "contracts/mis-module.md#mismodule-contract/conversation-first-constraints",
+      "contracts/mis-module.md#mismodule-contract/contract-enforcement",
+      "contracts/mis-module.md#mismodule-contract/related"
     ]
   }
 }

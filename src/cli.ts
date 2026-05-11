@@ -424,7 +424,7 @@ function cmdHelp(): void {
   console.log(`nuos-catalogue — NuOS build-catalogue tooling (WU 110, WU 111)
 
 Usage:
-  nuos-catalogue init     [--name=X --tagline="Y" --domain=Z --role=consumer --yes]
+  nuos-catalogue init     [--name=X --tagline="Y" --role=consumer --interactive]
                           (interactive bootstrap of docs/build/, methodfile.json, .claude/commands/<protocols>, CLAUDE.md, .gitignore overrides; refuses if docs/build/ already exists)
   nuos-catalogue install-protocols
                           (refresh .claude/commands/<protocols> from this CLI's bundled canonical bodies)
@@ -497,7 +497,7 @@ async function main(): Promise<void> {
           tagline: args.flags['tagline'] ? String(args.flags['tagline']) : undefined,
           domain: args.flags['domain'] ? String(args.flags['domain']) : undefined,
           role: args.flags['role'] ? String(args.flags['role']) : undefined,
-          nonInteractive: Boolean(args.flags['yes']),
+          interactive: Boolean(args.flags['interactive']),
         });
         if (result.output) console.log(result.output);
         process.exit(result.exitCode);
