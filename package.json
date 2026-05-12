@@ -1,6 +1,6 @@
 {
   "name": "@nusoft/nuos-build-catalogue",
-  "version": "0.17.0",
+  "version": "0.17.1",
   "description": "NuOS build-catalogue tooling: semantic search (WU 110) + migration runner that lifts markdown artefacts into JSON-backed workflow records (WU 111, Phase G).",
   "type": "module",
   "bin": {
@@ -13,7 +13,7 @@
     "README.md"
   ],
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
   "scripts": {
     "build": "rm -rf dist && tsc && chmod +x dist/cli.js",
