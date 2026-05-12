@@ -1,5 +1,117 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.17.1 — 2026-05-12 — publishConfig access fix
+
+Flipped `publishConfig.access` to `"public"` so `npm publish` correctly publishes to the public registry. No code changes; package behaviour is identical to 0.17.0.
+
+## 0.17.0 — 2026-05-12 — Swarm CLI commands + verification gates
+
+Closes the swarm feature loop. 0.15.0 added agents; 0.16.0 added the coordinator and audit register; this release adds CLI introspection and safety gates.
+
+### New CLI commands
+
+`nuos-catalogue swarm status [--limit=N]` lists recent `/build-wu` runs in reverse chronological order, reading audit files from `docs/build/swarm/`. Shows date, work unit handle, and outcome (APPROVED / REQUEST CHANGES / ESCALATED). Default limit 10.
+
+`nuos-catalogue swarm cost` aggregates estimated cost lines from each audit file. Honest framing: these are best-effort estimates; real spend lives on the Anthropic billing dashboard. The CLI's value is showing per-WU cost trajectory at a glance. Both commands use lenient parsers — a mid-write or hand-edited swarm file surfaces what it can rather than failing.
+
+### Verification gates in the coordinator
+
+Six gates baked into `templates/protocols/build-wu.md`:
+
+- **Retry cap** — after 3 reviewer REQUEST CHANGES loops, stop and escalate. The spec or design needs clarifying, not a fourth code pass.
+- **Cost ceiling** — when a single WU's swarm cost crosses £10, surface to operator before continuing. Soft ceiling; operator can authorise more.
+- **Agent time ceiling** — if an agent runs substantially over budget (architect >1 hr, coder >2 hrs, etc.), surface duration before continuing.
+- **Architectural drift detection** — if coder or tester surfaces a design choice not in the architect's brief, stop and route to architect first. This is the load-bearing gate: preventing coders from making design calls inline is the swarm pattern's whole value.
+- **Midpoint coherence check** — after coder finishes, before tester spawns, verify the coder's output is visibly consistent with the architect's brief. Catch drift before more tokens get spent.
+- **Gate trigger recording** — every gate trigger gets logged in the swarm audit entry, even when the swarm continues.
+
+Tests: 144/145 (one pre-existing AC-parse real-fixture failure unrelated). `tests/swarm.test.ts` adds 5 new tests covering both subcommands.
+
+## 0.16.0 — 2026-05-12 — `/build-wu` coordinator protocol + swarm register
+
+Wires up the swarm pattern end-to-end. The six agent definitions shipped in 0.15.0; this release adds the coordinator that orchestrates them against a work unit, and the audit trail for each swarm run.
+
+### `/build-wu` coordinator protocol (`templates/protocols/build-wu.md`)
+
+The coordinator reads a work unit by handle; classifies it (design-only / implementation / full-feature / bug-fix / research-first); decomposes; spawns the appropriate agents in the right order via Claude Code's Task tool; aggregates results; files the swarm audit entry; updates the work unit and STATE; reports back to the operator in plain English.
+
+Spawning semantics: parallel where agents can work independently (e.g. tester writing tests while reviewer reads the design); sequential when an agent's output is the next agent's input (architect → coder). Each spawn receives the work unit handle, the relevant files to read, its specific deliverable, and what it hands off.
+
+### Swarm register (`docs/build/swarm/`)
+
+A new first-class register for swarm run audit entries. Every `/build-wu` invocation files `YYYY-MM-DD-wu-<handle>.md` capturing: classification, decomposition chosen, each agent spawned (role + model + input summary + output summary + time), final outcome, decisions/questions/risks that surfaced, estimated cost. The register is sortable and searchable so the operator can review cost over time and spot escalation patterns.
+
+`init` and `install-protocols` extended to fan `build-wu.md` out to `.claude/commands/`, `.opencode/commands/`, and `.agents/skills/build-wu/SKILL.md`. `methodfile.json` registers list includes `"swarm": "swarm/"` so the migration runner and summary recognise the new register.
+
+Tests: 139/140 (one pre-existing AC-parse real-fixture failure unrelated). Assertions added for build-wu fan-out and swarm register presence after init.
+
+## 0.15.0 — 2026-05-12 — Swarm agent definitions
+
+Adds six specialised AI agent definitions to the harness. `init` installs them automatically into `.claude/agents/`; `install-protocols` refreshes them alongside the protocol bodies. Each agent has Claude Code-compatible frontmatter (name, description, model, tools).
+
+| Agent | Model | Role |
+|---|---|---|
+| architect | opus | Design, contracts, module boundaries |
+| debugger | opus | Trace failures when work breaks |
+| coder | sonnet | Implementation — the 80% of build work |
+| tester | sonnet | Tests against acceptance criteria |
+| reviewer | sonnet | Review against spec and design system |
+| researcher | haiku | Online lookups, doc reading, summaries |
+
+Opus handles reasoning-heavy work (design choices, debugging). Sonnet covers the coding/test/review 80%. Haiku handles fast lookup work where recall and scan matter more than deep reasoning. On a real build the 80/20 Sonnet/Opus split translates to roughly 30% lower spend vs running everything through Opus.
+
+Model routing defaults live in `methodfile.json` under `swarm.models`. Each entry is overridable per-spawn by passing `model: '...'` to the Task tool.
+
+`GLOSSARY.md` gains Swarm and Tier entries. `WELCOME.md` gains a "How the implementation work itself runs" section.
+
+Tests: 139/140. `init.test.ts` asserts agent presence, correct model frontmatter per role, and methodfile swarm block.
+
+## 0.14.2 — 2026-05-12 — Crawler includes whole docs tree
+
+The search crawler previously hardcoded a four-subdir allowlist (`build/`, `contracts/`, `philosophy/`, `guides/`) and silently skipped everything else under `docs/`. On the nuos catalogue this meant 10 top-level docs files and 4 subdirs — including strategically important files like `THE-NUOS-BUILD-METHOD.md`, `MVP-NEXT-STEPS.md`, and `PHASE-4-SIGNOFF.md` — were invisible to `nuos-catalogue search`.
+
+New behaviour: recursive crawl of the whole `docs/` tree from the catalogue root, using the same skip rules as before for archived dirs and tooling dirs, plus two new skip rules:
+- `*-template.md` files (added in 0.14.0; these are scaffolding, not content)
+- Slash-command directories (`.opencode/`, `.claude/`, `.agents/`) which contain derived protocol copies, not source content
+
+Verified on nuos's own catalogue: 162 files / 1936 chunks before → 176 files / 2223 chunks after.
+
+## 0.14.1 — 2026-05-12 — Init is zero-prompt by default
+
+The 0.14.0 init flow asked four pre-install questions and printed a 20-line closing message. Both were the wrong shape for the target audience — a non-developer types `npx ... init` expecting the package to install and tell them one thing to do next.
+
+Init is now zero-prompt by default. Defaults fill in everything (name from directory basename; tagline and domain empty; role `"consumer"`). Users who want the prompted flow pass `--interactive`. The `--yes` flag is removed (no longer needed).
+
+Closing output is three lines: `✅ Done.` followed by a single instruction to run `/start-of-session` in Claude Code. The 5-phase content is in `WELCOME.md` for when the user wants it.
+
+## 0.14.0 — 2026-05-12 — Outcomes-driven AI-guided planning
+
+Reshapes the first-run experience to mirror the outcomes-driven approach used in odd-flow. A domain expert who is not a software engineer previously encountered a catalogue full of undefined method terms with no scaffolding for the act of planning a project. This release wires up a 5-phase planning arc — each phase its own session, each producing real catalogue artefacts — until the catalogue has the substrate that makes everything downstream coherent.
+
+The five phases:
+
+| Phase | What it produces |
+|---|---|
+| A — Orientation | Project description, personas, the horizon |
+| B — Architecture & Contracts | Major pieces and what they exchange |
+| C — UI/UX + Design System | Every surface, plus shared design language |
+| D — Maps | Phases of work and near-term plan |
+| E — Initial Work Units | First 5–10 things to build, dependency-ordered |
+
+Phase A ships end-to-end in this release (`plan-orientation.md` protocol). Phases B–E ship in 0.15.0–0.17.0; each register and protocol is already scaffolded so the structure is stable.
+
+### New content
+
+Five first-class registers inside `docs/build/`: `maps/`, `architecture/`, `contracts/`, `ui-ux/`, `design-system/` (with token files for colour, typography, spacing, motion, radius/elevation, plus `components/`, `patterns/`, `voice`, `accessibility`). `WELCOME.md` gives a 5-minute plain-English orientation; `GLOSSARY.md` defines every term once.
+
+### New protocol and CLI command
+
+`templates/protocols/plan-orientation.md` is a Phase A conversational script the AI follows when the operator types `/plan-orientation`. `src/commands/plan.ts` adds `nuos-catalogue plan status` which prints the current planning phase and whether each phase is complete. `methodfile.json` gains a `planning` block tracking each phase's state.
+
+### Templates and plain-English rewrites
+
+Two work unit templates: `001-template-simple.md` (4-field shape for everyday work) and `001-template-full.md` (the prior 13-field shape, opt-in via `--full`). All six existing register `_index.md` files, `STATE.md`, and all four protocol bodies rewritten in plain English with jargon defined on first use.
+
 ## 0.13.0 — 2026-05-11 — WU 111 soak findings + bundled git hooks
 
 The 0.12.0 → 0.13.0 release closes four real-use issues surfaced when running the CLI against the live nuos catalogue via `npx` (WU 111 Day-1 soak) plus extends `init` to bundle the project's git hooks. 135/135 tests pass.
