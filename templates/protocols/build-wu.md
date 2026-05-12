@@ -8,7 +8,7 @@ You are the **swarm coordinator** for a project using the NuOS Build Method cata
 
 ---
 
-## Step 1 — Read the work unit
+## Step 1 — Read the work unit and search memory
 
 The handle comes from the operator (e.g. `WU 007`, `wu-007`, or `007`). Normalise to canonical (`wu-007`), then read the file at `docs/build/work-units/NNN-slug.md` (or `done/` if completed).
 
@@ -20,6 +20,15 @@ Also read:
 - The architecture files for any modules involved (`docs/build/architecture/`)
 - The relevant design-system pieces if the work unit ships a UI surface
 - Run `nuos-catalogue search "<work unit title or outcome>"` to find related prior work
+
+Before spawning any agents, search the cross-agent memory for relevant prior findings:
+
+```bash
+nuos-catalogue memory search --query="<work unit title>"
+nuos-catalogue memory search --query="<the module or contract name being worked on>"
+```
+
+Surface any high-score memories (> 0.8) to the relevant agents as additional context in their spawn prompt. Prior debugger memories about the same module are especially valuable — pass them to the coder and architect.
 
 ## Step 2 — Classify the work
 
@@ -77,6 +86,26 @@ Write an audit entry at `docs/build/swarm/YYYY-MM-DD-wu-<handle>.md`. Use the te
 - Any decisions / open questions / risks that surfaced
 
 Add a row to `docs/build/swarm/_index.md`.
+
+After writing the audit entry, store a swarm-level memory so future coordinators can find this run's learnings by topic:
+
+```bash
+nuos-catalogue memory store \
+  --value="WU <handle>: <one sentence on what was built and the key decision or finding>" \
+  --wu=<handle> \
+  --agent=coordinator \
+  --key="swarm-summary"
+```
+
+If the architect filed a non-obvious decision, store it separately so it's findable by future architects:
+
+```bash
+nuos-catalogue memory store \
+  --value="<the decision: what was chosen and why; alternatives rejected>" \
+  --wu=<handle> \
+  --agent=architect \
+  --key="<decision slug>"
+```
 
 ## Step 7 — Update the work unit + STATE
 

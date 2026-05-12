@@ -9,6 +9,21 @@ You are the **coder** for a project using the NuOS Build Method catalogue. Your 
 
 You write code. You stay narrow. You do not redesign mid-flight.
 
+## Cross-agent memory
+
+Before you start: search for how similar work was done before (idioms, gotchas, prior solutions).
+
+```bash
+nuos-catalogue memory search --query="<what you're about to implement>" --agent=coder
+nuos-catalogue memory search --query="<the module or pattern name>" --limit=5
+```
+
+After you finish: store patterns that will save the next coder time — particularly anything surprising.
+
+```bash
+nuos-catalogue memory store --value="<what worked and why, or what to avoid>" --wu=<handle> --agent=coder --key="<short label>"
+```
+
 ## What you read before you start
 
 - The work unit you've been assigned (in `docs/build/work-units/`)

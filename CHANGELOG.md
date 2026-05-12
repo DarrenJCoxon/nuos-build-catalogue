@@ -1,5 +1,43 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.18.0 — 2026-05-12 — Cross-agent memory via NuVector
+
+Closes the most significant gap between the harness and odd-flow: agents can now read from and write to a shared semantic memory store that persists across all swarm runs. A coder working on WU 031 can retrieve what the debugger learned on WU 007. A future architect can ask "how did we handle RLS before?" and get the answer without reading every session log.
+
+### Two new CLI commands
+
+`nuos-catalogue memory store --value="..." [--wu=wu-007] [--agent=architect] [--key="label"]`
+
+Embeds the value text and writes it to the NuVector store with `kind: agent_memory`, tagged with the agent role, work unit handle, and optional key label. Any agent at any future point can retrieve it by semantic query.
+
+`nuos-catalogue memory search --query="..." [--limit=N] [--wu=wu-007] [--agent=architect]`
+
+Embeds the query and retrieves semantically similar memories. Returns ranked results with score, context (agent + WU + date), and the stored text. Optional `--wu` and `--agent` flags filter results post-retrieval. Minimum score threshold 0.3; anything below that is noise.
+
+Both commands use the same NuVector store as the catalogue's search index (`.nuos-catalogue/index.nv`), distinguished by `kind: agent_memory`. No new infrastructure — if `nuos-catalogue search` works, `nuos-catalogue memory` works.
+
+### Memory wired into every agent and the coordinator
+
+All six agent definitions now include a **Cross-agent memory** section:
+- `architect` — search before designing; store key decisions and rejected alternatives
+- `coder` — search for prior implementation patterns; store anything surprising
+- `tester` — search for known flaky areas; store testability findings
+- `reviewer` — search for recurring patterns; store cross-WU review trends
+- `debugger` — search first (root causes recur most of all); store symptom → root cause → fix
+- `researcher` — search before fetching; store findings with source URLs
+
+The `build-wu` coordinator protocol gains memory instructions at two points:
+1. **Before spawning** (Step 1): search for relevant prior memories and pass high-score hits to agents as additional context in their spawn prompt
+2. **After filing the audit** (Step 6): store a coordinator-level swarm summary memory + any non-obvious architect decisions
+
+### `methodfile.json` harness wired
+
+`harness.wired` flips from `false` to `true`. `harness.runtime.nuvector` is now `".nuos-catalogue/index.nv"` — the same path the index and search commands use. Projects that bootstrapped via `init` already have this store; running `nuos-catalogue index` populates it; `memory store` and `memory search` work immediately after.
+
+### Migration from 0.17.1
+
+No breaking changes. The memory commands are additive. The agent definitions and build-wu protocol are templates — existing projects that customised them won't see the changes until they re-run `install-protocols`. `methodfile.json` changes only affect new projects bootstrapped via `init`; existing projects should update their `harness` block manually if they want the `wired: true` signal.
+
 ## 0.17.1 — 2026-05-12 — publishConfig access fix
 
 Flipped `publishConfig.access` to `"public"` so `npm publish` correctly publishes to the public registry. No code changes; package behaviour is identical to 0.17.0.

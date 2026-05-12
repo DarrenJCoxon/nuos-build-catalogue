@@ -458,6 +458,9 @@ Usage:
   nuos-catalogue swarm     status    [--limit=N]  list recent /build-wu runs
   nuos-catalogue swarm     cost      aggregate cost across swarm runs
 
+  nuos-catalogue memory    store     --value="..." [--wu=wu-007] [--agent=architect] [--key="label"]
+  nuos-catalogue memory    search    --query="..." [--limit=N]   [--wu=wu-007]       [--agent=architect]
+
   nuos-catalogue help
 
 Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
@@ -563,6 +566,32 @@ async function main(): Promise<void> {
       }
       console.error(`unknown swarm subcommand: ${sub ?? '(none)'}`);
       console.error('available: swarm status [--limit=N], swarm cost');
+      process.exit(1);
+    }
+    case 'memory': {
+      const sub = args.positional[0];
+      const { cmdMemoryStore, cmdMemorySearch } = await import('./commands/memory.js');
+      if (sub === 'store') {
+        const value = args.flags['value'] ? String(args.flags['value']) : '';
+        const wu = args.flags['wu'] ? String(args.flags['wu']) : undefined;
+        const agent = args.flags['agent'] ? String(args.flags['agent']) : undefined;
+        const key = args.flags['key'] ? String(args.flags['key']) : undefined;
+        const code = await cmdMemoryStore({ value, wu, agent, key, cwd: process.cwd() });
+        if (code !== 0) process.exit(code);
+        break;
+      }
+      if (sub === 'search') {
+        const query = args.flags['query'] ? String(args.flags['query']) : '';
+        const limit = args.flags['limit'] ? Number(args.flags['limit']) : undefined;
+        const wu = args.flags['wu'] ? String(args.flags['wu']) : undefined;
+        const agent = args.flags['agent'] ? String(args.flags['agent']) : undefined;
+        const code = await cmdMemorySearch({ query, limit, wu, agent, cwd: process.cwd() });
+        if (code !== 0) process.exit(code);
+        break;
+      }
+      console.error(`unknown memory subcommand: ${sub ?? '(none)'}`);
+      console.error('available: memory store --value="..." [--wu=...] [--agent=...] [--key=...]');
+      console.error('           memory search --query="..." [--limit=N] [--wu=...] [--agent=...]');
       process.exit(1);
     }
     case 'help':
