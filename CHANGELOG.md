@@ -1,5 +1,54 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.21.0 — 2026-05-13 — Harness implementation-write gate (WU 136)
+
+Closes the protocol gap surfaced in Session 80: an agent can file a decision in the catalogue and then ship hours of substantive implementation work in a sibling repo (sensight/, nuvector/, …) before any catalogue trace gets written. The pre-commit hook only watches the catalogue repo itself; the existing Claude PreToolUse hook (WU 128) watches catalogue file writes only. So sibling-repo writes had no gate at all. This release ships one.
+
+### New CLI commands
+
+`nuos-catalogue install-hooks`
+
+Idempotently installs the Claude PreToolUse hook into `.claude/hooks/check-implementation-write.sh` of the current project, merges the matcher into `.claude/settings.json` (preserves any existing PreToolUse entries), and adds `.nuos-catalogue/active-wu` to `.gitignore`. Re-run after package upgrades; the hook script is overwritten, the settings entry is added only if missing.
+
+`nuos-catalogue wu start <handle>`
+
+Writes the handle to `.nuos-catalogue/active-wu`. The PreToolUse hook reads this marker to decide whether to allow a write outside the catalogue project root.
+
+`nuos-catalogue wu end`
+
+Removes the marker. Idempotent — succeeds silently when no marker exists.
+
+`nuos-catalogue wu current`
+
+Prints the current active WU handle, or `(none)` when no marker. Always exits 0.
+
+### The gate behaviour
+
+The shipped `check-implementation-write.sh` hook fires on every `Write` / `Edit` / `MultiEdit` / `NotebookEdit` tool call. It classifies the target file:
+
+- **Inside the catalogue project root** — always allowed. Editing the catalogue itself (work units, decisions, indexes, hooks, scripts) is the catalogue trace; no WU declaration required.
+- **Outside the catalogue project root** — requires an active WU declared via `wu start`. Without it, the call is blocked (exit code 2) with a clear stderr message naming the blocked path, the missing marker, and the two recovery commands.
+
+Touches are logged to `.nuos-enforcement.log` with the declared WU handle (or `blocked` / `bypassed`) so the audit trail names the work.
+
+### Escape hatch
+
+`NUOS_SKIP_IMPLEMENTATION_GATE=1` bypasses the block for a single call, with a strong warning emitted to stderr and a `implementation-gate-bypassed` line in the enforcement log. Intended for genuinely catalogue-orthogonal writes only; CLAUDE.md continues to prohibit bypass for substantive build work.
+
+### Dogfooding
+
+The nuos catalogue itself installs this hook (via `nuos-catalogue install-hooks` run in the catalogue repo). The break it closes was found in the catalogue's own session work; the same mechanism now guards future sessions.
+
+### Internals
+
+- `templates/claude-hooks/check-implementation-write.sh` — the hook source, shipped in the package.
+- `src/commands/wu-active.ts` — pure file operations for the marker (no workflow-store interaction; safe to invoke before the catalogue is fully migrated).
+- `src/commands/install-claude-hooks.ts` — idempotent installer with settings.json + .gitignore merge helpers.
+
+20 new tests across `tests/wu-active.test.ts` and `tests/install-claude-hooks.test.ts`.
+
+References: [WU 136](https://github.com/DarrenJCoxon/nuos/blob/main/docs/build/work-units/136-harness-implementation-write-gate.md).
+
 ## 0.18.0 — 2026-05-12 — Cross-agent memory via NuVector
 
 Closes the most significant gap between the harness and odd-flow: agents can now read from and write to a shared semantic memory store that persists across all swarm runs. A coder working on WU 031 can retrieve what the debugger learned on WU 007. A future architect can ask "how did we handle RLS before?" and get the answer without reading every session log.

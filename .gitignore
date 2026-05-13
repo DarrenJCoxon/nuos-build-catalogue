@@ -24,3 +24,4 @@ dist/
 # any machine, so the file does not need to live in git. Mode 2
 # (post-WU-113) may revisit if the JSON becomes canonical.
 .nuos-catalogue/workflows.json
+.nuos-catalogue/active-wu

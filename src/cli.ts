@@ -208,6 +208,27 @@ async function cmdRegisterDispatch(
   }
 
   const action = positional[0];
+
+  // WU 136 — `wu start` / `wu end` / `wu current` are file-only commands
+  // (manage the active-WU marker for the PreToolUse hook). They do NOT
+  // need the workflow store, so handle them BEFORE the store is opened —
+  // this also keeps them fast and avoids requiring a fully-migrated
+  // catalogue to declare an active WU.
+  if (command === 'wu' && (action === 'start' || action === 'end' || action === 'current')) {
+    const { cmdWuStart, cmdWuEnd, cmdWuCurrent } = await import('./commands/wu-active.js');
+    let result;
+    if (action === 'start') {
+      result = cmdWuStart(positional[1], { cwd: process.cwd() });
+    } else if (action === 'end') {
+      result = cmdWuEnd({ cwd: process.cwd() });
+    } else {
+      result = cmdWuCurrent({ cwd: process.cwd() });
+    }
+    console.log(result.output);
+    process.exit(result.exitCode);
+    return;
+  }
+
   const buildRoot = resolveBuildRoot(flags['build-root']);
   const workflowsPath = resolveWorkflowsPath(buildRoot, flags['workflows']);
   const store = await openWorkflowStore(workflowsPath);
@@ -424,10 +445,14 @@ function cmdHelp(): void {
   console.log(`nuos-catalogue — NuOS build-catalogue tooling (WU 110, WU 111)
 
 Usage:
-  nuos-catalogue init     [--name=X --tagline="Y" --role=consumer --interactive]
-                          (interactive bootstrap of docs/build/, methodfile.json, .claude/commands/<protocols>, CLAUDE.md, .gitignore overrides; refuses if docs/build/ already exists)
+  nuos-catalogue init     [--name=X --tagline="Y" --role=consumer --interactive] [--no-llm]
+                          (bootstrap docs/build/, methodfile.json, .claude/commands/<protocols>, CLAUDE.md, .gitignore overrides; then probe Ollama and pull qwen3-embedding:0.6b for semantic search. --no-llm skips the LLM step. Refuses if docs/build/ already exists)
+  nuos-catalogue setup-llm
+                          (run the LLM-setup phase outside 'init': detect Ollama, offer to install where reliable, pull qwen3-embedding:0.6b with a progress bar. Idempotent — safe to re-run)
   nuos-catalogue install-protocols
                           (refresh .claude/commands/<protocols> from this CLI's bundled canonical bodies)
+  nuos-catalogue install-hooks
+                          (WU 136 — install the Claude PreToolUse hook that gates sibling-repo writes on a declared active WU; idempotent)
 
   nuos-catalogue index    [--force] [--dry-run] [--catalogue=<dir>]
   nuos-catalogue search   "<query>" [--kind=<file_kind>] [--status=<s>] [--limit=N] [--json]
@@ -441,6 +466,12 @@ Usage:
   nuos-catalogue wu        advance   <handle> --to=<status> [--reason="..."]
   nuos-catalogue wu        tick      <handle> --index=N --evidence="..."
                           (--index is 1-based: --index=1 ticks the first AC)
+  nuos-catalogue wu        start     <handle>
+                          (WU 136 — declare this WU as the active one for sibling-repo writes; required by the install-hooks gate)
+  nuos-catalogue wu        end
+                          (clear the active-WU marker)
+  nuos-catalogue wu        current
+                          (print the active WU handle, or "(none)")
   nuos-catalogue decision  list      [--status=<s>] [--limit=N] [--json]
   nuos-catalogue decision  show      <handle> [--json]
   nuos-catalogue decision  create    (interactive)
@@ -504,12 +535,38 @@ async function main(): Promise<void> {
           domain: args.flags['domain'] ? String(args.flags['domain']) : undefined,
           role: args.flags['role'] ? String(args.flags['role']) : undefined,
           interactive: Boolean(args.flags['interactive']),
+          noLlm: Boolean(args.flags['no-llm']),
         });
         if (result.output) console.log(result.output);
         process.exit(result.exitCode);
       } finally {
         prompt.close();
       }
+      break;
+    }
+    case 'setup-llm': {
+      // WU 135 — standalone re-entry into the LLM-setup phase. Useful
+      // when `init` was run with --no-llm, when an install failed, or
+      // when the user switched machines and needs to pull the model
+      // freshly. Same orchestrator that `init` calls internally.
+      const { runLlmSetup } = await import('./setup/run-llm-setup.js');
+      const { ensureIndexBuilt } = await import('./setup/auto-index.js');
+      const result = await runLlmSetup({ nonInteractive: false });
+      // After the LLM stack is ready, auto-build the search index when
+      // it isn't already present. Same helper init and install-protocols
+      // use — keeps the three commands aligned on "after this finishes
+      // the project is search-ready".
+      if (
+        result.kind === 'already_ready' ||
+        result.kind === 'pulled_only' ||
+        result.kind === 'installed_and_pulled'
+      ) {
+        await ensureIndexBuilt({});
+      }
+      // Most failure paths emit guidance in-band; we exit non-zero only
+      // when a pull actually failed (so CI scripting can branch on it).
+      const exitCode = result.kind === 'pull_failed' || result.kind === 'install_failed' ? 1 : 0;
+      process.exit(exitCode);
       break;
     }
     case 'install-protocols': {
@@ -521,6 +578,15 @@ async function main(): Promise<void> {
       } finally {
         prompt.close();
       }
+      break;
+    }
+    case 'install-hooks': {
+      // WU 136 — install the Claude PreToolUse hook that gates
+      // sibling-repo writes on a declared active WU.
+      const { cmdInstallClaudeHooks } = await import('./commands/install-claude-hooks.js');
+      const result = cmdInstallClaudeHooks({ cwd: process.cwd() });
+      if (result.output) console.log(result.output);
+      process.exit(result.exitCode);
       break;
     }
     case 'migrate':
