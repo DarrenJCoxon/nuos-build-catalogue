@@ -59,6 +59,13 @@ export interface InitOptions {
    * has no effect — init is always non-interactive unless `interactive` is set.
    */
   nonInteractive?: boolean;
+  /**
+   * Skip the post-scaffold LLM-setup phase (WU 135). When true, `init`
+   * scaffolds the catalogue and exits without probing for Ollama or
+   * offering to pull the embedding model. Users who skip can run
+   * `nuos-catalogue setup-llm` later. Default: false.
+   */
+  noLlm?: boolean;
 }
 
 export interface InitResult {
@@ -85,7 +92,7 @@ const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
   'end-of-session': 'Capture what happened, update state, write session log, commit',
   'wu-new': 'File a new work unit through a guided plain-English conversation',
   'persona-new': 'File a new persona by walking the seven dimensions conversationally',
-  'plan-orientation': 'Phase A of planning — project description, personas, the horizon map',
+  'plan-orientation': 'Phase A of planning — project description, tech stack, personas, the horizon map',
   'build-wu': 'Orchestrate a swarm of agents to build one work unit end-to-end',
 };
 
@@ -280,6 +287,43 @@ export async function cmdInit(prompt: Prompt, options: InitOptions = {}): Promis
   const gitignorePath = path.join(cwd, '.gitignore');
   await ensureGitignoreEntries(gitignorePath, log_line);
 
+  // Step 6: LLM setup (WU 135). Probes Ollama, offers to install where
+  // reliable, pulls the default embedding model with a live progress bar.
+  // Skipped when `noLlm` is set, leaving the catalogue scaffolded and
+  // usable for markdown-only workflows — the user can run
+  // `nuos-catalogue setup-llm` later.
+  if (!options.noLlm) {
+    const { runLlmSetup } = await import('../setup/run-llm-setup.js');
+    const { ensureIndexBuilt } = await import('../setup/auto-index.js');
+    await runLlmSetup({
+      // The setup module writes its own progress directly to stderr; we
+      // don't route through `prompt.print` because the in-place progress
+      // bar needs unbuffered control of the line.
+      //
+      // We always allow prompts here, even though `init` overall is
+      // zero-prompt by default. The LLM setup's only prompts are
+      // single-key consent gates ("install Ollama?", "open download
+      // page?") and they need the user's input on a fresh machine.
+      // `runLlmSetup` falls back to no-on-EOF when stdin isn't a TTY,
+      // so this is safe in unattended runs too.
+      nonInteractive: false,
+    });
+    // After LLM setup succeeds, auto-build the first search index. On a
+    // fresh project this is ~30s of starter-kit boilerplate; trivial,
+    // and finishing here means `search` works out of the box. When the
+    // LLM stack isn't ready, `ensureIndexBuilt` skips with a hint
+    // pointing back to setup-llm.
+    const indexResult = await ensureIndexBuilt({ cwd });
+    if (indexResult.kind === 'skipped_llm_not_ready') {
+      prompt.print('');
+      prompt.print(`  · Skipping first-index build: ${indexResult.reason}.`);
+      prompt.print(`  · ${indexResult.hint}`);
+    }
+  } else {
+    prompt.print('');
+    prompt.print('  · LLM setup skipped (--no-llm). Run `nuos-catalogue setup-llm` later to enable semantic search.');
+  }
+
   prompt.print('');
   prompt.print('✅ Done.');
   prompt.print('');
@@ -341,7 +385,65 @@ export async function cmdInstallProtocols(
   prompt.print(`Refreshing swarm agent definitions (.claude/agents/):`);
   await installAgents(cwd, (msg) => prompt.print(msg));
 
+  // Quick non-interactive probe of the local-inference stack (WU 135).
+  // `install-protocols` is the natural upgrade path for existing
+  // projects, so we surface the LLM status here too — but as a status
+  // report rather than the full install/pull flow (which is what
+  // `setup-llm` is for). This keeps install-protocols fast and
+  // script-safe while making the LLM state visible without the user
+  // needing to know about a separate command.
+  prompt.print('');
+  prompt.print('Checking local semantic search (Ollama + qwen3-embedding:0.6b):');
+  await reportLlmStatus((msg) => prompt.print(`  ${msg}`));
+
+  // Auto-build/refresh the search index when the LLM is ready. The
+  // indexer is incremental via per-file SHA hashes: a no-change project
+  // takes ~1s, a project with N changed files takes O(N) embed calls.
+  // When the LLM stack isn't ready the helper skips silently — the
+  // status was already reported above by reportLlmStatus.
+  const { ensureIndexBuilt } = await import('../setup/auto-index.js');
+  await ensureIndexBuilt({ cwd });
+
   return { output: '', exitCode: 0 };
+}
+
+/**
+ * Quick probe + status print for the LLM stack. Non-interactive: never
+ * prompts, never installs, never pulls. The full install/pull flow
+ * lives in `setup-llm`; this is the "what's the current state?" report.
+ *
+ * Times out after ~1.5s when Ollama isn't running so the command stays
+ * snappy on machines that haven't set up local inference yet.
+ */
+async function reportLlmStatus(log: (msg: string) => void): Promise<void> {
+  const { narrowPlatform } = await import('../setup/types.js');
+  const { detectOllamaApi, detectModelPresent } = await import('../setup/ollama-detect.js');
+  const { DEFAULT_EMBEDDING_MODEL } = await import('../setup/run-llm-setup.js');
+
+  const platform = narrowPlatform(process.platform);
+  const apiHost = process.env.NUOS_CATALOGUE_OLLAMA_HOST ?? 'http://localhost:11434';
+  const modelId = process.env.NUOS_CATALOGUE_OLLAMA_MODEL ?? DEFAULT_EMBEDDING_MODEL;
+
+  const api = await detectOllamaApi(apiHost);
+  if (!api.reachable) {
+    log(`✗ Ollama is not running at ${apiHost}`);
+    log('  Run `nuos-catalogue setup-llm` for guided install + pull.');
+    return;
+  }
+  log(`✓ Ollama is running at ${apiHost}`);
+
+  const model = await detectModelPresent(apiHost, modelId);
+  if (!model.present) {
+    log(`✗ ${modelId} is not pulled`);
+    log('  Run `nuos-catalogue setup-llm` to download it (~600 MB).');
+    return;
+  }
+  log(`✓ ${modelId} is pulled (~600 MB)`);
+  log(`Semantic search is ready. Try \`nuos-catalogue search "your query"\` after the first index.`);
+
+  // Suppress the unused-variable warning while keeping platform available
+  // for future per-OS hints (e.g. "Ollama runs in the menu bar on macOS").
+  void platform;
 }
 
 // ---------------------------------------------------------------------------

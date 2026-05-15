@@ -22,8 +22,20 @@ interface PlanState {
 
 type PlanStatus = 'not_started' | 'in_progress' | 'complete';
 
+interface TechStack {
+  defined: boolean;
+  languages?: string[];
+  frontend?: string | null;
+  backend?: string | null;
+  database?: string | null;
+  deployment?: string | null;
+  externalServices?: string[];
+  notes?: string | null;
+}
+
 interface MethodFile {
   planning?: PlanState;
+  techStack?: TechStack;
 }
 
 const PHASES: { key: keyof PlanState; label: string }[] = [

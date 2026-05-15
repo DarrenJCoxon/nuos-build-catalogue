@@ -1,3 +1,7 @@
+---
+description: File a new work unit through a guided plain-English conversation
+---
+
 # wu-new
 
 You are filing a new **work unit** for a project that uses the **NuOS Build Method catalogue**. A work unit is one concrete thing the project will build. The catalogue's value compounds as work units accumulate notes — every session adds to the record of what was attempted, what worked, what didn't, what was learned.
@@ -41,8 +45,6 @@ The full shape has the four fields above plus:
 For infrastructure work, persona / trigger / walkthrough are marked `N/A — infrastructure work`.
 
 ## Step 4 — File the work unit
-
-Before writing the file, check `methodfile.json`'s `techStack.defined`. If it's `false` or the field is absent, tell the operator: *"I notice the tech stack isn't defined yet — that normally happens during Phase A planning. Want to define it now, or shall I file an open question?"* Either way, continue filing the work unit. If `defined` is `true`, the acceptance criteria may reference the stack where relevant (e.g. *"renders correctly with Next.js App Router SSR"*).
 
 1. **Number it.** Scan `docs/build/work-units/` and `docs/build/work-units/done/` for the highest existing 3-digit prefix; new number is max + 1.
 2. **Slugify the title.** Lowercase; dashes for spaces; no special characters; cap at 60 chars.

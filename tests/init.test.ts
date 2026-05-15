@@ -72,6 +72,7 @@ describe('§1 init on a fresh directory', () => {
       domain: 'example.com',
       role: 'consumer',
       nonInteractive: true,
+      noLlm: true, // WU 135: keep test deterministic; the LLM-setup phase has its own coverage
     });
     assert.equal(result.exitCode, 0, result.output);
 
@@ -253,6 +254,7 @@ describe('§2 init is one-shot', () => {
       name: 'foo',
       tagline: 'bar',
       nonInteractive: true,
+      noLlm: true, // WU 135: keep test deterministic; the LLM-setup phase has its own coverage
     });
     assert.equal(result.exitCode, 1);
     assert.match(result.output, /already exists/);
@@ -279,6 +281,7 @@ describe('§3 init preserves existing CLAUDE.md', () => {
       name: 'preserve-test',
       tagline: 'preserve test',
       nonInteractive: true,
+      noLlm: true, // WU 135: keep test deterministic; the LLM-setup phase has its own coverage
     });
     assert.equal(result.exitCode, 0, result.output);
 
@@ -309,6 +312,7 @@ describe('§4 init handles unanchored build/ in .gitignore', () => {
       name: 'g-test',
       tagline: 't',
       nonInteractive: true,
+      noLlm: true, // WU 135: keep test deterministic; the LLM-setup phase has its own coverage
     });
     assert.equal(result.exitCode, 0);
 
@@ -331,6 +335,7 @@ describe('§4 init handles unanchored build/ in .gitignore', () => {
       name: 'nb-test',
       tagline: 't',
       nonInteractive: true,
+      noLlm: true, // WU 135: keep test deterministic; the LLM-setup phase has its own coverage
     });
     assert.equal(result.exitCode, 0);
 
@@ -409,4 +414,37 @@ describe('§5 install-protocols', () => {
   });
 });
 
-console.log('@nusoft/nuos-build-catalogue — init + install-protocols: 8/8 acceptance verified');
+// ─── §6 init --no-llm short-circuits the LLM setup phase (WU 135 AC 9) ───
+
+describe('§6 init --no-llm', () => {
+  test('skips the LLM setup phase and prints the skip hint', async () => {
+    const cwd = path.join(workspace, 'no-llm-project');
+    await mkdir(cwd);
+    const prompt = new MockPrompt([]);
+
+    const result = await cmdInit(prompt, {
+      cwd,
+      name: 'no-llm-project',
+      tagline: 'verifying --no-llm',
+      nonInteractive: true,
+      noLlm: true,
+    });
+    assert.equal(result.exitCode, 0, result.output);
+
+    // The scaffold ran (sanity check).
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'STATE.md')));
+
+    // The skip hint appears in the prompt output, naming the standalone
+    // recovery command so the user can come back to LLM setup later.
+    const printed = prompt.output.join('\n');
+    assert.match(printed, /LLM setup skipped/);
+    assert.match(printed, /setup-llm/);
+
+    // No Ollama-probe output appears. The setup module always prints
+    // "Setting up local semantic search…" as its first line, so its
+    // absence here is positive evidence that the phase was skipped.
+    assert.doesNotMatch(printed, /Setting up local semantic search/);
+  });
+});
+
+console.log('@nusoft/nuos-build-catalogue — init + install-protocols: 9/9 acceptance verified');

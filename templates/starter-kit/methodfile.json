@@ -9,6 +9,16 @@
     "tagline": "{{PROJECT_TAGLINE}}",
     "domain": "{{PROJECT_DOMAIN}}"
   },
+  "techStack": {
+    "defined": false,
+    "languages": [],
+    "frontend": null,
+    "backend": null,
+    "database": null,
+    "deployment": null,
+    "externalServices": [],
+    "notes": null
+  },
   "catalogue": {
     "root": "docs/build/",
     "registers": {

@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+#
+# NuOS catalogue post-commit hook — auto-refresh the semantic-search index
+# after every commit that touched docs/build/**.
+#
+# Why this hook:
+#   `nuos-catalogue search` only finds what's in the NuVector index. The
+#   index is hash-based and incremental, but it doesn't update itself —
+#   you have to run `nuos-catalogue index` after meaningful changes for
+#   new content to be searchable. Running it manually is too easy to
+#   forget; the discipline argument that gave us the pre-commit hook
+#   (index-drift, accepted-decision immutability) applies equally here.
+#
+# Behaviour:
+#   - Skip if the just-landed commit did NOT touch docs/build/** (most
+#     code commits don't need a reindex)
+#   - Skip if `nuos-catalogue` isn't resolvable (the CLI may not be
+#     installed yet on a fresh clone; this hook should never block)
+#   - Otherwise: run the index in the BACKGROUND so the user's terminal
+#     isn't held while we embed. All output goes to .nuos-enforcement.log.
+#
+#   The hook respects two env vars:
+#     NUOS_CATALOGUE_INDEX_DIR   default: <repo>/.nuos-catalogue
+#     NUOS_CATALOGUE_OLLAMA_MODEL  passed through to the CLI
+#
+# This hook never blocks. If indexing fails (Ollama not running, model
+# not pulled, dimension mismatch with existing index), the error goes
+# to the log and the user can investigate. The commit itself already
+# landed by the time post-commit fires.
+
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+LOG="$REPO_ROOT/.nuos-enforcement.log"
+
+dim()    { printf '\033[2m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+
+# ---- Skip-paths --------------------------------------------------------
+
+# Skip if this project doesn't have a catalogue at all.
+if [[ ! -d "$REPO_ROOT/docs/build" ]]; then
+  exit 0
+fi
+
+# Skip if the just-landed commit didn't touch docs/build/**.
+if ! git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null | grep -q '^docs/build/'; then
+  exit 0
+fi
+
+# Resolve the CLI: prefer globally-installed `nuos-catalogue`; fall back
+# to `npx --yes` which fetches from npm on demand.
+INDEX_CMD=""
+if command -v nuos-catalogue >/dev/null 2>&1; then
+  INDEX_CMD="nuos-catalogue"
+elif command -v npx >/dev/null 2>&1; then
+  INDEX_CMD="npx --yes @nusoft/nuos-build-catalogue"
+else
+  yellow "[nuos:post-commit] neither nuos-catalogue nor npx found; skipping index refresh"
+  printf '%s | post-commit-skip | no CLI available\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$LOG"
+  exit 0
+fi
+
+# ---- Background index refresh ------------------------------------------
+
+# Default the index dir to project-local if the user hasn't set one.
+: "${NUOS_CATALOGUE_INDEX_DIR:=$REPO_ROOT/.nuos-catalogue}"
+export NUOS_CATALOGUE_INDEX_DIR
+
+# Detach from the terminal so the post-commit returns immediately. All
+# output (stdout + stderr) goes to the enforcement log so the user can
+# tail it if they want to see progress.
+(
+  start=$(date +%s)
+  printf '%s | post-commit-index | start (model=%s, dir=%s)\n' \
+    "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+    "${NUOS_CATALOGUE_OLLAMA_MODEL:-default}" \
+    "$NUOS_CATALOGUE_INDEX_DIR" \
+    >> "$LOG"
+
+  if cd "$REPO_ROOT" && $INDEX_CMD index >> "$LOG" 2>&1; then
+    end=$(date +%s)
+    printf '%s | post-commit-index | done in %ss\n' \
+      "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+      $((end - start)) \
+      >> "$LOG"
+  else
+    printf '%s | post-commit-index | FAILED (see lines above in %s)\n' \
+      "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+      "$(basename "$LOG")" \
+      >> "$LOG"
+  fi
+) </dev/null >/dev/null 2>&1 &
+disown 2>/dev/null || true
+
+dim "[nuos:post-commit] index refresh started in background — see .nuos-enforcement.log"

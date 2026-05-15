@@ -1,3 +1,7 @@
+---
+description: Phase A of planning — project description, personas, the horizon map
+---
+
 # plan-orientation
 
 You are running **Phase A of the planning arc** for a project that just adopted the NuOS Build Method catalogue. This is the operator's first real conversation with the harness. By the end of this session they should have:
@@ -45,43 +49,7 @@ Listen. Don't interrupt. When they're done, summarise back in 2-3 sentences in y
 
 When the description is settled, **write it into `STATE.md`'s "What is currently in flight" section** — replacing the placeholder. Keep their voice; don't make it sound corporate. Show them the file path and confirm it's saved.
 
-## Step 3 — Tech stack (5 min)
-
-Now ask what they're building it with:
-
-> "Before we meet the people your project is for — quickly, what are you building it with? Language, framework, database, where it'll run. If you know already, brilliant. If you haven't decided, just say so and we'll note it as an open question."
-
-Listen and capture what they give you. Common patterns:
-- *"Next.js, PostgreSQL, deployed on Vercel"* → frontend + database + deployment all filled
-- *"React Native with Firebase"* → frontend + database/backend filled
-- *"Not sure yet"* → set `defined: false`, file a Q-NNN
-
-**Write the result to `methodfile.json` now**, under the `techStack` section:
-
-```json
-{
-  "techStack": {
-    "defined": true,
-    "languages": ["TypeScript"],
-    "frontend": "Next.js 15 (App Router)",
-    "backend": "Next.js API Routes / Server Actions",
-    "database": "PostgreSQL (Supabase)",
-    "deployment": "Vercel",
-    "externalServices": ["Stripe"],
-    "notes": null
-  }
-}
-```
-
-Fill in what you know; set unknown fields to `null`. If nothing is settled, set `defined: false`, leave all fields null, and file a Q-NNN open question: *"Tech stack not yet decided — revisit before Phase B."*
-
-Show the operator the updated `methodfile.json` and confirm it saved. Tell them:
-
-> *"This means every agent we spawn later will know what it's building against — language, framework, where it runs. Just a few fields, but it prevents a lot of wrong output later."*
-
-**Drift discipline:** partial information is fine and still valuable. An operator who says *"definitely Next.js, not sure about the database yet"* should have `frontend: "Next.js"`, `database: null`, `defined: true`. Partial is better than undefined.
-
-## Step 4 — One persona, then one or two more (15-20 min)
+## Step 3 — One persona, then one or two more (15-20 min)
 
 Tell the operator what's coming:
 
@@ -95,7 +63,7 @@ When P001 is filed, surface it and ask:
 
 If yes, run `/persona-new` again. Aim for **1-3 total** — more than 3 in Phase A usually means the project is overscoped; file the rest as open questions and revisit later.
 
-## Step 5 — Map 1: The Horizon (8-10 min)
+## Step 4 — Map 1: The Horizon (8-10 min)
 
 When the personas are filed, transition:
 
@@ -111,7 +79,7 @@ Use the template at `docs/build/maps/01-template.md`. Walk through its sections 
 
 Write the map to `docs/build/maps/01-the-horizon.md`. Show them the file path and confirm.
 
-## Step 6 — Open questions (2 min)
+## Step 5 — Open questions (2 min)
 
 Pass over the conversation looking for anything the operator wasn't sure about. For each:
 
@@ -120,7 +88,7 @@ Pass over the conversation looking for anything the operator wasn't sure about. 
 
 > "I noticed a few things you weren't sure about yet — [list]. I've filed them as open questions so we'll come back to them. Two of them affect Phase B (Architecture), so we'll definitely hit them next session."
 
-## Step 7 — Close (2 min)
+## Step 6 — Close (2 min)
 
 Update STATE.md:
 
@@ -132,7 +100,6 @@ Then tell the operator what they now have:
 
 > "You've got your first catalogue substrate:
 >
-> - **Tech stack** defined in `methodfile.json` — (or flagged as an open question if not yet settled)
 > - **[N] personas** in `docs/build/personas/` — these anchor every later decision
 > - **Map 1** at `docs/build/maps/01-the-horizon.md` — the whole-project picture
 > - **[N] open questions** in `docs/build/open-questions/` — these are what we'll resolve as planning continues

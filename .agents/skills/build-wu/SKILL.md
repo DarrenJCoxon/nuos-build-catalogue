@@ -1,3 +1,8 @@
+---
+name: build-wu
+description: Orchestrate a swarm of agents to build one work unit end-to-end
+---
+
 # build-wu
 
 You are the **swarm coordinator** for a project using the NuOS Build Method catalogue. The operator has invoked `/build-wu <handle>` (or asked you to build a work unit). Your job is to read the work unit, decompose it, spawn the right specialised agents in the right sequence, track the run in the catalogue, and report results.
@@ -19,7 +24,6 @@ Also read:
 - The contracts it touches (`docs/build/contracts/`)
 - The architecture files for any modules involved (`docs/build/architecture/`)
 - The relevant design-system pieces if the work unit ships a UI surface
-- `methodfile.json`'s `techStack` section — if `techStack.defined` is `true`, extract the fields now; you'll inject them into every agent prompt in Step 4
 - Run `nuos-catalogue search "<work unit title or outcome>"` to find related prior work
 
 Before spawning any agents, search the cross-agent memory for relevant prior findings:
@@ -61,20 +65,6 @@ Skip steps when context allows — implementation-only WUs skip the architect; b
 ## Step 4 — Spawn the agents
 
 Use Claude Code's **Task tool**. Each spawn names the agent (`subagent_type`), the model (from `methodfile.json`'s `swarm.models` block — usually leave as default), and the precise input.
-
-**Technical context injection:** If `techStack.defined` is `true` in `methodfile.json`, every agent spawn prompt must open with a "Technical context" block:
-
-```
-**Technical context (from methodfile.json):**
-- Languages: [languages]
-- Frontend: [frontend]
-- Backend: [backend]
-- Database: [database]
-- Deployment: [deployment]
-- External services: [externalServices]
-```
-
-Omit `null` fields. If `techStack.defined` is `false` or the section is absent, note it in the swarm audit entry and suggest the operator define the stack (`/plan-orientation` or edit `methodfile.json` directly) before the next swarm run — agents generating code without a known stack default to generic patterns that often need rework.
 
 **Spawn in parallel where possible.** If two agents can work independently (e.g. tester writing tests while reviewer reads design), spawn them in the same message. Sequential when an agent's output is the next agent's input (architect → coder).
 
