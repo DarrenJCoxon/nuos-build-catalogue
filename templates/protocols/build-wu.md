@@ -51,12 +51,24 @@ For the classified pattern, list the subtasks each agent will handle. Write this
 
 A typical full-feature decomposition:
 
-1. **Architect**: design the contract surface this WU produces; file a decision if a non-obvious choice exists; write the design brief in WU notes
+1. **Architect**: design the contract surface this WU produces — **using design-it-twice** (see below); file a decision for the chosen approach; write the design brief in WU notes
 2. **Coder**: implement against architect's brief; matches existing code idioms; smallest change that satisfies acceptance criteria
 3. **Tester**: writes one test per acceptance criterion + failure-path tests; runs them
 4. **Reviewer**: reads coder + tester output against spec, design system, decisions; flags drift
 
 Skip steps when context allows — implementation-only WUs skip the architect; bug-fix WUs use debugger instead of architect.
+
+### Design-it-twice (required for every architect pass)
+
+The architect step is **not a single-pass activity**. Before the architect's brief is written and before the coder is spawned, the architect must:
+
+1. **Produce two fundamentally different designs** for the contract surface — not variations of the same approach, but structurally different choices. Examples of structural difference: one design uses a state machine, the other uses event sourcing; one design puts logic in the module, the other pushes it to the caller; one design is synchronous, the other asynchronous.
+2. **Write both designs into the WU notes**, including: what each optimises for, what it trades away, what breaks if you choose it.
+3. **Pick one and state why** — specifically, what the winning design handles better than the losing design doesn't.
+
+Only after this comparison is documented should the coder be spawned. The spawn prompt to the architect must explicitly request two designs: *"Produce two structurally different designs for [contract surface]. Write both into the WU notes with their tradeoffs. Then commit to one with a stated reason."*
+
+A single-design architect pass is drift — the failure mode where an agent satisfices on the first plausible idea. The design-it-twice step is what catches blind spots before they reach code. Skipping it saves 10 minutes and costs hours in rework.
 
 ## Step 4 — Spawn the agents
 

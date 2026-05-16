@@ -79,6 +79,10 @@ const PROTOCOL_FILES = [
   'wu-new.md',
   'persona-new.md',
   'plan-orientation.md',
+  'plan-architecture.md',
+  'plan-uiux.md',
+  'plan-maps.md',
+  'plan-initial-wu.md',
   'build-wu.md',
 ] as const;
 
@@ -93,6 +97,10 @@ const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
   'wu-new': 'File a new work unit through a guided plain-English conversation',
   'persona-new': 'File a new persona by walking the seven dimensions conversationally',
   'plan-orientation': 'Phase A of planning — project description, tech stack, personas, the horizon map',
+  'plan-architecture': 'Phase B of planning — name the major modules and define what each one provides',
+  'plan-uiux': 'Phase C of planning — enumerate every surface and build the complete design system',
+  'plan-maps': 'Phase D of planning — map the journey from here to done with phases and near-term plan',
+  'plan-initial-wu': 'Phase E of planning — file the first 5–10 work units ordered by dependency',
   'build-wu': 'Orchestrate a swarm of agents to build one work unit end-to-end',
 };
 

@@ -16,7 +16,17 @@ Read `docs/build/STATE.md`. Look at the **Planning progress** section:
 
   If yes, **switch to the `plan-orientation` protocol** (invoke `/plan-orientation` if available; otherwise read `.claude/commands/plan-orientation.md` and follow it). If no, point them at `docs/build/WELCOME.md` and `docs/build/GLOSSARY.md` so they can read about the catalogue first, then wait.
 
-- If **Phase A is in flight or any phase is mid-progress** (marked `🟡 in flight` in STATE.md's Planning progress section), route the operator back to the relevant `plan-*` protocol to continue planning. Read the most recent session log's "Resume hint" section to know exactly where to pick up.
+- If **any planning phase is in progress or marked `🟡 next`**, route to the appropriate protocol. Read the most recent session log's "Resume hint" to know exactly where to pick up within the phase.
+
+  | Phase | Protocol |
+  |---|---|
+  | A — Orientation | `plan-orientation` |
+  | B — Architecture & Contracts | `plan-architecture` |
+  | C — UI/UX + Design System | `plan-uiux` |
+  | D — Maps | `plan-maps` |
+  | E — Initial Work Units | `plan-initial-wu` |
+
+  Invoke the protocol with its slash command (e.g. `/plan-uiux`) if available; otherwise read `.claude/commands/<protocol>.md` and follow it. The "next" phase in STATE.md is the one to route to — if Phase B is `✅ complete` and Phase C is `🟡 next`, invoke `plan-uiux`.
 
 - If **all five planning phases are complete**, proceed with the normal session-start steps below.
 
