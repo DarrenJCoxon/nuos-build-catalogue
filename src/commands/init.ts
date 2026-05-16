@@ -83,6 +83,7 @@ const PROTOCOL_FILES = [
   'plan-uiux.md',
   'plan-maps.md',
   'plan-initial-wu.md',
+  'plan-review.md',
   'build-wu.md',
 ] as const;
 
@@ -101,6 +102,7 @@ const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
   'plan-uiux': 'Phase C of planning — enumerate every surface and build the complete design system',
   'plan-maps': 'Phase D of planning — map the journey from here to done with phases and near-term plan',
   'plan-initial-wu': 'Phase E of planning — file the first 5–10 work units ordered by dependency',
+  'plan-review': 'End-to-end planning review — surfaces gaps, inconsistencies, and optimisations before building starts',
   'build-wu': 'Orchestrate a swarm of agents to build one work unit end-to-end',
 };
 

@@ -53,10 +53,22 @@ Update each work unit file with its dependency links. Update `docs/build/work-un
 
 If multiple work units have no dependencies, pick the one that unblocks the most. Mark that one `🟡 in flight`; leave the others `🔵 proposed` with a note that they can start in parallel.
 
-## Step 4 — Close
+## Step 4 — Run the planning arc review (required before closing)
+
+Before Phase E can close, run the full planning arc review. This is not optional.
+
+**Invoke `/plan-review`** (or read `.claude/commands/plan-review.md` and follow it). The review agent reads every artefact in the catalogue, then surfaces what's missing, unclear, inconsistent, or improvable — before a single line of code is written.
+
+Do not proceed to Step 5 until:
+- All blocker findings are fixed or explicitly escalated to the operator
+- All other findings are either fixed, filed as open questions, or deferred with a stated reason
+
+The review typically takes 10–20 minutes. It is the difference between a catalogue an agent can build against coherently and one that produces drift from the first spawn.
+
+## Step 5 — Close
 
 Update STATE.md:
-- Phase E row → `✅ complete (YYYY-MM-DD)`
+- Phase E row → `✅ complete (YYYY-MM-DD)` (only after `plan-review` has completed)
 - "Active work unit" → the first `🟡 in flight` work unit handle and title
 - "What is currently in flight" → one sentence describing what the swarm will tackle first
 - Refresh "Last updated"
