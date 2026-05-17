@@ -46,6 +46,8 @@ If anything in the work unit is ambiguous, **stop and surface the ambiguity to t
 
 5. **No comments unless WHY is non-obvious.** A hidden constraint, a workaround for a specific bug, behaviour that would surprise a reader. If removing the comment wouldn't confuse a future reader, don't write it.
 
+6. **Write testable code (vitest gate).** If `methodfile.json` declares `testing.framework: "vitest"` with `testing.enforced: true`, every source file you create or substantially modify in this WU must end up covered by at least one vitest test — the tester writes them, but your job is to make that cheap. Export the units the tester needs to reach; avoid burying observable logic inside untestable closures; keep side effects at the edges. Files that genuinely can't be unit-tested (pure type declarations, config glue) are fine — flag them in your notes so the reviewer doesn't treat them as drift.
+
 ## When you finish
 
 Append a brief note to the work unit's `## Notes / log` section:

@@ -39,9 +39,11 @@ nuos-catalogue memory store --value="<what you learned about testing this area>"
 
 3. **Failure paths matter as much as happy paths.** If the work unit's walkthrough mentions what happens when data is missing or the user makes a mistake, write a test for each.
 
-4. **Use the existing test idioms.** Don't introduce a new assertion library, a new fixture pattern, or a new way of mocking. If the project uses `node:test`, use it. If it uses Vitest, use Vitest.
+4. **Use the framework declared in `methodfile.json`'s `testing.framework`.** For JS/TS projects this defaults to **vitest** — the harness pre-wires it. If `testing.framework` is null or names a non-vitest runner (e.g. `pytest`), match the project's existing idiom instead. Never silently switch frameworks; if the declared framework is missing from the repo, escalate to the coordinator before writing tests.
 
-5. **Tests must be reproducible.** No flaky timing, no relying on order, no shared mutable state between tests unless the framework explicitly supports it.
+5. **Per-touched-file coverage is mandatory (vitest gate).** When `testing.framework` is vitest and `testing.enforced` is true, every source file the coder created or substantially modified in this WU must have at least one test file referencing it. Run `git diff --name-only <swarm-base>...HEAD` to get the list. For each `.ts/.tsx/.js/.jsx` file under `src/`, `app/`, `routes/`, `pages/`, `lib/`, `components/`, or `api/` (excluding test files, `.d.ts`, configs), write or extend a test that imports the module and exercises observable behaviour. Colocated (`foo.test.ts` next to `foo.ts`) or `tests/`-mirrored layout — match what already exists.
+
+6. **Tests must be reproducible.** No flaky timing, no relying on order, no shared mutable state between tests unless the framework explicitly supports it.
 
 ## When you run the tests
 

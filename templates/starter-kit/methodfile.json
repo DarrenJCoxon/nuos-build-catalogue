@@ -19,6 +19,15 @@
     "externalServices": [],
     "notes": null
   },
+  "testing": {
+    "framework": "vitest",
+    "command": "npx vitest run",
+    "configPath": "vitest.config.ts",
+    "enforced": true,
+    "policy": "every-touched-source-file-must-be-covered-by-a-passing-test",
+    "appliesTo": ["typescript", "javascript", "tsx", "jsx"],
+    "comment": "Vitest is the default test runner for JS/TS implementation repos. The swarm enforces two gates before a WU can promote: (1) `npx vitest run` exits 0; (2) every source file touched by the WU is referenced by at least one .test.ts(x) or .spec.ts(x). If the project's techStack does not include JS/TS, set framework to whatever idiom the stack uses (or null to opt out — the coordinator will warn but not block)."
+  },
   "catalogue": {
     "root": "docs/build/",
     "registers": {

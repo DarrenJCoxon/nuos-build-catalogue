@@ -1,5 +1,48 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.25.0 — 2026-05-17 — Vitest as a built-in build requirement
+
+The harness now treats **vitest** as the default test runner for JS/TS implementation repos, and the swarm enforces a two-part test gate before any work unit can promote. The operator never has to set this up — the coordinator wires vitest into the implementation repo on first run and runs the gate on every WU thereafter.
+
+### What changed
+
+**`methodfile.json` schema — new `testing` block.** Starter-kit `methodfile.json` now ships with:
+
+```json
+"testing": {
+  "framework": "vitest",
+  "command": "npx vitest run",
+  "configPath": "vitest.config.ts",
+  "enforced": true,
+  "policy": "every-touched-source-file-must-be-covered-by-a-passing-test",
+  "appliesTo": ["typescript", "javascript", "tsx", "jsx"]
+}
+```
+
+For non-JS projects, `framework` should be set to whatever the project uses (or `null` to opt out — the coordinator warns but doesn't block).
+
+**`build-wu.md` protocol — two new steps.**
+
+- *Step 4 vitest pre-flight* (JS/TS only). Before spawning the coder, the coordinator checks the implementation repo has vitest installed and a `vitest.config.ts` present. If not, it installs vitest, copies `templates/testing/vitest.config.ts` and `templates/testing/example.test.ts` from the harness, adds a `"test": "vitest run"` script to the repo's `package.json`, and runs `vitest run` once to confirm the wiring.
+- *Step 5.5 test gate*. After the coder + tester finish and before the reviewer approves, the reviewer runs two sub-gates: (A) `npx vitest run` exits 0; (B) every source file in `git diff --name-only` of the WU's changes is referenced by at least one `.test.ts(x)` or `.spec.ts(x)`. Gate failures count against the 3-attempt retry cap and escalate to the operator on the third.
+
+**Agent templates updated.**
+
+- `tester.md` — vitest is the default for JS/TS; per-touched-file coverage is mandatory.
+- `coder.md` — write testable code (export units the tester needs, keep side effects at the edges).
+- `reviewer.md` — runs both vitest sub-gates; uncovered touched files are BLOCKER findings.
+
+**New `templates/testing/` scaffolding.** Ships `vitest.config.ts`, a smoke-test `example.test.ts`, and a README. These are runtime-copied into the implementation repo by the swarm — not by `nuos-catalogue init`.
+
+### Why
+
+Up to 0.24.x the harness was deliberately test-framework-agnostic: the tester template said "match whatever the project uses." That flexibility cost discipline. JS/TS WUs sometimes shipped without any tests at all because no enforcement existed. Vitest is now the standard for JS/TS work; non-JS projects keep the existing flexibility by setting `testing.framework` to their own runner or `null`.
+
+### Upgrade notes
+
+- Existing catalogues: re-run `nuos-catalogue install-protocols` to pick up the new build-wu.md and agent templates. Add the `testing` block to your `methodfile.json` manually (the schema lives in the starter-kit template).
+- The first swarm run after upgrade on a JS/TS project will prompt the operator before installing vitest into the implementation repo.
+
 ## 0.21.0 — 2026-05-13 — Harness implementation-write gate (WU 136)
 
 Closes the protocol gap surfaced in Session 80: an agent can file a decision in the catalogue and then ship hours of substantive implementation work in a sibling repo (sensight/, nuvector/, …) before any catalogue trace gets written. The pre-commit hook only watches the catalogue repo itself; the existing Claude PreToolUse hook (WU 128) watches catalogue file writes only. So sibling-repo writes had no gate at all. This release ships one.

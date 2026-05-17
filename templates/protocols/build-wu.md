@@ -88,6 +88,14 @@ Use Claude Code's **Task tool**. Each spawn names the agent (`subagent_type`), t
 
 Omit `null` fields. If `techStack.defined` is `false` or the section is absent, note it in the swarm audit entry and suggest the operator define the stack (`/plan-orientation` or edit `methodfile.json` directly) before the next swarm run — agents generating code without a known stack default to generic patterns that often need rework.
 
+**Vitest pre-flight (JS/TS projects only).** Before spawning the coder, check `methodfile.json`'s `testing` block. If `testing.framework` is `vitest` and `testing.enforced` is `true`, verify the implementation repo has vitest installed and a `vitest.config.ts` (or `.js`/`.mts`) present. If either is missing, before any agent runs:
+
+1. Surface to the operator in one line: *"Vitest is the declared test runner but isn't wired up in the implementation repo yet. I'll install it (`npm i -D vitest @vitest/coverage-v8`) and drop a minimal `vitest.config.ts` before the coder starts. OK?"*
+2. On confirmation: (a) run `npm i -D vitest @vitest/coverage-v8` in the implementation repo; (b) copy the harness's `vitest.config.ts` template into the repo root and `example.test.ts` into `tests/example.test.ts` (create the directory if missing). The templates ship inside the installed harness package at `node_modules/@nusoft/nuos-build-catalogue/templates/testing/` — read them from there; if the harness is being run from a checkout, they're at `<harness-repo>/templates/testing/`; (c) add a `"test": "vitest run"` script to the implementation repo's `package.json` if absent; (d) run `npx vitest run` once to confirm the wiring works.
+3. Record the setup in the swarm audit entry under a `## Setup` section so the next swarm doesn't repeat the check.
+
+If `testing.framework` is not vitest (e.g. the project is Python), skip this pre-flight — the existing "match the project's idiom" rule applies.
+
 **Spawn in parallel where possible.** If two agents can work independently (e.g. tester writing tests while reviewer reads design), spawn them in the same message. Sequential when an agent's output is the next agent's input (architect → coder).
 
 For each spawn:
@@ -101,6 +109,25 @@ When each agent returns, capture their output. Three outcomes are typical:
 - **APPROVED** by reviewer → work unit is ready to promote ✅ shipped. Run end-of-session to commit.
 - **REQUEST CHANGES** by reviewer → re-spawn coder with reviewer's findings as input. Cap at 3 retry loops; if still failing, escalate to debugger or operator.
 - **ESCALATE** (any agent surfaces an architectural issue, a design ambiguity, a need for the operator's call) → STOP the swarm. Surface the issue to the operator in plain English; do not auto-decide.
+
+## Step 5.5 — Run the test gate (JS/TS projects)
+
+If `methodfile.json` has `testing.framework: "vitest"` and `testing.enforced: true`, this gate is mandatory before the reviewer's APPROVE can stand. The reviewer is responsible for running it (see [reviewer.md](../agents/reviewer.md)), but the coordinator owns the outcome.
+
+**Gate A — the suite passes:** Run the command in `testing.command` (default `npx vitest run`) from the implementation repo root. The command must exit 0. Capture full output. If any test fails, the gate fails — re-spawn the coder + tester with the failure output, counted against the retry cap in Step 5.
+
+**Gate B — every touched source file is covered:**
+
+1. Compute the WU's changed files: `git diff --name-only <base>...HEAD` where `<base>` is the swarm's starting commit (recorded in the audit entry's `## Setup` section, or `HEAD~1` if not).
+2. Filter to source files: anything matching `*.ts`, `*.tsx`, `*.js`, `*.jsx` under `src/`, `app/`, `routes/`, `pages/`, `lib/`, `components/`, or `api/`. Exclude `*.test.*`, `*.spec.*`, `*.d.ts`, config files, and anything under `node_modules/`, `dist/`, `build/`, `.next/`.
+3. For each remaining file, check at least one `.test.ts(x)` or `.spec.ts(x)` references it. Acceptable references: (a) an `import` statement naming the file's module path, (b) a colocated `foo.test.ts` next to `foo.ts`, (c) a `tests/foo.test.ts` whose basename matches.
+4. Any source file with no matching test is a Gate B failure. Re-spawn the tester with the uncovered file list and a directive to add at least one passing test per file.
+
+If both gates pass, record `✓ vitest gate passed (N tests, M files covered)` in the swarm audit entry under `## Test gate` and continue to Step 6.
+
+If either gate fails, re-spawn agents per the retry rules in Step 5. Gate failures count against the 3-attempt cap. After the third failure, escalate to the operator in plain English: *"After three attempts the vitest gate still fails on [list]. Either the tests need redesign or the touched files genuinely shouldn't be tested (config glue, declaration files). How would you like to proceed?"*
+
+**Non-JS projects:** Skip this gate but note in the audit entry that the WU shipped without an enforced test gate (e.g. *"Python project — vitest gate N/A; pytest suite run separately"*).
 
 ## Step 6 — Record the swarm run
 
@@ -212,6 +239,10 @@ For full-feature swarms (architect → coder → tester → reviewer), after the
 - Are the contracts the architect filed still the ones the coder is consuming?
 
 If anything looks misaligned, escalate to the operator before spending more tokens on the tester.
+
+### Vitest test gate (JS/TS projects)
+
+Step 5.5 above defines the gate in full. Restated as a verification rule: a JS/TS work unit cannot promote with reviewer APPROVE unless `vitest run` exits 0 AND every source file the WU touched has at least one test file referencing it. The reviewer runs the gate; the coordinator enforces the outcome. This is the load-bearing gate for code quality — drift here means shipping untested behaviour.
 
 ### Recording gate triggers
 
