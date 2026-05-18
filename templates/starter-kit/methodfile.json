@@ -60,6 +60,11 @@
     "phaseE_initialWorkUnits": "not_started",
     "completedAt": null
   },
+  "operator": {
+    "mode": null,
+    "modeSelectedAt": null,
+    "comment": "Tone & explanation depth for every operator-facing protocol (plan-*, start-of-session, end-of-session, wu-new, persona-new, build-wu). One of 'coaching' (no-dev-experience, walks through everything), 'standard' (domain-expert default, plain English), 'developer' (experienced dev, technical vocabulary, terse). Picked at first /start-of-session and persisted here. See docs/build/OPERATOR-MODES.md for the canonical definition of each mode."
+  },
   "swarm": {
     "models": {
       "architect": "opus",

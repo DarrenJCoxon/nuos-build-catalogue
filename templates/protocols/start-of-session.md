@@ -2,7 +2,19 @@
 
 You are starting a session on a project that uses the **NuOS Build Method catalogue**. Your job is to read where the project is right now and tell the operator in plain English, then propose the next action and wait for confirmation.
 
-**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. If you must use a term like "work unit" or "persona", spell it out the first time per session.
+## Step 0 — Operator mode
+
+Read `methodfile.json`'s `operator.mode`:
+
+- Set to `"coaching"` / `"standard"` / `"developer"` → adopt that tone per `docs/build/OPERATOR-MODES.md`. Skip to Step 1.
+- `null` → run the picker below before doing anything else.
+
+**Picker (first run only).** Tell the operator this is a one-time setup, then offer the three modes in your own words from `OPERATOR-MODES.md`:
+- **Coaching** — new to software development; learning the process while building.
+- **Standard** — domain expert; comfortable with files and instructions; not a working dev. *(Most common — recommend if they're unsure.)*
+- **Developer** — experienced engineer; wants terse protocols.
+
+On their answer: write the choice to `methodfile.json` as `operator.mode` (string) and stamp `operator.modeSelectedAt` with today's ISO date. Confirm in one line: *"Saved. Change any time with `nuos-catalogue mode <name>`."* Continue to Step 1.
 
 ---
 

@@ -9,16 +9,18 @@ By the end of this session the operator should have:
 - Decisions filed for every non-obvious technology or structural choice
 - The Phase B row in STATE.md's Planning progress table flipped to `✅ complete`
 
-The whole session takes about 60–90 minutes. **The operator is most likely a domain expert, not a software engineer.** Plain English throughout. A "module" is just a major piece with one clear responsibility. A "contract" is the plain-English promise that piece makes to everything else.
+The whole session takes about 60–90 minutes (longer in coaching mode, shorter in developer mode).
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 
 ## How to lead this conversation
 
-- **Lead the operator; don't quiz them.** Walk them through naming each piece, one at a time.
-- **Write each module and contract as the conversation produces it.** Don't accumulate and write at the end.
-- **If a technology choice surfaces, file a decision immediately.** Saying "we'll use PostgreSQL" in conversation and not filing it is drift.
-- **Refer to the horizon map.** The modules are the mechanism that gets to the destination — check every module earns its place by pointing at something in the map.
+- Walk through naming pieces one at a time; don't quiz.
+- File each module + contract as the conversation produces it.
+- Tech choice surfacing in conversation → file a decision *now* (drift kills the catalogue).
+- Check every module earns its place by pointing at something in the horizon map.
 
 ---
 
@@ -69,25 +71,9 @@ Scan the conversation for anything the operator wasn't sure about. File each as 
 
 ## Step 5 — Close (2 min)
 
-Update STATE.md:
-- Phase B row → `✅ complete (YYYY-MM-DD)`
-- Phase C row → `🟡 next`
-- Refresh "Last updated"
+Update STATE.md: Phase B → `✅ complete (YYYY-MM-DD)`, Phase C → `🟡 next`, refresh "Last updated".
 
-Tell the operator:
-
-> "You've got the architecture substrate:
->
-> - **[N] modules** in `docs/build/architecture/` — the major pieces
-> - **[N] contracts** in `docs/build/contracts/` — what each piece promises
-> - **[N] decisions** in `docs/build/decisions/` — the choices already made
-> - **STATE.md** updated
->
-> Next session: **Phase C — UI/UX + Design System** (~60–90 min). We'll name every screen and surface the user touches, then build the complete design language: colours, type, spacing, components, patterns, voice, and accessibility. By the end, the design system is real — no placeholders.
->
-> Run `/end-of-session` to commit everything."
-
-Then run `/end-of-session`.
+Summarise to the operator: [N] modules + contracts filed, [N] decisions, STATE.md updated. Next session is **Phase C — UI/UX + Design System** (~60–90 min) producing a real design system, no placeholders. Then run `/end-of-session`.
 
 ---
 

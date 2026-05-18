@@ -4,6 +4,8 @@ You are running the **planning arc review** — a full end-to-end audit of every
 
 This runs automatically at the end of Phase E. It can also be invoked at any point mid-project (e.g. after a significant pivot, after adding a new persona, or when something feels off) with `/plan-review`.
 
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset). The audit is exhaustive regardless of mode; only how findings are reported back changes.
+
 By the end of this protocol:
 
 - Every gap, ambiguity, inconsistency, and optimisation opportunity in the planning catalogue has been surfaced

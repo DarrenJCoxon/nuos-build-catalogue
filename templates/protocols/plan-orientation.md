@@ -8,20 +8,22 @@ You are running **Phase A of the planning arc** for a project that just adopted 
 - Initial open questions captured for anything they couldn't yet answer
 - The Phase A row in STATE.md's Planning progress table flipped to `✅ complete`
 
-The whole session should take about 30 minutes. **The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Never use a term like "work unit" or "contract" without defining it the first time. Read [`docs/build/GLOSSARY.md`](../../docs/build/GLOSSARY.md) once before you start so your vocabulary matches the catalogue's.
+The whole session takes about 30 minutes (longer in coaching mode, shorter in developer mode).
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset). If `null`, send the operator back to `/start-of-session` first to pick.
+
+Read [`docs/build/GLOSSARY.md`](../../docs/build/GLOSSARY.md) once before you start so your vocabulary matches the catalogue's.
 
 ---
 
 ## How to lead this conversation
 
-- **Lead the operator. Don't quiz them.** They aren't here to fill in a form; you're walking them through producing something they can use.
-- **Translate the answers into catalogue artefacts as you go.** They don't need to know the artefact shape — you do.
-- **One question at a time.** If they answer two at once, capture both and move on.
-- **Use their words wherever possible.** Translate jargon out, not in.
-- **If they don't know something, file an open question and move on.** Don't stall.
-- **Save as you go.** Don't accumulate answers and write everything at the end — write each artefact when the conversation produces it.
-
-**Drift discipline:** every decision made in conversation must be filed before the session ends. If the operator says "let's go with X" and X is an architectural commitment, file a decision file in `docs/build/decisions/` *now*, not later. Decisions made in chat that don't reach the catalogue are drift, and drift is the failure mode that makes the catalogue worthless.
+- Lead the operator; don't quiz them. Walk them through producing something they can use.
+- Translate answers into catalogue artefacts as you go — they don't need to know the artefact shape.
+- One question at a time. If they answer two at once, capture both and move on.
+- Use their words. Translate jargon out, not in.
+- "I don't know" → file an open question; move on. Don't stall.
+- Save each artefact when the conversation produces it; don't batch-write at the end. Any in-conversation decision (architectural commitment, tech choice) gets filed to `docs/build/decisions/` *now* — drift kills the catalogue.
 
 ---
 
@@ -122,27 +124,9 @@ Pass over the conversation looking for anything the operator wasn't sure about. 
 
 ## Step 7 — Close (2 min)
 
-Update STATE.md:
+Update STATE.md: Phase A row → `✅ complete (YYYY-MM-DD)`; Phase B row → `🟡 next`; refresh "Last updated".
 
-- Set the **Planning progress** Phase A row to `✅ complete (YYYY-MM-DD)`
-- Set the Phase B row to `🟡 next` (so the next `/start-of-session` knows where to route)
-- Refresh the "Last updated" date
-
-Then tell the operator what they now have:
-
-> "You've got your first catalogue substrate:
->
-> - **Tech stack** defined in `methodfile.json` — (or flagged as an open question if not yet settled)
-> - **[N] personas** in `docs/build/personas/` — these anchor every later decision
-> - **Map 1** at `docs/build/maps/01-the-horizon.md` — the whole-project picture
-> - **[N] open questions** in `docs/build/open-questions/` — these are what we'll resolve as planning continues
-> - **STATE.md** updated to reflect Phase A is done
->
-> Next session, we move to **Phase B — Architecture & Contracts** (about 60-90 minutes). We'll name the major pieces of your project and what each one provides to the others.
->
-> For now, run `/end-of-session` to commit everything. The catalogue's search index will refresh in the background, and next session can pick up from here."
-
-Then run `/end-of-session` to close out.
+Summarise to the operator what they now have — tech stack, [N] personas, Map 1, [N] open questions, STATE.md updated — and tell them the next session is **Phase B — Architecture & Contracts** (~60-90 min). Then run `/end-of-session`.
 
 ---
 

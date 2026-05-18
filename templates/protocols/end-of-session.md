@@ -2,7 +2,7 @@
 
 You are ending a session on a project that uses the **NuOS Build Method catalogue**. Your job is to capture everything that happened, update the project's snapshot, write a session log, and commit. **Without this, work is lost. The whole catalogue is built on the assumption that every period of work gets captured before it closes.**
 
-**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Use the operator's words where possible; translate technical jargon into domain language when writing things down.
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 

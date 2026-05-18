@@ -674,43 +674,21 @@ async function ensureGitignoreEntries(
   );
 }
 
-function renderCatalogueSection(projectName: string): string {
+function renderCatalogueSection(_projectName: string): string {
   return `## Build catalogue (NuOS Build Method)
 
-This project uses the **NuOS Build Method catalogue** at [docs/build/](docs/build/). It is the project's memory — who it's for, what's been built, what's been decided, what's still unknown, what's at risk. Eleven registers in plain Markdown. The catalogue stays current through two protocols that bookend every session.
+This project's memory lives at [docs/build/](docs/build/) — eleven registers in plain Markdown, kept current by two bookend protocols.
 
-**Start here** if you're new:
+- Run \`/start-of-session\` to begin every session, \`/end-of-session\` to close every session.
+- A brand-new project: \`/start-of-session\` detects the empty catalogue and routes through 5 planning phases (Orientation → Architecture → UI/UX + Design System → Maps → Initial Work Units) before building.
+- Onboarding: [docs/build/WELCOME.md](docs/build/WELCOME.md) (5 min); every term defined in [docs/build/GLOSSARY.md](docs/build/GLOSSARY.md).
 
-- [docs/build/WELCOME.md](docs/build/WELCOME.md) — what this catalogue is, in 5 minutes
-- [docs/build/GLOSSARY.md](docs/build/GLOSSARY.md) — every term defined once
+### Rules
 
-### Three commands
+- **Never close without \`/end-of-session\`** — work not written down is lost.
+- **Never edit an accepted decision file** — file a superseding decision instead (pre-commit hook blocks silent edits).
+- **Never make an architectural decision in conversation without filing it to \`docs/build/decisions/\` first** — drift kills the catalogue.
 
-That's it. Everything else is automatic.
-
-\`\`\`text
-/start-of-session       — every time you begin working
-/end-of-session         — every time you stop
-\`\`\`
-
-(\`init\` runs once at the start; you've already done that.)
-
-If this is a brand-new project, \`/start-of-session\` will detect the empty catalogue and walk you through 5 short planning phases (Orientation, Architecture, UI/UX + Design System, Maps, Initial Work Units) before any building starts. Each phase is its own session. Take them in order; pause whenever you need to.
-
-### The principle that makes it work
-
-**Project memory never drifts from project reality.** Every decision made in conversation gets saved before the session ends. Every change to an existing piece flows through a protocol. The pre-commit hook blocks silent edits to accepted decisions; the post-commit hook auto-refreshes the search index after every commit. What the AI finds when you ask "what did we decide about X?" is always current.
-
-### What never to do
-
-- **Never close a session without \`/end-of-session\`.** Work that isn't written down is work that's lost.
-- **Never edit an accepted decision file.** If something changes, file a new decision that supersedes the old one. The pre-commit hook will block silent edits.
-- **Never make an architectural decision in conversation without filing it.** If you and the AI agree on "let's go with X", file it as a decision *before moving on*. Drift is the failure mode that makes the catalogue worthless.
-
-### If you need more
-
-- All registers and their templates live under [docs/build/](docs/build/)
-- The full CLI surface (creating work units / decisions / personas / questions / contracts / surfaces from the command line) is documented at [docs/build/WELCOME.md](docs/build/WELCOME.md)
-- To refresh protocols and hooks later (after a CLI upgrade): \`npx @nusoft/nuos-build-catalogue install-protocols\`
+Refresh protocols + hooks after a CLI upgrade with \`npx @nusoft/nuos-build-catalogue install-protocols\`.
 `;
 }

@@ -171,6 +171,15 @@ describe('§1 init on a fresh directory', () => {
     assert.equal(mf2.planning.phaseD_maps, 'not_started');
     assert.equal(mf2.planning.phaseE_initialWorkUnits, 'not_started');
 
+    // methodfile.json includes the operator-mode block, unset by default —
+    // the first /start-of-session walks the operator through picking one.
+    assert.ok(mf2.operator, 'methodfile.operator section must exist');
+    assert.equal(mf2.operator.mode, null);
+    assert.equal(mf2.operator.modeSelectedAt, null);
+
+    // OPERATOR-MODES.md is the canonical reference every protocol points at
+    assert.ok(existsSync(path.join(cwd, 'docs', 'build', 'OPERATOR-MODES.md')));
+
     // methodfile.json catalogue.registers includes the new register paths
     assert.ok(mf2.catalogue.registers.maps);
     assert.ok(mf2.catalogue.registers.architecture);

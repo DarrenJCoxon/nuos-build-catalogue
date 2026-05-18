@@ -6,50 +6,22 @@
 
 {{PROJECT_NAME}} is {{PROJECT_TAGLINE}}.
 
-This project runs **the NuOS Build Method** — see [the canonical strategic note](https://github.com/DarrenJCoxon/nuos/blob/main/docs/THE-NUOS-BUILD-METHOD.md) for the discipline, and [the harness contract](https://github.com/DarrenJCoxon/nuos/blob/main/docs/contracts/method-harness.md) for how the catalogue plugs into NuOS when wired.
+This project runs **the NuOS Build Method**. The discipline lives in [`THE-NUOS-BUILD-METHOD.md`](https://github.com/DarrenJCoxon/nuos/blob/main/docs/THE-NUOS-BUILD-METHOD.md); the harness contract is in [`method-harness.md`](https://github.com/DarrenJCoxon/nuos/blob/main/docs/contracts/method-harness.md).
 
-## At the start of every session — always
+## Session bookends
 
-Run the start-of-session protocol. The single command is:
+- **Start every session** with `/start-of-session` — follow [docs/build/START-OF-SESSION.md](docs/build/START-OF-SESSION.md) exactly.
+- **End every session** with `/end-of-session` — follow [docs/build/END-OF-SESSION.md](docs/build/END-OF-SESSION.md) exactly. **Work that isn't written down is work that's lost.**
 
-> "Run start-of-session"
+## Maps hold the operational plan
 
-When asked to do this, follow [docs/build/START-OF-SESSION.md](docs/build/START-OF-SESSION.md) exactly. It will:
+`docs/build/maps/` is the canonical operational plan. **Story-level detail lives in maps**, not in fragmented planning docs. Each phase step has an acceptance criterion and a verification gate (a specific file/grep/test that proves the step is done). After STATE.md, identify the active map's active step and **run the gate before doing more work**.
 
-1. Read [docs/build/STATE.md](docs/build/STATE.md) — the always-current project snapshot
-2. Read the most recent entry in [docs/build/sessions/](docs/build/sessions/)
-3. Identify the active work unit and read it in full
-4. Surface any blocking open questions or risks
-5. Confirm the state and propose the next concrete action
+If you find yourself writing *"likely"*, *"presumably"*, *"should be"* — stop. The hedge word indicates a skipped verification. Run the gate, replace the hedge with the result, then continue.
 
-## At the end of every session — always
+## Design it twice
 
-Run the end-of-session protocol. The single command is:
-
-> "Run end-of-session"
-
-When asked to do this, follow [docs/build/END-OF-SESSION.md](docs/build/END-OF-SESSION.md) exactly. It will:
-
-1. Update the active work unit's notes with what was done
-2. Update [docs/build/STATE.md](docs/build/STATE.md) to reflect current state
-3. Write a new session log entry in [docs/build/sessions/](docs/build/sessions/)
-4. Update any decisions, open questions, or risks that emerged
-5. Update the relevant `_index.md` files
-6. Verify nothing is lost
-
-If a session ends without the end-of-session protocol being run, work may be lost. Always run it.
-
-## The canonical operational plan lives in maps
-
-The `docs/build/maps/` directory holds the canonical operational plan for this project. **Story-level detail lives in maps**, not in fragmented planning docs. Each phase step in a map has an acceptance criterion and a verification gate (a specific file/grep/test in the target repo that proves the step is done).
-
-When a session starts, after reading STATE.md, identify the active map and read the active phase step. The verification gate names exactly what to run to know whether the step is complete. **Run the gate before doing more work.**
-
-If you find yourself writing *"likely"*, *"presumably"*, *"should be"* in code or planning text, **stop**. The hedge word indicates a verification step was skipped. Run the gate, replace the hedge with the result, then continue.
-
-**Before generating non-trivial implementation, produce at least two fundamentally different designs, evaluate each, then pick.** This is Ousterhout's "design it twice" applied to agent-led work. Agents satisfice on the first plausible idea; the structured comparison is what catches blind spots before they reach code. Record the alternatives in the WU's notes (or a D-NNN decision file).
-
-These are two of the five agentic-age patterns codified in [`THE-NUOS-BUILD-METHOD.md`](https://github.com/DarrenJCoxon/nuos/blob/main/docs/THE-NUOS-BUILD-METHOD.md) §post-Phase-3 epistemic discipline. The discipline isn't borrowed from agile; it's shaped for the specific failure modes of LLM-driven building.
+Before generating non-trivial implementation, produce at least two fundamentally different designs, evaluate each, then pick. Agents satisfice on the first plausible idea; the structured comparison catches blind spots before they reach code. Record the alternatives in the WU's notes or a D-NNN decision file.
 
 ## The single rule
 

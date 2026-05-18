@@ -12,7 +12,9 @@ By the end of this session:
 - Decisions are filed for every non-obvious design choice
 - The Phase C row in STATE.md is flipped to `✅ complete`
 
-This session takes 60–90 minutes. **The design system is not a nice-to-have.** Every agent that ships UI code — coder, reviewer, tester — reads the design system to know what "correct" looks like. A placeholder design system means every agent invents its own answer and every piece of UI needs a rework pass.
+This session takes 60–90 minutes (longer in coaching mode, shorter in developer mode). **The design system is not a nice-to-have.** Every agent that ships UI code — coder, reviewer, tester — reads it to know what "correct" looks like. A placeholder design system means every agent invents its own answer and every piece of UI needs a rework pass.
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 
@@ -72,72 +74,38 @@ For each surface in the list, ask in conversation:
 
 ## Step 4 — Extract the design language (20–25 min)
 
-When all surfaces are filed, say:
+Transition to the operator: now the design language that governs every surface — values handed to every agent so they all build the same thing. Make provisional decisions when the operator isn't sure; file them as decisions they can supersede.
 
-> "Now let's build the design language that governs all of them. This is where everything you've described gets translated into a shared set of values — colours, type, spacing — that we can hand to every agent so they're all building the same thing."
+Walk through each token group below as conversation — open with the character/feel question, then capture the values. **Every token gets a real value, not a placeholder.**
 
-Walk through the following as conversation. Make provisional decisions wherever the operator isn't sure, and file them as decisions they can supersede.
-
-### Colour tokens
-
-Ask:
-> "What's the character of this product? Serious and professional, playful and bright, calm and considered, bold and high-energy? How do you want people to feel when they use it?"
-
-Establish and write **real hex or hsl values** for:
-- **Brand primary** — the main action colour (buttons, links, active states)
-- **Brand secondary** — accent colour if needed
+### Colour — `docs/build/design-system/tokens-colour.md`
+Open: *"What's the character of this product — serious/professional, playful, calm, bold? How should people feel using it?"* Then capture, with real hex/hsl values:
+- **Brand primary** (main action colour) + **brand secondary** if needed
 - **Neutral scale** — 5–7 steps: background, surface, border, muted text, body text, heading
-- **Semantic colours** — success, warning, error, info (four colours, real values)
+- **Semantic** — success, warning, error, info
 
-Write to `docs/build/design-system/tokens-colour.md`. Show the operator the file before moving on.
+### Typography — `docs/build/design-system/tokens-typography.md`
+Open: *"Scanning data or reading prose? Mobile-first or desktop-first?"* Capture:
+- **Font family** (real name — system stack, specific Google Font, or custom)
+- **Size scale** xs → 3xl (real rem values)
+- **Weight variants** (real numeric weights)
+- **Line height** (compact for data, comfortable for prose)
 
-### Type scale
+### Spacing — `docs/build/design-system/tokens-spacing.md`
+Open: *"Tight density or generous whitespace?"* Capture:
+- **Spacing scale** (real step sequence, e.g. 4/8/12/16/20/24/32/40/48/64 px)
+- **Max content width** + **grid/column structure** if used
 
-Ask:
-> "What's the reading experience? Are people scanning data or reading long prose? Mobile-first or desktop-first?"
+### Radius & elevation — `docs/build/design-system/tokens-radius-elevation.md`
+Open: *"Sharp corners or rounded? Flat or layered?"* Capture:
+- **Border radius** (none / sm / md / lg / full — real px values)
+- **Shadow scale** if depth is used (2–4 named levels, real values)
 
-Establish:
-- **Font family** — system stack, a specific Google Font, or custom (real name, not "sans-serif")
-- **Size scale** — xs through 3xl (real rem values, not "small/medium/large")
-- **Weight variants** — regular / medium / semibold / bold (real numeric weights)
-- **Line height** — compact for data, comfortable for prose (real values)
-
-Write to `docs/build/design-system/tokens-typography.md`.
-
-### Spacing & layout
-
-Ask:
-> "How dense is this? Tight information display, or generous whitespace?"
-
-Establish:
-- **Spacing scale** — a consistent step sequence (e.g. 4/8/12/16/20/24/32/40/48/64 px — real values)
-- **Max content width** if applicable
-- **Grid or column structure** if the product uses one
-
-Write to `docs/build/design-system/tokens-spacing.md`.
-
-### Radius & elevation
-
-Ask:
-> "Sharp corners or rounded? Flat design or layered with shadows and depth?"
-
-Establish:
-- **Border radius** — none / sm / md / lg / full with real px values
-- **Shadow scale** — if the product uses depth, 2–4 named shadow levels with real values
-
-Write to `docs/build/design-system/tokens-radius-elevation.md`.
-
-### Motion
-
-Ask:
-> "Does this product have meaningful transitions — things appearing, sliding, fading? Or is it mostly static?"
-
-Establish:
-- **Transition durations** — instant / fast / base / slow (real ms values)
-- **Easing curves** — real CSS easing values
-- **Reduced-motion policy** — what happens when `prefers-reduced-motion` is set
-
-Write to `docs/build/design-system/tokens-motion.md`.
+### Motion — `docs/build/design-system/tokens-motion.md`
+Open: *"Meaningful transitions or mostly static?"* Capture:
+- **Transition durations** instant / fast / base / slow (real ms values)
+- **Easing curves** (real CSS easing values)
+- **Reduced-motion policy** for `prefers-reduced-motion`
 
 ## Step 5 — File the components (15–20 min)
 
@@ -213,28 +181,9 @@ If anything is still a placeholder, resolve it now. This check is non-negotiable
 
 ## Step 9 — Close
 
-Update STATE.md:
-- Phase C row → `✅ complete (YYYY-MM-DD)`
-- Phase D row → `🟡 next`
-- Refresh "Last updated"
+Update STATE.md: Phase C → `✅ complete (YYYY-MM-DD)`, Phase D → `🟡 next`, refresh "Last updated".
 
-Tell the operator:
-
-> "The design system is done:
->
-> - **[N] surfaces** in `docs/build/ui-ux/` — every screen defined
-> - **Colour, type, spacing, radius, motion tokens** — real values, ready to use
-> - **[N] components** in `docs/build/design-system/components/` — the building blocks
-> - **[N] patterns** in `docs/build/design-system/patterns/` — recurring compositions
-> - **Voice + accessibility** committed
->
-> Every agent that builds UI reads this design system. The reviewer will reject output that doesn't conform. That's the mechanism: consistent product instead of random output.
->
-> Next session: **Phase D — Maps** (~45 min). We'll map the journey from here to done.
->
-> Run `/end-of-session` to commit everything."
-
-Then run `/end-of-session`.
+Summarise to the operator: [N] surfaces, real token values (colour, type, spacing, radius, motion), [N] components, [N] patterns, voice + accessibility committed. Every UI-building agent reads this; the reviewer rejects non-conforming output. Next session is **Phase D — Maps** (~45 min). Then run `/end-of-session`.
 
 ---
 

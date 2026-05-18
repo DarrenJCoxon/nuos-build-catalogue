@@ -2,7 +2,7 @@
 
 You are filing a new **work unit** for a project that uses the **NuOS Build Method catalogue**. A work unit is one concrete thing the project will build. The catalogue's value compounds as work units accumulate notes — every session adds to the record of what was attempted, what worked, what didn't, what was learned.
 
-**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Use their words. Define any term you use that isn't obvious from context.
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 

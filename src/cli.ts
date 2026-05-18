@@ -486,6 +486,9 @@ Usage:
 
   nuos-catalogue plan      status    show planning progress across the 5-phase arc
 
+  nuos-catalogue mode                    print the current operator mode
+  nuos-catalogue mode <name>             set operator mode: coaching | standard | developer
+
   nuos-catalogue swarm     status    [--limit=N]  list recent /build-wu runs
   nuos-catalogue swarm     cost      aggregate cost across swarm runs
 
@@ -615,6 +618,12 @@ async function main(): Promise<void> {
       console.error(`unknown plan subcommand: ${sub ?? '(none)'}`);
       console.error('available: plan status');
       process.exit(1);
+    }
+    case 'mode': {
+      const { cmdMode } = await import('./commands/mode.js');
+      const code = await cmdMode({ cwd: process.cwd(), mode: args.positional[0] });
+      if (code !== 0) process.exit(code);
+      break;
     }
     case 'swarm': {
       const sub = args.positional[0];

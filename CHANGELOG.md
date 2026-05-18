@@ -1,5 +1,53 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.26.0 — 2026-05-18 — Operator modes (coaching / standard / developer)
+
+Every operator-facing protocol now adapts its tone, explanation depth, and assumed background to one of three modes. The first `/start-of-session` walks the operator through picking a mode; the choice persists in `methodfile.json` and applies to every later session.
+
+### What changed
+
+**`methodfile.json` schema — new `operator` block.**
+
+```json
+"operator": {
+  "mode": null,
+  "modeSelectedAt": null
+}
+```
+
+`mode` is `null` on a fresh scaffold and is set to `"coaching"`, `"standard"`, or `"developer"` the first time the operator runs `/start-of-session`.
+
+**New `docs/build/OPERATOR-MODES.md`** — canonical reference for what each mode means. Every operator-facing protocol points at this file:
+
+- **Coaching** — no-dev-experience audience. Every step is explained before it runs, every technical term is defined inline with an analogy, optional-depth offers throughout, pacing roughly 1.5× standard. For domain experts using the catalogue to learn the build process while producing real artefacts.
+- **Standard** (default) — domain-expert audience, plain English throughout, brief rationale where helpful. The catalogue's original voice; unchanged.
+- **Developer** — experienced-engineer audience. Technical vocabulary used directly without preamble, no hand-holding, terse prose, diff-friendly framing. Discipline (drift, design-it-twice, verification gates) still applies; only the *explanation* is trimmed.
+
+**`/start-of-session` — new Step 0.** When `operator.mode` is `null`, the protocol opens with a one-time mode picker before reading STATE.md. The operator's choice is written into `methodfile.json` and confirmed back. Picker can be re-run by setting the field back to `null` or running `nuos-catalogue mode <name>`.
+
+**Mode-aware preamble in every operator-facing protocol.** `plan-orientation`, `plan-architecture`, `plan-uiux`, `plan-maps`, `plan-initial-wu`, `plan-review`, `start-of-session`, `end-of-session`, `wu-new`, `persona-new`, `build-wu` each open by reading `operator.mode` and adopting the matching tone from `OPERATOR-MODES.md`. The structural steps and artefacts produced are identical across modes — only the conversation changes.
+
+**New `nuos-catalogue mode` CLI command.**
+
+```bash
+nuos-catalogue mode                  # print the current mode (or "(unset)")
+nuos-catalogue mode coaching         # switch to coaching mode
+nuos-catalogue mode standard
+nuos-catalogue mode developer
+```
+
+Sets `operator.mode` and stamps `operator.modeSelectedAt` with today's date. Validates against the three known values; rejects anything else without writing.
+
+### Why
+
+The planning arc was written assuming "domain expert, not a software engineer" throughout. That voice is right for the catalogue's centre-of-mass audience, but two flanks fell outside it: people with no software background at all (who needed every term defined and every step explained), and experienced developers (who wanted the protocols out of their way). Modes let the same protocols serve all three audiences without forking the catalogue or duplicating the artefacts.
+
+The picker is one-time at first `/start-of-session` rather than at `init` time deliberately: the operator should see what the arc looks like before being asked to pitch its voice, and `init` stays zero-prompt so `npx ... init` just works.
+
+### Backwards compatibility
+
+Projects that initialised before 0.26.0 will not have an `operator` block in their `methodfile.json`. The `mode` CLI command and every protocol handle the missing block as if `mode === null` — the next `/start-of-session` will run the picker. No migration is required.
+
 ## 0.25.0 — 2026-05-17 — Vitest as a built-in build requirement
 
 The harness now treats **vitest** as the default test runner for JS/TS implementation repos, and the swarm enforces a two-part test gate before any work unit can promote. The operator never has to set this up — the coordinator wires vitest into the implementation repo on first run and runs the gate on every WU thereafter.

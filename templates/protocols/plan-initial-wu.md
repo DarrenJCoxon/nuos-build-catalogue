@@ -11,7 +11,9 @@ By the end of this session:
 - STATE.md names the first work unit as `🟡 in flight`
 - `methodfile.json`'s `planning.completedAt` is set to today's date
 
-This session takes about 60 minutes. **The operator is most likely a domain expert, not a software engineer.** Plain English throughout.
+This session takes about 60 minutes (longer in coaching mode, shorter in developer mode).
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 
@@ -67,31 +69,9 @@ The review typically takes 10–20 minutes. It is the difference between a catal
 
 ## Step 5 — Close
 
-Update STATE.md:
-- Phase E row → `✅ complete (YYYY-MM-DD)` (only after `plan-review` has completed)
-- "Active work unit" → the first `🟡 in flight` work unit handle and title
-- "What is currently in flight" → one sentence describing what the swarm will tackle first
-- Refresh "Last updated"
+Update STATE.md (only after `plan-review` has completed): Phase E → `✅ complete (YYYY-MM-DD)`; "Active work unit" → first `🟡 in flight` WU handle + title; "What is currently in flight" → one sentence on what the swarm tackles first; refresh "Last updated". Set `methodfile.json` → `planning.completedAt` to today's ISO date.
 
-Update `methodfile.json`:
-- Set `planning.completedAt` to today's date (ISO format: YYYY-MM-DD)
-
-Tell the operator:
-
-> "Planning is done. You have:
->
-> - **[N] work units** filed and ordered — [first WU title] is first
-> - **The planning arc is complete**
->
-> Every session from here follows the same loop:
->
-> `/start-of-session` → work → `/end-of-session`
->
-> When you're ready to build, run `/build-wu [handle]` — the swarm coordinator reads the work unit, designs the approach (twice — two options, then a pick), spawns the right agents, and runs it to completion.
->
-> Run `/end-of-session` to commit everything and close the planning arc."
-
-Then run `/end-of-session`.
+Tell the operator: planning arc complete, [N] work units filed and ordered, [first WU title] is first. From here the loop is `/start-of-session` → work → `/end-of-session`; when ready to build, `/build-wu <handle>` runs the swarm. Then run `/end-of-session`.
 
 ---
 

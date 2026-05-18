@@ -9,7 +9,9 @@ By the end of this session:
 - Each phase in Map 2 has a clear acceptance criterion and a verification gate
 - The Phase D row in STATE.md is flipped to `✅ complete`
 
-This session takes about 45 minutes. **The operator is most likely a domain expert, not a software engineer.** Plain English throughout.
+This session takes about 45 minutes (longer in coaching mode, shorter in developer mode).
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset).
 
 ---
 
@@ -57,23 +59,9 @@ Write Map 3 to `docs/build/maps/03-near-term.md` using `docs/build/maps/03-templ
 
 ## Step 4 — Close (5 min)
 
-Update STATE.md:
-- Phase D row → `✅ complete (YYYY-MM-DD)`
-- Phase E row → `🟡 next`
-- Refresh "Last updated"
+Update STATE.md: Phase D → `✅ complete (YYYY-MM-DD)`, Phase E → `🟡 next`, refresh "Last updated".
 
-Tell the operator:
-
-> "The maps are in:
->
-> - **Map 2** — the full journey from here to done, with acceptance criteria and verification gates per stage
-> - **Map 3** — what's happening right now and what's immediately next
->
-> Next session: **Phase E — Initial Work Units** (~60 min). We'll file the first 5–10 concrete things to build, ordered by dependency. After that, the planning arc is done and the swarm can start.
->
-> Run `/end-of-session` to commit everything."
-
-Then run `/end-of-session`.
+Summarise: Map 2 (full journey with per-stage gates) and Map 3 (near-term plan) filed. Next session is **Phase E — Initial Work Units** (~60 min); after that the planning arc closes and the swarm can start. Then run `/end-of-session`.
 
 ---
 

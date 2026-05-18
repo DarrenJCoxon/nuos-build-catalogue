@@ -2,7 +2,7 @@
 
 You are filing a new **persona** for a project that uses the **NuOS Build Method catalogue**. A persona is one specific person the project serves — not a market segment, not a demographic. One person with a name, a situation, and a reason to need what's being built.
 
-**The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Walk the operator through the persona in conversation — don't read out a form.
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset). The seven dimensions are filed in full regardless of mode.
 
 ---
 
