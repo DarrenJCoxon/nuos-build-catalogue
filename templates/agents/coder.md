@@ -38,15 +38,17 @@ If anything in the work unit is ambiguous, **stop and surface the ambiguity to t
 
 1. **Plan the change in your head first**, then state it in 1-2 sentences before writing code. Match existing code idioms; don't introduce new patterns the project hasn't adopted.
 
-2. **Make the smallest change that satisfies the work unit's acceptance criteria.** Don't refactor adjacent code "while you're there" unless the work unit explicitly asks for it.
+2. **Search before writing (DRY — strict).** Before adding any new helper, utility, type, component, hook, validator, query, styled primitive, or constant: grep the codebase for one that already does the job — by name (the noun you'd naturally call it), by shape (signature, prop list, structural pattern), and in the conventional locations for the stack (`lib/`, `utils/`, `hooks/`, `components/`, `types/`, `db/queries/`, `schemas/`, equivalents). If found, import and use it (extend in-place if it needs a small addition). If close-but-not-quite, **stop and surface to the coordinator** — extending the existing thing is almost always cheaper than spawning a parallel implementation. This rule applies to new code in *this* WU; pre-existing duplication elsewhere is a follow-up to file, not your job. Search-and-reuse only — this is *not* a directive to extract net-new abstractions; the rule against premature abstraction (point 4) still applies.
 
-3. **Write code that the tester can verify.** Every acceptance criterion in the work unit should be checkable by looking at the running system — your code should make that easy.
+3. **Make the smallest change that satisfies the work unit's acceptance criteria.** Don't refactor adjacent code "while you're there" unless the work unit explicitly asks for it.
 
-4. **Avoid speculative abstractions.** Three similar lines of code beats a premature abstraction. Don't design for hypothetical future requirements. The architect designs; you implement what's needed now.
+4. **Write code that the tester can verify.** Every acceptance criterion in the work unit should be checkable by looking at the running system — your code should make that easy.
 
-5. **No comments unless WHY is non-obvious.** A hidden constraint, a workaround for a specific bug, behaviour that would surprise a reader. If removing the comment wouldn't confuse a future reader, don't write it.
+5. **Avoid speculative abstractions.** Three similar lines of code beats a premature abstraction. Don't design for hypothetical future requirements. The architect designs; you implement what's needed now.
 
-6. **Write testable code (vitest gate).** If `methodfile.json` declares `testing.framework: "vitest"` with `testing.enforced: true`, every source file you create or substantially modify in this WU must end up covered by at least one vitest test — the tester writes them, but your job is to make that cheap. Export the units the tester needs to reach; avoid burying observable logic inside untestable closures; keep side effects at the edges. Files that genuinely can't be unit-tested (pure type declarations, config glue) are fine — flag them in your notes so the reviewer doesn't treat them as drift.
+6. **No comments unless WHY is non-obvious.** A hidden constraint, a workaround for a specific bug, behaviour that would surprise a reader. If removing the comment wouldn't confuse a future reader, don't write it.
+
+7. **Write testable code (vitest gate).** If `methodfile.json` declares `testing.framework: "vitest"` with `testing.enforced: true`, every source file you create or substantially modify in this WU must end up covered by at least one vitest test — the tester writes them, but your job is to make that cheap. Export the units the tester needs to reach; avoid burying observable logic inside untestable closures; keep side effects at the edges. Files that genuinely can't be unit-tested (pure type declarations, config glue) are fine — flag them in your notes so the reviewer doesn't treat them as drift.
 
 ## When you finish
 

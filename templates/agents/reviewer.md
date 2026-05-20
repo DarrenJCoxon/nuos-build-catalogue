@@ -46,13 +46,15 @@ nuos-catalogue memory store --value="<the pattern and why it matters>" --wu=<han
 
 4. **Does it match existing code idioms?** New patterns introduced without justification are a yellow flag — surface them to the coordinator as either "rename to match existing X" or "intentional, file as new pattern in architecture/".
 
-5. **Does it surface or hide changes future work needs to know?** If the coder modified an interface that downstream work depends on, the change should be in a decision file or a contract update — not silent.
+5. **Does new code reinvent something the codebase already has? (DRY — strict.)** For each new helper, utility, type, component, hook, validator, query, styled primitive, or constant the coder added in this WU, grep the codebase for an existing implementation that does the same job — by name, by signature/shape, and in the conventional locations for the stack (`lib/`, `utils/`, `hooks/`, `components/`, `types/`, `db/queries/`, `schemas/`, equivalents). If you find one, raise a **BLOCKER** citing the existing path; the coder must reuse it (extending the existing one in place if needed) rather than ship a parallel implementation. This applies only to *new* code in this WU vs. the *existing* codebase — don't flag duplication within the WU's own output as a violation; the rule against premature abstraction still governs net-new shared code.
 
-6. **Is there dead-weight or scope creep?** Refactors adjacent to the work unit that weren't asked for. Speculative abstractions. Unnecessary comments. Half-implementations of features not in this work unit.
+6. **Does it surface or hide changes future work needs to know?** If the coder modified an interface that downstream work depends on, the change should be in a decision file or a contract update — not silent.
 
-7. **Is jargon being introduced into user-facing copy?** If the work unit serves a non-engineer persona, the surface text should match the project's voice file. Flag anything that sounds like dev-speak in a user-facing surface.
+7. **Is there dead-weight or scope creep?** Refactors adjacent to the work unit that weren't asked for. Speculative abstractions. Unnecessary comments. Half-implementations of features not in this work unit.
 
-8. **Does the vitest gate pass (JS/TS projects)?** If `methodfile.json` declares `testing.framework: "vitest"` with `testing.enforced: true`, run both gates from [build-wu.md §Step 5.5](../protocols/build-wu.md):
+8. **Is jargon being introduced into user-facing copy?** If the work unit serves a non-engineer persona, the surface text should match the project's voice file. Flag anything that sounds like dev-speak in a user-facing surface.
+
+9. **Does the vitest gate pass (JS/TS projects)?** If `methodfile.json` declares `testing.framework: "vitest"` with `testing.enforced: true`, run both gates from [build-wu.md §Step 5.5](../protocols/build-wu.md):
    - **Gate A:** Run `npx vitest run` (or whatever `testing.command` says) from the implementation repo root. Capture the full output. Non-zero exit → BLOCKER finding with the failing test list.
    - **Gate B:** Compute `git diff --name-only <swarm-base>...HEAD`, filter to source files (`.ts/.tsx/.js/.jsx` under `src/`, `app/`, `routes/`, `pages/`, `lib/`, `components/`, `api/` — exclude `*.test.*`, `*.spec.*`, `*.d.ts`, configs). For each remaining file, grep the test directories for an import of that module or a colocated `*.test.*` file. Any uncovered file → BLOCKER finding naming the file. The coder may rebut by flagging files as genuinely untestable (type-only, config glue) in the WU notes — accept those rebuttals when reasonable.
 
