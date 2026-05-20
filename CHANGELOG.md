@@ -1,5 +1,51 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.27.0 — 2026-05-18 — HTML companion views for visual registers
+
+Markdown is the catalogue's source of truth — every agent reads it, the index walks it, the pre-commit hook gates it. But four registers are *inherently visual* and reading them as prose is harder than reading them as renders: `ui-ux/` (surfaces + sitemap), `design-system/` (colour swatches, type scale, spacing, components), `maps/` (horizon, phases, near-term), and `architecture/` (modules + dependencies). This release ships a small render pipeline that generates a companion `_view.html` for each of those four registers from the canonical markdown.
+
+### Principle
+
+**Companion, never canonical.** The HTML is a generated artefact, like a built site. The markdown stays authoritative. Every agent still reads `.md`; the operator opens `_view.html` when they want to *see* what they have. Regenerable any time via `nuos-catalogue render`, so the operator never has to worry about drift between markdown and HTML — re-render and they match.
+
+### What changed
+
+**New CLI command — `nuos-catalogue render [<register>]`.**
+
+```bash
+nuos-catalogue render                  # regenerate all four views
+nuos-catalogue render surfaces         # just ui-ux/_view.html
+nuos-catalogue render design-system    # just design-system/_view.html
+nuos-catalogue render maps             # just maps/_view.html
+nuos-catalogue render architecture     # just architecture/_view.html
+```
+
+Outputs:
+- `docs/build/ui-ux/_view.html` — sitemap grouped by persona + per-surface card with the surface's "What they see", primary actions, contracts touched, and design-system pieces consumed. A skeletal wireframe hint sits above each card.
+- `docs/build/design-system/_view.html` — colour swatches with real hex chips, type scale rendered at its declared px/line-height/weight (so the operator sees the actual shape, not a description), spacing scale as horizontal bars, radius examples, motion durations, plus listings of components and patterns. Voice + accessibility summaries underneath.
+- `docs/build/maps/_view.html` — vertical timeline of all map files (horizon → phases → near-term), each as a card.
+- `docs/build/architecture/_view.html` — module index + per-module card with responsibility, dependencies, and contracts owned.
+
+**New `src/render/` module.** A small parser (sections, GFM tables, hex extraction, placeholder detection) plus per-register renderers and a shared HTML wrapper. Pure static HTML output — no JS, no framework, no external CSS or fonts. Self-contained files the operator can open in a browser without a build step.
+
+**`/end-of-session` Step 8 — regenerate companion views.** When the protocol runs, if anything in `ui-ux/`, `design-system/`, `maps/`, or `architecture/` was edited, run `nuos-catalogue render` and stage the refreshed `_view.html` files alongside the markdown for the commit. If none of those registers changed, the step is skipped.
+
+### Why
+
+The Build Method's framing — *"the operator is most likely a domain expert, not a software engineer"* — means an operator reviewing 20 surface files or a fully populated design-system folder is reading prose descriptions of things that *should* be visual. Wireframes belong as wireframes; colour swatches belong as swatches; timelines belong as timelines. The catalogue compounds in value when those artefacts can be reviewed in their natural medium without giving up the markdown legibility that the agent swarm depends on.
+
+This is also a deliberate reply to the *"HTML is the new Markdown"* observation that long AI-generated plans defeat human review when they're walls of text. The reply here isn't "replace markdown with HTML" — that would silently break the index, agent legibility, diff-discipline, and the pre-commit gate. The reply is *both* — markdown for machines, HTML for humans, generated from one source.
+
+### Scope and non-goals
+
+In: surfaces, design system, maps, architecture. Out (intentionally, for now): personas (small, text-driven; a card view adds little), decisions / open questions / risks / work units (text-first, agent-consumed; HTML adds friction), and the speculative "throwaway micro-software" / "comment on the canvas" patterns from the source proposal — held until the four base companions prove themselves.
+
+The visual language is deliberately neutral — restrained cards, system fonts, no brand opinion. Consumer projects with strong design opinions can post-process the output or skip companion rendering entirely; the default isn't trying to be a brand.
+
+### Backwards compatibility
+
+Existing projects pick up the render command after upgrading the CLI; no migration needed. Re-running `/end-of-session` after the upgrade generates `_view.html` files in any registers that have content. The `_view.html` files are committed alongside the markdown — they're tracked artefacts, not gitignored, so reviewers see them in pull requests.
+
 ## 0.26.0 — 2026-05-18 — Operator modes (coaching / standard / developer)
 
 Every operator-facing protocol now adapts its tone, explanation depth, and assumed background to one of three modes. The first `/start-of-session` walks the operator through picking a mode; the choice persists in `methodfile.json` and applies to every later session.

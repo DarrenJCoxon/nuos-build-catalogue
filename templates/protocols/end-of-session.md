@@ -67,7 +67,13 @@ Create `docs/build/sessions/YYYY-MM-DD-short-slug.md`. The entry includes:
 
 Add a row to `sessions/_index.md`.
 
-### 8. Verify nothing is lost
+### 8. Regenerate HTML companion views (if any visual register changed)
+
+If anything in `ui-ux/`, `design-system/`, `maps/`, or `architecture/` was edited this session, run `nuos-catalogue render` to refresh the companion HTML views (`_view.html` in each of those directories). These are generated artefacts — the markdown stays canonical — but they need to stay in sync so the operator's next review opens current views. Stage the refreshed `_view.html` files for the commit alongside the markdown.
+
+If none of those registers changed, skip this step.
+
+### 9. Verify nothing is lost
 
 Before committing, scan:
 
@@ -78,7 +84,7 @@ Before committing, scan:
 - Cross-references resolve (no dead links)
 - Dates are right
 
-### 9. Commit
+### 10. Commit
 
 Single commit. Message format:
 
