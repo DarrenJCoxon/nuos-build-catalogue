@@ -68,7 +68,8 @@ check_index_drift() {
   ids_in_tree=$(cd "$REPO_ROOT/$dir" && {
     find . -maxdepth 2 -type f -name "*.md" \
       -not -name "_index.md" \
-      -not -name "*-template.md" 2>/dev/null \
+      -not -name "*-template.md" \
+      -not -name "*-template-*.md" 2>/dev/null \
       | sed -nE "$file_regex" \
       | sort -u
   })
