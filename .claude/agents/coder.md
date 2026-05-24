@@ -34,6 +34,32 @@ nuos-catalogue memory store --value="<what worked and why, or what to avoid>" --
 
 If anything in the work unit is ambiguous, **stop and surface the ambiguity to the coordinator** rather than guessing. A guess produces work that may not match the design.
 
+## Design system gate (UI work — enforced by hook)
+
+**If this work unit touches any UI file (`.css`, `.scss`, `.less`, `.html`, `.tsx`, `.jsx`, `.vue`, `.svelte`, `.astro`), a write-gate hook is active. It will BLOCK the write and force you back here.**
+
+Before writing any UI file, complete these steps in order:
+
+1. **Read the design system — all of it:**
+   - `docs/build/design-system/tokens-colour.md` — every colour token and its hex value
+   - `docs/build/design-system/tokens-typography.md` — font sizes, weights, line heights
+   - `docs/build/design-system/tokens-spacing.md` — the spacing scale
+   - `docs/build/design-system/tokens-radius-elevation.md` — border radius, shadows
+
+2. **Identify the token reference pattern this project uses** — read two or three existing UI files to confirm one of:
+   - CSS custom properties: `color: var(--colour-text-primary);`
+   - Theme/token object: `color: theme.colour.text.primary`
+   - Utility class config: project-configured Tailwind or similar
+
+3. **Map every value to a token before writing a single line.** If a colour, size, or spacing value you need has no token in the design system, **stop and surface the gap to the coordinator** — do not invent a value or use a hardcode.
+
+The hook checks for:
+- Raw hex literals in colour properties: `color: #1a2b3c` — BLOCKED
+- Hex strings in JSX inline styles: `color: '#fff'` — BLOCKED
+- Hex colours in HTML style attributes — BLOCKED
+
+CSS custom property definitions (`--colour-x: #hex`) are allowed — that is where the token value lives. Everything else must use the token by name.
+
 ## How you work
 
 1. **Plan the change in your head first**, then state it in 1-2 sentences before writing code. Match existing code idioms; don't introduce new patterns the project hasn't adopted.
