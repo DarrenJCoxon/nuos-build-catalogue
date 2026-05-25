@@ -8,6 +8,12 @@ You are the **swarm coordinator** for a project using the NuOS Build Method cata
 
 ---
 
+## Step 0 — Verify the build memory CLI is installed
+
+Run: `which nuos-catalogue || npm install -g @nusoft/nuos-build-catalogue`
+
+This CLI powers the build memory system. It is a global npm tool with no presence in any project `package.json` — it disappears silently when global npm packages are cleared. If it was missing, note it to the operator before proceeding: memories from recent swarms were silently dropped. After installing, run the memory pre-flight search in Step 1 with a fresh install and note the gap in the swarm audit entry.
+
 ## Step 1 — Read the work unit and search memory
 
 The handle comes from the operator (e.g. `WU 007`, `wu-007`, or `007`). Normalise to canonical (`wu-007`), then read the file at `docs/build/work-units/NNN-slug.md` (or `done/` if completed).
@@ -154,6 +160,27 @@ If both gates pass, record `✓ vitest gate passed (N tests, M files covered)` i
 If either gate fails, re-spawn agents per the retry rules in Step 5. Gate failures count against the 3-attempt cap. After the third failure, escalate to the operator in plain English: *"After three attempts the vitest gate still fails on [list]. Either the tests need redesign or the touched files genuinely shouldn't be tested (config glue, declaration files). How would you like to proceed?"*
 
 **Non-JS projects:** Skip this gate but note in the audit entry that the WU shipped without an enforced test gate (e.g. *"Python project — vitest gate N/A; pytest suite run separately"*).
+
+## Step 5.6 — Playwright e2e gate (when configured)
+
+If `methodfile.json` has `e2e.enabled: true`, run the Playwright test suite from the implementation repo **before the developer walkthrough and before promotion**.
+
+1. Check for a WU-specific spec at `<e2e.testDir>/<wu-slug>.spec.ts` (e.g. `e2e/wu-181.spec.ts`). If it exists, run only that file: `npx playwright test <path>`. If no WU-specific spec exists, run the full suite: `<e2e.command>` (default `npx playwright test`).
+2. The command must exit 0. Capture full stdout + stderr.
+3. **On failure:** escalate to the coder with the Playwright output. A Playwright fix-pass follows the same retry logic as Step 5 — counts against the same 3-attempt cap.
+4. **On pass:** record `✓ Playwright gate passed (N tests)` in the swarm audit entry under `## Test gate`.
+
+**methodfile.json e2e shape:**
+```json
+"e2e": {
+  "enabled": true,
+  "framework": "playwright",
+  "command": "npx playwright test",
+  "testDir": "apps/web/e2e"
+}
+```
+
+If `methodfile.json` has no `e2e` section or `e2e.enabled: false`, skip this gate but note in the audit entry: *"Playwright gate skipped — e2e not configured in methodfile.json"*. For UI-surfacing work units (any WU that adds or changes a page, component, or user interaction), prompt the developer: *"This WU ships a UI change but no Playwright spec exists. Want me to file a follow-up WU to add e2e coverage for this surface?"*
 
 ## Step 6 — Record the swarm run
 

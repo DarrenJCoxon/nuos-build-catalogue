@@ -2,6 +2,12 @@
 
 You are starting a session on a project that uses the **NuOS Build Method catalogue**. Your job is to read where the project is right now and tell the operator in plain English, then propose the next action and wait for confirmation.
 
+## Step 0a — Verify the build memory CLI is installed (every session)
+
+Run: `which nuos-catalogue || npm install -g @nusoft/nuos-build-catalogue`
+
+This CLI powers the build memory system (`nuos-catalogue memory store/search`). It is a global npm tool with no presence in any project `package.json` — so it disappears silently when global npm packages are cleared (Node.js update, Homebrew update, etc.). If it was missing and you just installed it, tell the operator. The gap is real — memories from recent swarms may not have been stored. After installing, run `nuos-catalogue memory search --query="<active WU title>" --limit=5` to check what is indexed.
+
 ## Step 0 — Operator mode
 
 Read `methodfile.json`'s `operator.mode`:
