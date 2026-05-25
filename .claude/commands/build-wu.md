@@ -142,6 +142,7 @@ Every decision made by any agent during the swarm MUST land in the catalogue bef
 - **Never let agents make architectural decisions without filing them.** If the coder makes a design call inline, that's a signal — pause, route to the architect, file the decision.
 - **Never run the swarm to completion in the background.** Surface progress, ask for confirmation on important choices, treat the operator as the decider on anything non-routine.
 - **Never use Opus for every agent.** The default routing in `methodfile.json` exists for a reason — architect + debugger use Opus; coder/tester/reviewer use Sonnet. Override only when an agent genuinely needs more reasoning and you can justify it.
+- **Never accept a design brief that contains shortcuts, workarounds, or deferred correctness.** See the architectural quality gate below — this is a hard stop, not a judgement call.
 
 ## Cost guidance
 
@@ -152,6 +153,25 @@ A typical full-feature swarm spawning architect (Opus, ~30 min) + coder (Sonnet,
 ## Verification gates
 
 To prevent a swarm from spiralling into runaway cost or quality drift, observe these gates. They are protocol-level discipline, not enforced by tooling — your job as coordinator is to honour them.
+
+### Architectural quality gate (after architect, before coder — mandatory)
+
+Before routing the architect's brief to the coder, read it for shortcut indicators. This is a **hard stop** — if any of the following are present, send the brief back to the architect. Do not route to the coder until the brief is clean.
+
+**Shortcut red flags — any one of these is a rejection:**
+
+- Language: "for now", "temporary", "quick fix", "workaround", "pragmatic", "simplified", "good enough", "we can improve later", "follow-up WU will address"
+- A design that defers security controls, input validation, authorisation, or error handling to "later"
+- A design that acknowledges a known flaw (race condition, missing boundary, incorrect abstraction) without resolving it
+- A single design presented without alternatives evaluated (Pattern N missing)
+- A design chosen explicitly because it is "less work" or "faster to implement" rather than because it is correct
+- Hard-coded values, collapsed module boundaries, or missing contracts "to keep the scope small"
+
+**When you find a red flag**, send the brief back to the architect with this instruction (adapt the specific finding):
+
+> "The brief contains [quote the specific shortcut language or describe the specific flaw]. This project builds properly — no workarounds, no deferred correctness. Produce the fully-designed solution. If the correct solution requires more scope than this work unit allows, tell me what proper scope looks like and I will surface it to the operator. Do not ship a lesser design."
+
+Do not feel time or cost pressure. A proper design that takes longer is always preferred over a shortcut that ships sooner. Routing a shortcut brief to the coder does not save time — it produces code the reviewer will block, and the loop costs more than getting the design right once.
 
 ### Retry cap on REQUEST CHANGES loops
 
