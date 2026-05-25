@@ -75,9 +75,41 @@ For each spawn:
 
 When each agent returns, capture their output. Three outcomes are typical:
 
-- **APPROVED** by reviewer → work unit is ready to promote ✅ shipped. Run end-of-session to commit.
+- **APPROVED** by reviewer → do NOT promote yet. Go to Step 5.1 — developer walkthrough.
 - **REQUEST CHANGES** by reviewer → re-spawn coder with reviewer's findings as input. Cap at 3 retry loops; if still failing, escalate to debugger or operator.
 - **ESCALATE** (any agent surfaces an architectural issue, a design ambiguity, a need for the operator's call) → STOP the swarm. Surface the issue to the operator in plain English; do not auto-decide.
+
+## Step 5.1 — Developer walkthrough (mandatory before promotion)
+
+The reviewer has approved. Before the work unit is promoted to shipped, **stop and brief the developer** so they can verify the feature themselves in their running dev environment.
+
+Write a short, plain-English walkthrough that tells the developer:
+
+1. **What was built** — one or two sentences describing the feature or change in terms of what it does, not how it was coded.
+2. **How to see it** — the exact steps to exercise the feature right now: which URL to open, which screen to navigate to, which action to take, which data to enter. Be specific enough that someone can follow without guessing.
+3. **What to look for** — what correct behaviour looks like at each step. What should appear, what should happen, what should NOT happen.
+4. **Any edge cases worth checking** — a second scenario or error path that is worth a quick manual check given what was built.
+
+Example format:
+
+---
+**What was built:** The password reset email now sends within 5 seconds and links to the new `/reset` page.
+
+**How to test it:**
+1. Go to `/login` and click "Forgot password"
+2. Enter any registered email address and submit
+3. Check that email inbox — the reset email should arrive within 5 seconds
+4. Click the link in the email — it should open `/reset?token=…` and show the new password form
+
+**What correct looks like:** The form accepts the new password, shows a confirmation message, and redirects to `/login`. The old password no longer works.
+
+**Worth checking:** Try submitting the reset form twice — the second submission should show "link expired", not an error page.
+
+---
+
+Then ask: **"Does everything look right? Reply 'yes' to promote this work unit, or tell me what you found and I'll route it back to the coder."**
+
+**Do not promote, do not run end-of-session, do not move to Step 6 until the developer explicitly confirms.**
 
 ## Step 6 — Record the swarm run
 
