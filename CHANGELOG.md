@@ -1,5 +1,41 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.31.0 — 2026-05-27 — deep-module discipline gates (intake, build-wu, hook)
+
+The single most load-bearing architectural commitment in a long-running build is that the project stays built from **deep modules** — small interface, large hidden complexity — and never from shallow ones. The catalogue protocols mention design-it-twice but had no enforcement for module depth itself; over a multi-month build, agents drift into shallow patterns (util grab-bags, pass-through wrappers, micro-modules, premature splits) and once those land they are effectively permanent. This release closes the gap with a three-layer defence.
+
+### Doctrine layer — new philosophy doc
+
+`templates/starter-kit/docs/philosophy/deep-modules.md` is the single source of truth. It names the rule in one sentence — *"every new feature added during the build either lives inside an existing deep module, or constitutes a new deep module with a stated interface, stated hidden complexity, and a stated depth justification; there is no third option"* — lists the shallow patterns explicitly, and points to where the rule is enforced. Every gate below references this doc.
+
+### Conversational gate layer — `/wu-new` and `/build-wu`
+
+- `/wu-new` gains **Step 2.5 — Deep-module intake gate**. Mandatory, non-negotiable. The operator must declare which module the WU lives in before filing. Three legitimate answers (existing module, new module via architect, default-to-existing if uncertain) and three forbidden answers (util grab-bag, "figure it out later", "skip for now") are spelled out so the AI cannot route around the gate.
+- Both WU templates (`001-template-simple.md`, `001-template-full.md`) now carry a required `Module:` field in the header.
+- `/build-wu` gains **Step 1.5 — Load the owning module**: coordinator reads the WU's `Module:` field, loads the architecture file, and passes it to every spawned agent. If `Module:` is missing, the swarm stops and routes back through the intake gate.
+- `/build-wu` gains a **Deep-module gate** alongside the existing architectural quality gate. Hard stop. Rejects new modules without a filed architecture file, modules whose interface ≈ body, banned-name grab-bags, pass-through wrappers, premature splits, and briefs that touch unclaimed source paths.
+
+### Agent layer — architect
+
+`templates/agents/architect.md` gains a **Module discipline — deep, not shallow** section. The architect now reads the WU's owning module before designing, fills every field of the module template when proposing a new module (interface surface, hidden complexity, depth justification, paths claimed), and treats *fold into existing module* as the default when the call is close. Module-depth shape is required as one of the design-it-twice axes for any work with module-boundary implications.
+
+### Mechanical gate layer — new PreToolUse hook
+
+`templates/claude-hooks/check-module-discipline.sh` reads `docs/build/architecture/*.md`, extracts every module's `## Paths claimed` block, and blocks `Write` / `Edit` / `MultiEdit` / `NotebookEdit` to source files not claimed by any module. The hook is degrade-safe: it exits 0 (allows) when the architecture register doesn't exist, when it's still bootstrapping (only template files present), when no claims are populated yet, when the file is a test/config/doc/script, or when the JSON tool input can't be parsed. It works both in-repo and against sibling implementation repos (resolves the sibling's git root, computes the relative path against that). Override is `NUOS_SKIP_MODULE_DISCIPLINE=1` for one call (logged to `.nuos-enforcement.log`).
+
+### Architecture register changes
+
+- `module-template.md` now carries four required new sections: **Interface surface**, **Hidden complexity**, **Depth justification**, **Paths claimed**. These are what the conversational gates inspect and what the PreToolUse hook reads.
+- `architecture/_index.md` documents the new fields and explicitly names the project's commitment that every module is deep by construction.
+
+### Install plumbing
+
+`nuos-catalogue install-hooks` now discovers and installs every `*.sh` file under `templates/claude-hooks/` rather than the single `check-implementation-write.sh` from WU 136. All three shipped hooks (implementation-write, design-system, module-discipline) land in `.claude/hooks/`, get individually registered as commands under a single shared PreToolUse matcher in `.claude/settings.json`, and the install remains idempotent. Adding a fourth hook is now zero-code: drop the script into `templates/claude-hooks/` and the next consumer upgrade picks it up.
+
+### Why this matters
+
+Module depth cannot be re-evaluated later the way most architectural commitments can. A shallow module ships interface contracts, file paths, imports, and tests that callers build against; un-splitting it later means rewriting all of them, so it never happens. The discipline has to be **enforced at intake**, not at cleanup — and it has to be enforced both conversationally (the doctrine + the gates) and mechanically (the hook), because either alone is bypassable. The hook is the safety net that catches what the conversation missed; the conversation is what makes the hook's blocks actionable.
+
 ## 0.27.0 — 2026-05-18 — HTML companion views for visual registers
 
 Markdown is the catalogue's source of truth — every agent reads it, the index walks it, the pre-commit hook gates it. But four registers are *inherently visual* and reading them as prose is harder than reading them as renders: `ui-ux/` (surfaces + sitemap), `design-system/` (colour swatches, type scale, spacing, components), `maps/` (horizon, phases, near-term), and `architecture/` (modules + dependencies). This release ships a small render pipeline that generates a companion `_view.html` for each of those four registers from the canonical markdown.

@@ -11,6 +11,10 @@
           {
             "type": "command",
             "command": "bash .claude/hooks/check-design-system-compliance.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/check-module-discipline.sh"
           }
         ]
       }

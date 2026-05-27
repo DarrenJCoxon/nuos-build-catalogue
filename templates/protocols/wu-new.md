@@ -27,6 +27,30 @@ Also ask:
 
 - **Which persona is this for?** Show them the list from `docs/build/personas/`. If none yet, file a persona first via `/persona-new`.
 
+## Step 2.5 — Deep-module intake gate (mandatory, non-negotiable)
+
+> **This gate is the most important step in `/wu-new`. It is the single mechanism that prevents shallow-module sprawl as a long-running build progresses. Do not skip it. Do not abbreviate it. See [docs/philosophy/deep-modules.md](../../starter-kit/docs/philosophy/deep-modules.md) for the doctrine.**
+
+Before filing the work unit, the operator must declare which module owns it. List every entry in `docs/build/architecture/` (read the `_index.md` table) and ask:
+
+> *"Which existing module does this work unit live inside? Here's what we've got: [list each module + one-line `What this module does` summary]. Or — does this need a new module?"*
+
+**Three possible answers:**
+
+1. **"It belongs to existing module X."** Read `docs/build/architecture/X.md`. Check that the WU's responsibility actually fits inside X's `Hidden complexity` — not just that file paths overlap. If yes, set `Module: X` in the WU. If the WU adds new source paths, also add them to X's `## Paths claimed` section in the same conversation.
+
+2. **"It needs a new module Y."** STOP. Do not file the WU yet. Tell the operator: *"A new module needs an architect pass before this WU can be filed. Want me to walk through proposing module Y now — its interface surface, hidden complexity, depth justification — and file the architecture entry first? Then we file the WU against the new module."* On confirmation, run the architect through the new-module flow: produce `docs/build/architecture/Y.md` from `module-template.md`, populate every field including `Paths claimed`, then return here and file the WU with `Module: Y`.
+
+3. **"I'm not sure — it could go in X or be its own thing Y."** This is the most dangerous case. Default to **fits inside X** and tell the operator why: *"Splitting too early creates a shallow module that's permanent; folding into X is reversible later. Let's put it in X. If three more WUs land there and a coherent sub-responsibility emerges, the architect can split it then."* Only override this default if the architect has explicitly justified the split in the conversation.
+
+**Forbidden answers:**
+
+- *"It's just a small utility / helper / shared bit."* — Util grab-bags are shallow modules by definition. Tell the operator: *"There's no `utils` module in this project by design — small bits live inside the module whose hidden complexity needs them. Which module's hidden complexity does this work serve?"*
+- *"Let's figure it out during the build."* — The whole point of this gate is to decide upfront. Push back: *"The build agents need to know which module they're working inside before they start. Let's pick now — if it's wrong we can correct it before the coder spawns."*
+- *"Skip this for now, we'll come back to it."* — There is no skipping. The WU does not get a number, does not get filed, until `Module:` is set.
+
+**Set `Module:` in the WU file.** Both `001-template-simple.md` and `001-template-full.md` carry a `Module:` field in the header. The value is the architecture file slug (e.g., `auth`, `consolidation`, `morning-briefing`).
+
 ## Step 3 — Walk the full shape (only when --full or for infrastructure work)
 
 The full shape has the four fields above plus:

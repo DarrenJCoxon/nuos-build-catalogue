@@ -4,6 +4,7 @@
 
 **Status:** 🔵 proposed / 🟡 in flight / 🟣 awaiting review / ✅ shipped / 🔴 blocked
 **For:** [persona handle and name — e.g. [P001 — name](../personas/P001-name.md)]
+**Module:** [architecture slug — e.g. [auth](../architecture/auth.md). Required. Set at the `/wu-new` deep-module intake gate.]
 **Last updated:** {{TODAY}}
 
 ## What's done when this ships

@@ -3,6 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Status | 🟡 in flight |
+| Module | [architecture slug — required; set at the `/wu-new` deep-module intake gate] |
 | Depends on | none |
 | Blocks | [WUs that cannot start until this lands] |
 | Implements | [the decision or pattern this realises] |

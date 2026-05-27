@@ -12,6 +12,33 @@
 
 > Example: "The Overnight Consolidation module processes every interaction with a student during a school day and produces, by morning, a per-student plan ranked by need."
 
+## Interface surface
+
+> *Small by design. List every public entry point another module can call: function names, exported types, HTTP routes, CLI commands, message types. If this list runs longer than a screen, the interface is wide — the module is at risk of being shallow. See [deep-modules.md](../../philosophy/deep-modules.md).*
+
+- [public function / route / type]
+- [...]
+
+## Hidden complexity
+
+> *Large by design. List what this module encapsulates that callers do not have to think about: state, branching, external integrations, retry logic, validation, edge cases, persistence, ordering, concurrency. The depth ratio (hidden complexity ÷ interface surface) is what makes a module deep.*
+
+- [thing hidden from callers]
+- [...]
+
+## Depth justification
+
+> *Required for every module. Answer in two or three sentences: why is the hidden complexity above genuinely larger than the interface surface above? If you cannot answer this, the module is shallow — fold its work into an existing module instead of filing a new one.*
+
+[The depth argument.]
+
+## Paths claimed
+
+> *Required. List the source-tree paths this module owns. The PreToolUse hook (`check-module-discipline.sh`) reads this section and blocks writes to source files not claimed by any module. Use directory prefixes (`src/auth/`) or glob-style patterns (`src/auth/**`). One per line, as a bullet.*
+
+- `src/[module-slug]/`
+- [...]
+
 ## Who uses it directly
 
 [List the personas who interact with this module via UI/UX surfaces. Each as `[P001](../personas/P001-name.md)` with a one-line note on how they use it.]

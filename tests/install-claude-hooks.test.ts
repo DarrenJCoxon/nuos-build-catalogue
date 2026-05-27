@@ -124,7 +124,7 @@ test('cmdInstallClaudeHooks is idempotent', () => {
     cmdInstallClaudeHooks({ cwd });
     const r2 = cmdInstallClaudeHooks({ cwd });
     assert.equal(r2.exitCode, 0);
-    // No duplicate settings entries.
+    // No duplicate settings entries — all hooks share one matcher entry.
     const settings = JSON.parse(readFileSync(join(cwd, '.claude', 'settings.json'), 'utf8'));
     assert.equal(settings.hooks.PreToolUse.length, 1);
     // No duplicate gitignore lines.
@@ -133,4 +133,48 @@ test('cmdInstallClaudeHooks is idempotent', () => {
   } finally {
     rmSync(cwd, { recursive: true, force: true });
   }
+});
+
+test('cmdInstallClaudeHooks installs every hook shipped in templates/claude-hooks/', () => {
+  const cwd = makeTempProject();
+  try {
+    const r = cmdInstallClaudeHooks({ cwd });
+    assert.equal(r.exitCode, 0);
+    // Every hook this package ships ends up in .claude/hooks/.
+    const hooksDir = join(cwd, '.claude', 'hooks');
+    assert.equal(existsSync(join(hooksDir, 'check-implementation-write.sh')), true);
+    assert.equal(existsSync(join(hooksDir, 'check-design-system-compliance.sh')), true);
+    assert.equal(existsSync(join(hooksDir, 'check-module-discipline.sh')), true);
+    // Each gets a settings.json command entry, all under a single matcher.
+    const settings = JSON.parse(readFileSync(join(cwd, '.claude', 'settings.json'), 'utf8'));
+    assert.equal(settings.hooks.PreToolUse.length, 1);
+    const commands = settings.hooks.PreToolUse[0].hooks.map((h: { command: string }) => h.command);
+    assert.ok(commands.includes('bash .claude/hooks/check-implementation-write.sh'));
+    assert.ok(commands.includes('bash .claude/hooks/check-design-system-compliance.sh'));
+    assert.ok(commands.includes('bash .claude/hooks/check-module-discipline.sh'));
+  } finally {
+    rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test('addPreToolUseHook appends to an existing matcher with the same key rather than creating a new one', () => {
+  const existing = {
+    hooks: {
+      PreToolUse: [
+        {
+          matcher: MATCHER,
+          hooks: [{ type: 'command', command: 'bash .claude/hooks/first.sh' }],
+        },
+      ],
+    },
+  };
+  const { value, changed } = addPreToolUseHook(existing, MATCHER, 'bash .claude/hooks/second.sh');
+  assert.equal(changed, true);
+  const pre = (value.hooks as { PreToolUse: { matcher: string; hooks: { command: string }[] }[] }).PreToolUse;
+  // Still a single matcher entry — the second command was appended into it,
+  // not split into a second entry.
+  assert.equal(pre.length, 1);
+  assert.equal(pre[0].hooks.length, 2);
+  assert.equal(pre[0].hooks[0].command, 'bash .claude/hooks/first.sh');
+  assert.equal(pre[0].hooks[1].command, 'bash .claude/hooks/second.sh');
 });

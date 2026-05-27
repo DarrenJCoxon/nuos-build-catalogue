@@ -37,6 +37,14 @@ nuos-catalogue memory search --query="<the module or contract name being worked 
 
 Surface any high-score memories (> 0.8) to the relevant agents as additional context in their spawn prompt. Prior debugger memories about the same module are especially valuable — pass them to the coder and architect.
 
+## Step 1.5 — Load the owning module (mandatory)
+
+The WU must have a `Module:` field set (added by the `/wu-new` deep-module intake gate). Read it.
+
+- **If the field is set**, read `docs/build/architecture/<module-slug>.md` in full — especially `Interface surface`, `Hidden complexity`, and `Paths claimed`. Every agent spawned for this WU must receive the architecture file as required reading in their spawn prompt. The coder must not touch any source path that is not listed in the module's `Paths claimed` block (the `check-module-discipline.sh` PreToolUse hook will block them otherwise).
+
+- **If the field is missing** (legacy WUs filed before the intake gate, or a hand-filed WU that skipped the gate), STOP. Tell the operator: *"This WU has no module assigned. The deep-module discipline requires every WU to declare which module it lives in. Want me to walk through the intake gate now — pick from existing modules or have the architect propose a new one — before the swarm proceeds?"* Do not classify or spawn anything until `Module:` is set and the architecture file is read.
+
 ## Step 2 — Classify the work
 
 Decide what shape this work is. Most work units fall into one of these patterns:
@@ -271,6 +279,29 @@ Before routing the architect's brief to the coder, read it for shortcut indicato
 > "The brief contains [quote the specific shortcut language or describe the specific flaw]. This project builds properly — no workarounds, no deferred correctness. Produce the fully-designed solution. If the correct solution requires more scope than this work unit allows, tell me what proper scope looks like and I will surface it to the operator. Do not ship a lesser design."
 
 Do not feel time or cost pressure. A proper design that takes longer is always preferred over a shortcut that ships sooner. Routing a shortcut brief to the coder does not save time — it produces code the reviewer will block, and the loop costs more than getting the design right once.
+
+### Deep-module gate (after architect, before coder — mandatory)
+
+Runs alongside the architectural quality gate above. Reads the architect's brief specifically for module-depth violations. Doctrine: [docs/philosophy/deep-modules.md](../../starter-kit/docs/philosophy/deep-modules.md). This is also a **hard stop**.
+
+**Before checking, confirm the WU has a `Module:` field set.** If the WU was filed without one (legacy WUs from before the intake gate, or a hand-filed WU that skipped `/wu-new`), STOP and route to the operator: *"This WU has no module assigned. Run the deep-module intake gate before the swarm can spawn — either pick an existing module from `docs/build/architecture/`, or have the architect propose a new one."* Do not let the swarm proceed without `Module:` set.
+
+**Shallow-module red flags in the architect's brief — any one is a rejection:**
+
+- **A new module is being proposed without its architecture file already filed.** The architect must produce `docs/build/architecture/<slug>.md` (using `module-template.md`) before the coder spawns. The file must have every field populated — including `Interface surface`, `Hidden complexity`, `Depth justification`, and `Paths claimed`. A brief that says "we'll file the architecture entry after coding" is a rejection.
+- **A new module whose `Interface surface` is roughly as wide as its `Hidden complexity`.** Count the items; if interface ≥ hidden, the module is shallow. Reject and tell the architect: *"This module's interface is not narrower than its body — it has no depth. Either fold this work into an existing module whose hidden complexity it actually serves, or expand the hidden body to justify the boundary."*
+- **A new module named `utils`, `helpers`, `common`, `shared`, `lib`, `misc`, or any variant.** These names signal grab-bags by construction. Reject. Tell the architect: *"This project has no utils module by design. The work this names must live inside the module whose hidden complexity needs it. Which module is that?"*
+- **A new module that is a pass-through wrapper** — its public methods each call exactly one method in another module. Reject; the wrapping module adds interface cost without adding encapsulation.
+- **A new module that re-exports or thinly adapts another module.** Reject; rename or adapt at the existing module instead.
+- **A design that splits one coherent responsibility across two new modules** to "separate concerns" when those concerns are not actually separable in the runtime. Reject; one deep module is better than two shallow ones.
+- **The brief touches source paths not claimed by any module's `## Paths claimed` section.** Reject; either update the owning module's claimed paths in the brief, or run the new-module flow first.
+- **The architect's brief proposes a new module when an existing module's `Hidden complexity` plausibly covers the responsibility.** Reject and ask the architect to either (a) demonstrate the responsibility does *not* fit, with specifics, or (b) fold the work into the existing module.
+
+**When you find a deep-module red flag**, send the brief back with this instruction (adapt to the specific finding):
+
+> "The brief proposes [quote the specific shallow pattern]. This project is built from deep modules — small interface, large hidden body. A shallow module ships permanent overhead. Either fold the work into [name the existing deep module that could absorb it], or produce the full module proposal (interface surface, hidden complexity, depth justification, paths claimed) that proves this is genuinely a deep module. Read `docs/philosophy/deep-modules.md` before retrying."
+
+When the gate passes — both architectural quality and deep-module — record `✓ deep-module gate passed` in the swarm audit entry under `## Gate triggers`. When it fails, record the trigger and the retry.
 
 - **Time ceiling per agent.** If a run exceeds its rough budget (architect >1h, coder >2h, tester >1h, reviewer >30m), don't kill the agent (loses in-flight work) — surface the duration and ask whether to continue, redirect, or escalate (e.g. coder stuck → debugger).
 - **Architectural drift.** If the coder or tester surfaces a design choice not in the architect's brief, STOP, route to the architect for a decision before re-spawning. Coders making design calls inline is the failure mode the swarm exists to prevent.

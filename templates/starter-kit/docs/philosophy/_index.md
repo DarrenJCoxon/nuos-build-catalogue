@@ -12,7 +12,7 @@ That is when a philosophy doc becomes worth writing. One short narrative-form do
 
 | Doc | Topic |
 | --- | --- |
-| _none yet — philosophy emerges as decisions accumulate_ | |
+| [deep-modules.md](deep-modules.md) | Every feature lives inside an existing deep module or constitutes a new one with stated interface, hidden complexity, and depth justification. Non-negotiable. |
 
 ## Pattern
 
