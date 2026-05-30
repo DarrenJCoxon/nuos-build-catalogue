@@ -1,5 +1,34 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.32.0 — 2026-05-28 — code-quality gates (lite during build, full at end-of-session)
+
+Test gates catch broken behaviour; the deep-module gate catches shallow boundaries; nothing in the protocol catches structural code-quality drift — files sprawling past 1k lines, ad-hoc conditionals bolted into unrelated flows, bespoke helpers duplicating canonical ones, thin wrappers adding indirection. Over a multi-month build these compound silently. This release adds a two-layer gate inspired by Cursor's [thermo-nuclear code-quality review](https://github.com/cursor/plugins/tree/main/thermos), shaped to keep token cost negligible on doc-only sessions.
+
+### Layer 1 — inline lite gate (`build-wu` Step 5.7)
+
+After the test gates pass, before promotion, the coordinator scans the coder's staged diff for the three highest-yield structural smells: 1k-line cross, spaghetti growth (new conditionals in unrelated flows), and canonical-helper duplication. Skipped entirely for design-only WUs and doc-only changes. Findings either go back to the coder or surface to the operator — never auto-promoted. Recorded under `## Gate triggers` in the swarm audit entry.
+
+### Layer 2 — full gate at end-of-session (`end-of-session` Step 10)
+
+Before the commit step, if the staged diff includes source, run the full 7-point pass (code-judo, 1k-line, spaghetti, boundaries, types, atomicity, wrappers). On structural findings, escalate to `/thermo-nuclear-code-quality-review` for the harsh full rubric. Markdown-only commits skip the gate entirely — zero cost on doc-heavy sessions.
+
+### Token economics
+
+Both gates are conditional on staged source changes. Most catalogue sessions are doc-heavy (decisions, work units, STATE.md) and pay zero gate cost. The full ~190-line thermo-nuclear rubric only loads when explicitly escalated. The protocol additions are ~30 lines total across both files.
+
+### Why this matters
+
+Tests and the deep-module hook catch what they were built to catch. Code-quality drift — implementation that *works* but makes the codebase harder to reason about — slips through both. It's the silent cost: every shipped WU layers another bit of incidental complexity, and by the time anyone reviews the whole, the right fixes are no longer cheap. The lite gate catches it early; the full gate at end-of-session catches what slipped past; escalation is opt-in for when a finding smells structural. Cheap-early-warning + final-guard, scoped tightly enough that doc-only work pays nothing.
+
+### Protocol single-source-of-truth + drift guard
+
+`templates/protocols/` is the canonical body for every protocol. `init` and `install-protocols` fan each body out to all three tool paths (`.claude/commands/`, `.opencode/commands/`, `.agents/skills/`). Previously the dogfood copies in this repo had drifted from their canonical templates (6 of 11 protocols missing from tool dirs; remaining 6 stale). This release:
+
+- Regenerates all 11 × 3 tool copies from canonical, bringing them fully in sync
+- Exports `PROTOCOL_FILES` and `TOOLS` from `init.ts` and adds a `protocols-in-sync` test (33 assertions) that fails fast with a "run `install-protocols`" message if any copy goes stale again
+
+---
+
 ## 0.31.0 — 2026-05-27 — deep-module discipline gates (intake, build-wu, hook)
 
 The single most load-bearing architectural commitment in a long-running build is that the project stays built from **deep modules** — small interface, large hidden complexity — and never from shallow ones. The catalogue protocols mention design-it-twice but had no enforcement for module depth itself; over a multi-month build, agents drift into shallow patterns (util grab-bags, pass-through wrappers, micro-modules, premature splits) and once those land they are effectively permanent. This release closes the gap with a three-layer defence.

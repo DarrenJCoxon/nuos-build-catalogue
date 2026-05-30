@@ -190,6 +190,20 @@ If `methodfile.json` has `e2e.enabled: true`, run the Playwright test suite from
 
 If `methodfile.json` has no `e2e` section or `e2e.enabled: false`, skip this gate but note in the audit entry: *"Playwright gate skipped — e2e not configured in methodfile.json"*. For UI-surfacing work units (any WU that adds or changes a page, component, or user interaction), prompt the developer: *"This WU ships a UI change but no Playwright spec exists. Want me to file a follow-up WU to add e2e coverage for this surface?"*
 
+## Step 5.7 — Code-quality lite gate (only if the coder touched source)
+
+Runs after the test gates pass, before promotion. Pure self-check by the coordinator on the coder's staged diff. Skip entirely if the WU was design-only or only touched docs/registers.
+
+Against `git diff --name-only <base>...HEAD` filtered to source files (same filter as Step 5.5 Gate B), scan for these three lite-gate items only:
+
+1. **1k-line cross** — did this WU push any file from under 1000 lines to over 1000 lines? If yes, surface to the operator: *"WU N pushed [file] from X → Y lines. Decompose before promotion, or accept the sprawl?"* Don't auto-decompose; this is an operator call.
+2. **Spaghetti** — does the diff add ad-hoc conditionals, one-off booleans, or special-case branches bolted into unrelated flows? If yes, send back to the coder with: *"This adds a special-case branch into [flow]. Move it behind its own abstraction before promotion."*
+3. **Canonical-helper duplication** — does the diff introduce a bespoke helper that duplicates an existing utility the codebase already has? If yes, send back to the coder with the path to the canonical helper.
+
+These are the three highest-yield checks from the full thermo-nuclear code-quality rubric. The full rubric runs at end-of-session against the staged commit diff (see [end-of-session.md](end-of-session.md) Step 10) and escalates to `/thermo-nuclear-code-quality-review` for the harsh pass. The lite gate here is the cheap-early-warning so structural mistakes are caught before they layer with downstream agent output.
+
+Record `✓ code-quality lite gate passed` (or the trigger if it fired) in the swarm audit entry under `## Gate triggers`.
+
 ## Step 6 — Record the swarm run
 
 Write an audit entry at `docs/build/swarm/YYYY-MM-DD-wu-<handle>.md`. Use the template at `docs/build/swarm/_template.md`. Capture:
@@ -240,6 +254,12 @@ Tell the operator in plain English:
 - What shipped (one sentence per work unit promoted)
 - What didn't and why (one sentence each)
 - The next concrete action (re-run the swarm, file an open question, escalate to architect, etc.)
+
+---
+
+## Cost guidance
+
+A typical full-feature swarm — architect (Opus, ~30 min) + coder (Sonnet, ~1 hr) + tester (Sonnet, ~30 min) + reviewer (Sonnet, ~15 min) — consumes substantially less of the operator's coding-tool plan budget than running the same work as a continuous Opus conversation. The 80/20 split — heavy reasoning for design and debugging only, lighter models for implementation and verification — is the lever. If a single work unit's swarm is consuming an unusual share of the day's plan budget, surface that to the operator before continuing; the WU is probably bigger than scoped.
 
 ---
 

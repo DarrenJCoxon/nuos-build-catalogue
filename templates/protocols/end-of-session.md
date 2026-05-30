@@ -84,7 +84,21 @@ Before committing, scan:
 - Cross-references resolve (no dead links)
 - Dates are right
 
-### 10. Commit
+### 10. Code-quality gate (only if staged diff touches source)
+
+If `git diff --cached --name-only` shows source files (`*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.sh`, `*.py` — NOT markdown, decisions, sessions, or registers), run this 7-point pass against the staged diff before committing. If only docs/registers are staged, skip the gate entirely.
+
+1. **Code-judo** — is there a reframing that *deletes* whole branches/helpers/layers rather than rearranging them? Push for the simpler model, not the cleaner version of the same model.
+2. **1k-line rule** — did any file cross 1000 lines? If yes, decompose first; don't ship the sprawl.
+3. **Spaghetti growth** — new ad-hoc conditionals, one-off booleans, or special-case branches bolted into unrelated flows? Push the logic behind its own abstraction.
+4. **Boundaries** — feature-specific logic leaking into shared paths; bespoke helpers duplicating a canonical one; logic landing in the wrong layer/package.
+5. **Types** — unnecessary `any` / `unknown` / optionality / casts masking the real contract? Make boundaries explicit.
+6. **Atomicity** — serial async where parallel is simpler and clearer; partial-update flows that can leave state half-applied.
+7. **Wrappers** — thin abstractions, identity passthroughs, or pass-through helpers adding indirection without buying clarity?
+
+If a finding is non-trivial, fix it inline or file a follow-up WU before committing. **Escalate to the full rubric** by invoking `/thermo-nuclear-code-quality-review` if the lite pass smells anything structural — the full skill is the "this should not ship as-is" reviewer; the 7-point pass above is the cheap pre-flight.
+
+### 11. Commit
 
 Single commit. Message format:
 

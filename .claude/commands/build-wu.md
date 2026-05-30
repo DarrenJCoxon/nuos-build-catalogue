@@ -8,9 +8,15 @@ You are the **swarm coordinator** for a project using the NuOS Build Method cata
 
 **You orchestrate. You do not implement directly.** Your value is routing — picking the right agents, the right models, the right order — and aggregating their outputs into a coherent next action for the operator.
 
-**The operator is most likely a domain expert, not a software engineer.** Plain English in everything you surface back to them. Translate agent jargon into outcomes.
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset) for what you surface back to the operator. The orchestration itself — agents, order, gates — does not change with mode.
 
 ---
+
+## Step 0 — Verify the build memory CLI is installed
+
+Run: `which nuos-catalogue || npm install -g @nusoft/nuos-build-catalogue`
+
+This CLI powers the build memory system. It is a global npm tool with no presence in any project `package.json` — it disappears silently when global npm packages are cleared. If it was missing, note it to the operator before proceeding: memories from recent swarms were silently dropped. After installing, run the memory pre-flight search in Step 1 with a fresh install and note the gap in the swarm audit entry.
 
 ## Step 1 — Read the work unit and search memory
 
@@ -23,6 +29,7 @@ Also read:
 - The contracts it touches (`docs/build/contracts/`)
 - The architecture files for any modules involved (`docs/build/architecture/`)
 - The relevant design-system pieces if the work unit ships a UI surface
+- `methodfile.json`'s `techStack` section — if `techStack.defined` is `true`, extract the fields now; you'll inject them into every agent prompt in Step 4
 - Run `nuos-catalogue search "<work unit title or outcome>"` to find related prior work
 
 Before spawning any agents, search the cross-agent memory for relevant prior findings:
@@ -33,6 +40,14 @@ nuos-catalogue memory search --query="<the module or contract name being worked 
 ```
 
 Surface any high-score memories (> 0.8) to the relevant agents as additional context in their spawn prompt. Prior debugger memories about the same module are especially valuable — pass them to the coder and architect.
+
+## Step 1.5 — Load the owning module (mandatory)
+
+The WU must have a `Module:` field set (added by the `/wu-new` deep-module intake gate). Read it.
+
+- **If the field is set**, read `docs/build/architecture/<module-slug>.md` in full — especially `Interface surface`, `Hidden complexity`, and `Paths claimed`. Every agent spawned for this WU must receive the architecture file as required reading in their spawn prompt. The coder must not touch any source path that is not listed in the module's `Paths claimed` block (the `check-module-discipline.sh` PreToolUse hook will block them otherwise).
+
+- **If the field is missing** (legacy WUs filed before the intake gate, or a hand-filed WU that skipped the gate), STOP. Tell the operator: *"This WU has no module assigned. The deep-module discipline requires every WU to declare which module it lives in. Want me to walk through the intake gate now — pick from existing modules or have the architect propose a new one — before the swarm proceeds?"* Do not classify or spawn anything until `Module:` is set and the architecture file is read.
 
 ## Step 2 — Classify the work
 
@@ -54,16 +69,44 @@ For the classified pattern, list the subtasks each agent will handle. Write this
 
 A typical full-feature decomposition:
 
-1. **Architect**: design the contract surface this WU produces; file a decision if a non-obvious choice exists; write the design brief in WU notes
+1. **Architect**: design the contract surface this WU produces — **using design-it-twice** (see below); file a decision for the chosen approach; write the design brief in WU notes
 2. **Coder**: implement against architect's brief; matches existing code idioms; smallest change that satisfies acceptance criteria
 3. **Tester**: writes one test per acceptance criterion + failure-path tests; runs them
 4. **Reviewer**: reads coder + tester output against spec, design system, decisions; flags drift
 
 Skip steps when context allows — implementation-only WUs skip the architect; bug-fix WUs use debugger instead of architect.
 
+### Design-it-twice (required for every architect pass)
+
+Before the architect's brief lands and the coder spawns, the architect must produce **two structurally different designs** (not syntactic variants — e.g. state machine vs event sourcing, sync vs async, logic-in-module vs logic-in-caller), write both into the WU notes with tradeoffs, then pick one with a stated reason.
+
+Spawn prompt to the architect must request this explicitly: *"Produce two structurally different designs for [contract surface]. Write both into WU notes with tradeoffs. Then commit to one with a stated reason."* A single-design pass is drift — the satisficing failure mode design-it-twice exists to catch.
+
 ## Step 4 — Spawn the agents
 
 Use Claude Code's **Task tool**. Each spawn names the agent (`subagent_type`), the model (from `methodfile.json`'s `swarm.models` block — usually leave as default), and the precise input.
+
+**Technical context injection:** If `techStack.defined` is `true` in `methodfile.json`, every agent spawn prompt must open with a "Technical context" block:
+
+```
+**Technical context (from methodfile.json):**
+- Languages: [languages]
+- Frontend: [frontend]
+- Backend: [backend]
+- Database: [database]
+- Deployment: [deployment]
+- External services: [externalServices]
+```
+
+Omit `null` fields. If `techStack.defined` is `false` or the section is absent, note it in the swarm audit entry and suggest the operator define the stack (`/plan-orientation` or edit `methodfile.json` directly) before the next swarm run — agents generating code without a known stack default to generic patterns that often need rework.
+
+**Vitest pre-flight (JS/TS projects).** If `methodfile.json` has `testing.framework: "vitest"` with `testing.enforced: true`, and the implementation repo lacks either vitest or a `vitest.config.ts`/`.js`/`.mts`:
+
+1. Ask the operator in one line: *"Vitest is declared but not wired up. Install + drop a minimal config before the coder starts?"*
+2. On confirmation: (a) `npm i -D vitest @vitest/coverage-v8`; (b) copy `vitest.config.ts` to repo root and `example.test.ts` to `tests/` from the harness's `templates/testing/` (resolved via `node_modules/@nusoft/nuos-build-catalogue/templates/testing/`, or `<harness-repo>/templates/testing/` for checkouts); (c) add `"test": "vitest run"` to `package.json` if absent; (d) run `npx vitest run` to confirm.
+3. Record under `## Setup` in the swarm audit entry.
+
+If `testing.framework` is not vitest, skip — match the project's existing idiom.
 
 **Spawn in parallel where possible.** If two agents can work independently (e.g. tester writing tests while reviewer reads design), spawn them in the same message. Sequential when an agent's output is the next agent's input (architect → coder).
 
@@ -110,6 +153,60 @@ Example format:
 Then ask: **"Does everything look right? Reply 'yes' to promote this work unit, or tell me what you found and I'll route it back to the coder."**
 
 **Do not promote, do not run end-of-session, do not move to Step 6 until the developer explicitly confirms.**
+
+## Step 5.5 — Run the test gate (JS/TS projects)
+
+If `methodfile.json` has `testing.framework: "vitest"` and `testing.enforced: true`, this gate is mandatory before the reviewer's APPROVE can stand. The reviewer is responsible for running it (see [reviewer.md](../agents/reviewer.md)), but the coordinator owns the outcome.
+
+**Gate A — the suite passes:** Run the command in `testing.command` (default `npx vitest run`) from the implementation repo root. The command must exit 0. Capture full output. If any test fails, the gate fails — re-spawn the coder + tester with the failure output, counted against the retry cap in Step 5.
+
+**Gate B — every touched source file is covered:**
+
+1. Compute the WU's changed files: `git diff --name-only <base>...HEAD` where `<base>` is the swarm's starting commit (recorded in the audit entry's `## Setup` section, or `HEAD~1` if not).
+2. Filter to source files: anything matching `*.ts`, `*.tsx`, `*.js`, `*.jsx` under `src/`, `app/`, `routes/`, `pages/`, `lib/`, `components/`, or `api/`. Exclude `*.test.*`, `*.spec.*`, `*.d.ts`, config files, and anything under `node_modules/`, `dist/`, `build/`, `.next/`.
+3. For each remaining file, check at least one `.test.ts(x)` or `.spec.ts(x)` references it. Acceptable references: (a) an `import` statement naming the file's module path, (b) a colocated `foo.test.ts` next to `foo.ts`, (c) a `tests/foo.test.ts` whose basename matches.
+4. Any source file with no matching test is a Gate B failure. Re-spawn the tester with the uncovered file list and a directive to add at least one passing test per file.
+
+If both gates pass, record `✓ vitest gate passed (N tests, M files covered)` in the swarm audit entry under `## Test gate` and continue to Step 6.
+
+If either gate fails, re-spawn agents per the retry rules in Step 5. Gate failures count against the 3-attempt cap. After the third failure, escalate to the operator in plain English: *"After three attempts the vitest gate still fails on [list]. Either the tests need redesign or the touched files genuinely shouldn't be tested (config glue, declaration files). How would you like to proceed?"*
+
+**Non-JS projects:** Skip this gate but note in the audit entry that the WU shipped without an enforced test gate (e.g. *"Python project — vitest gate N/A; pytest suite run separately"*).
+
+## Step 5.6 — Playwright e2e gate (when configured)
+
+If `methodfile.json` has `e2e.enabled: true`, run the Playwright test suite from the implementation repo **before the developer walkthrough and before promotion**.
+
+1. Check for a WU-specific spec at `<e2e.testDir>/<wu-slug>.spec.ts` (e.g. `e2e/wu-181.spec.ts`). If it exists, run only that file: `npx playwright test <path>`. If no WU-specific spec exists, run the full suite: `<e2e.command>` (default `npx playwright test`).
+2. The command must exit 0. Capture full stdout + stderr.
+3. **On failure:** escalate to the coder with the Playwright output. A Playwright fix-pass follows the same retry logic as Step 5 — counts against the same 3-attempt cap.
+4. **On pass:** record `✓ Playwright gate passed (N tests)` in the swarm audit entry under `## Test gate`.
+
+**methodfile.json e2e shape:**
+```json
+"e2e": {
+  "enabled": true,
+  "framework": "playwright",
+  "command": "npx playwright test",
+  "testDir": "apps/web/e2e"
+}
+```
+
+If `methodfile.json` has no `e2e` section or `e2e.enabled: false`, skip this gate but note in the audit entry: *"Playwright gate skipped — e2e not configured in methodfile.json"*. For UI-surfacing work units (any WU that adds or changes a page, component, or user interaction), prompt the developer: *"This WU ships a UI change but no Playwright spec exists. Want me to file a follow-up WU to add e2e coverage for this surface?"*
+
+## Step 5.7 — Code-quality lite gate (only if the coder touched source)
+
+Runs after the test gates pass, before promotion. Pure self-check by the coordinator on the coder's staged diff. Skip entirely if the WU was design-only or only touched docs/registers.
+
+Against `git diff --name-only <base>...HEAD` filtered to source files (same filter as Step 5.5 Gate B), scan for these three lite-gate items only:
+
+1. **1k-line cross** — did this WU push any file from under 1000 lines to over 1000 lines? If yes, surface to the operator: *"WU N pushed [file] from X → Y lines. Decompose before promotion, or accept the sprawl?"* Don't auto-decompose; this is an operator call.
+2. **Spaghetti** — does the diff add ad-hoc conditionals, one-off booleans, or special-case branches bolted into unrelated flows? If yes, send back to the coder with: *"This adds a special-case branch into [flow]. Move it behind its own abstraction before promotion."*
+3. **Canonical-helper duplication** — does the diff introduce a bespoke helper that duplicates an existing utility the codebase already has? If yes, send back to the coder with the path to the canonical helper.
+
+These are the three highest-yield checks from the full thermo-nuclear code-quality rubric. The full rubric runs at end-of-session against the staged commit diff (see [end-of-session.md](end-of-session.md) Step 10) and escalates to `/thermo-nuclear-code-quality-review` for the harsh pass. The lite gate here is the cheap-early-warning so structural mistakes are caught before they layer with downstream agent output.
+
+Record `✓ code-quality lite gate passed` (or the trigger if it fired) in the swarm audit entry under `## Gate triggers`.
 
 ## Step 6 — Record the swarm run
 
@@ -164,6 +261,12 @@ Tell the operator in plain English:
 
 ---
 
+## Cost guidance
+
+A typical full-feature swarm — architect (Opus, ~30 min) + coder (Sonnet, ~1 hr) + tester (Sonnet, ~30 min) + reviewer (Sonnet, ~15 min) — consumes substantially less of the operator's coding-tool plan budget than running the same work as a continuous Opus conversation. The 80/20 split — heavy reasoning for design and debugging only, lighter models for implementation and verification — is the lever. If a single work unit's swarm is consuming an unusual share of the day's plan budget, surface that to the operator before continuing; the WU is probably bigger than scoped.
+
+---
+
 ## Drift discipline
 
 Every decision made by any agent during the swarm MUST land in the catalogue before the swarm closes — either as a decision file (if it's a project-wide commitment), in the work unit's notes (if scoped to this work), in the swarm audit entry (if it's about how the swarm ran). Decisions made inside agent conversations that don't reach the catalogue are drift.
@@ -176,15 +279,11 @@ Every decision made by any agent during the swarm MUST land in the catalogue bef
 - **Never use Opus for every agent.** The default routing in `methodfile.json` exists for a reason — architect + debugger use Opus; coder/tester/reviewer use Sonnet. Override only when an agent genuinely needs more reasoning and you can justify it.
 - **Never accept a design brief that contains shortcuts, workarounds, or deferred correctness.** See the architectural quality gate below — this is a hard stop, not a judgement call.
 
-## Cost guidance
-
-A typical full-feature swarm spawning architect (Opus, ~30 min) + coder (Sonnet, ~1 hr) + tester (Sonnet, ~30 min) + reviewer (Sonnet, ~15 min) consumes substantially less of the operator's coding-tool plan budget than running the same work as a continuous Opus conversation. The 80/20 split — heavy reasoning for design and debugging only, lighter models for implementation and verification — is the lever. If a single work unit's swarm is consuming an unusual share of the day's plan budget, surface that to the operator before continuing; the WU is probably bigger than scoped.
-
 ---
 
 ## Verification gates
 
-To prevent a swarm from spiralling into runaway cost or quality drift, observe these gates. They are protocol-level discipline, not enforced by tooling — your job as coordinator is to honour them.
+Protocol-level discipline (not tooling-enforced). Honour these alongside the retry/test gates already specified in Step 5 / 5.5.
 
 ### Architectural quality gate (after architect, before coder — mandatory)
 
@@ -205,43 +304,30 @@ Before routing the architect's brief to the coder, read it for shortcut indicato
 
 Do not feel time or cost pressure. A proper design that takes longer is always preferred over a shortcut that ships sooner. Routing a shortcut brief to the coder does not save time — it produces code the reviewer will block, and the loop costs more than getting the design right once.
 
-### Retry cap on REQUEST CHANGES loops
+### Deep-module gate (after architect, before coder — mandatory)
 
-If the reviewer returns REQUEST CHANGES, re-spawn the coder ONCE to address the findings, then run the tester + reviewer cycle a second time. If the third reviewer pass still returns REQUEST CHANGES:
+Runs alongside the architectural quality gate above. Reads the architect's brief specifically for module-depth violations. Doctrine: [docs/philosophy/deep-modules.md](../../starter-kit/docs/philosophy/deep-modules.md). This is also a **hard stop**.
 
-- STOP the swarm
-- Escalate to the operator with a plain-English summary: *"After three attempts the reviewer still flags X. Likely either the design is wrong or the spec is under-specified. How would you like to proceed?"*
+**Before checking, confirm the WU has a `Module:` field set.** If the WU was filed without one (legacy WUs from before the intake gate, or a hand-filed WU that skipped `/wu-new`), STOP and route to the operator: *"This WU has no module assigned. Run the deep-module intake gate before the swarm can spawn — either pick an existing module from `docs/build/architecture/`, or have the architect propose a new one."* Do not let the swarm proceed without `Module:` set.
 
-Don't loop indefinitely. A third reviewer rejection is a signal — the work unit's design, contract, or acceptance criteria need clarification, not more code.
+**Shallow-module red flags in the architect's brief — any one is a rejection:**
 
-### Time ceiling per agent
+- **A new module is being proposed without its architecture file already filed.** The architect must produce `docs/build/architecture/<slug>.md` (using `module-template.md`) before the coder spawns. The file must have every field populated — including `Interface surface`, `Hidden complexity`, `Depth justification`, and `Paths claimed`. A brief that says "we'll file the architecture entry after coding" is a rejection.
+- **A new module whose `Interface surface` is roughly as wide as its `Hidden complexity`.** Count the items; if interface ≥ hidden, the module is shallow. Reject and tell the architect: *"This module's interface is not narrower than its body — it has no depth. Either fold this work into an existing module whose hidden complexity it actually serves, or expand the hidden body to justify the boundary."*
+- **A new module named `utils`, `helpers`, `common`, `shared`, `lib`, `misc`, or any variant.** These names signal grab-bags by construction. Reject. Tell the architect: *"This project has no utils module by design. The work this names must live inside the module whose hidden complexity needs it. Which module is that?"*
+- **A new module that is a pass-through wrapper** — its public methods each call exactly one method in another module. Reject; the wrapping module adds interface cost without adding encapsulation.
+- **A new module that re-exports or thinly adapts another module.** Reject; rename or adapt at the existing module instead.
+- **A design that splits one coherent responsibility across two new modules** to "separate concerns" when those concerns are not actually separable in the runtime. Reject; one deep module is better than two shallow ones.
+- **The brief touches source paths not claimed by any module's `## Paths claimed` section.** Reject; either update the owning module's claimed paths in the brief, or run the new-module flow first.
+- **The architect's brief proposes a new module when an existing module's `Hidden complexity` plausibly covers the responsibility.** Reject and ask the architect to either (a) demonstrate the responsibility does *not* fit, with specifics, or (b) fold the work into the existing module.
 
-If a single agent's run is taking substantially longer than its rough budget (architect >1 hr, coder >2 hrs, tester >1 hr, reviewer >30 min):
+**When you find a deep-module red flag**, send the brief back with this instruction (adapt to the specific finding):
 
-- Don't kill the agent — that loses its in-flight work
-- Surface the duration to the operator
-- Ask whether to continue, redirect, or escalate to a different agent (e.g. if coder is stuck, route to debugger)
+> "The brief proposes [quote the specific shallow pattern]. This project is built from deep modules — small interface, large hidden body. A shallow module ships permanent overhead. Either fold the work into [name the existing deep module that could absorb it], or produce the full module proposal (interface surface, hidden complexity, depth justification, paths claimed) that proves this is genuinely a deep module. Read `docs/philosophy/deep-modules.md` before retrying."
 
-### Architectural drift detection
+When the gate passes — both architectural quality and deep-module — record `✓ deep-module gate passed` in the swarm audit entry under `## Gate triggers`. When it fails, record the trigger and the retry.
 
-If the coder or tester surfaces a design choice that wasn't in the architect's brief (or no architect was spawned because this was meant to be implementation-only):
-
-- STOP the implementation
-- Escalate to the architect agent with the surfaced choice
-- Wait for the architect's brief or decision file before re-spawning the coder
-
-This is the load-bearing gate. Coders making design calls inline is the failure mode that produces drift between intent and implementation; the swarm pattern's whole value is preventing it.
-
-### Coherence check at midpoint
-
-For full-feature swarms (architect → coder → tester → reviewer), after the coder finishes and before the tester spawns, do a quick check:
-
-- Is what the coder produced visibly consistent with what the architect specified?
-- Are the file paths / module boundaries the architect named present in the coder's output?
-- Are the contracts the architect filed still the ones the coder is consuming?
-
-If anything looks misaligned, escalate to the operator before spending more tokens on the tester.
-
-### Recording gate triggers
-
-Every gate trigger gets recorded in the swarm audit entry under a `## Gate triggers` section. Even if the swarm continues, the trigger is logged. This builds the audit trail for the operator to review when reasoning about whether the swarm pattern is paying off.
+- **Time ceiling per agent.** If a run exceeds its rough budget (architect >1h, coder >2h, tester >1h, reviewer >30m), don't kill the agent (loses in-flight work) — surface the duration and ask whether to continue, redirect, or escalate (e.g. coder stuck → debugger).
+- **Architectural drift.** If the coder or tester surfaces a design choice not in the architect's brief, STOP, route to the architect for a decision before re-spawning. Coders making design calls inline is the failure mode the swarm exists to prevent.
+- **Midpoint coherence check** (full-feature swarms). After coder finishes, before tester spawns: are file paths and contracts the architect named present in the coder's output? If misaligned, escalate before spending tester tokens.
+- **Record gate triggers.** Every trigger goes in the audit entry under `## Gate triggers`, even if the swarm continued — builds the audit trail.

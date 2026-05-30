@@ -34,7 +34,7 @@ Read `docs/build/STATE.md`. Look at the **Planning progress** section:
 
   If yes, **switch to the `plan-orientation` protocol** (invoke `/plan-orientation` if available; otherwise read `.claude/commands/plan-orientation.md` and follow it). If no, point them at `docs/build/WELCOME.md` and `docs/build/GLOSSARY.md` so they can read about the catalogue first, then wait.
 
-- If **any planning phase is in progress or marked `🟡 next`**, route to the appropriate protocol. Read the most recent session log's "Resume hint" to know exactly where to pick up within the phase.
+- If **any planning phase is in progress or marked `🟡 next`**, route to the appropriate protocol. Read STATE.md's `## Last session resume` section to know exactly where to pick up within the phase. Do not open the session log file.
 
   | Phase | Protocol |
   |---|---|
@@ -50,12 +50,13 @@ Read `docs/build/STATE.md`. Look at the **Planning progress** section:
 
 ## Step 2 — Read where the project is
 
-Read these files in order:
+Read only what is necessary — no more:
 
-1. `docs/build/STATE.md` in full — the always-current snapshot
-2. The most recent file in `docs/build/sessions/` — what happened last session
-3. The active work unit named in STATE.md, including its notes section at the bottom
-4. Skim `docs/build/open-questions/_index.md` and `docs/build/risks/_index.md` for anything blocking the active work unit
+1. `docs/build/STATE.md` in full — the always-current snapshot. **This is the primary source.** The `## Last session resume` section contains the pickup point from the previous session; you do not need to open any session log file.
+2. The active work unit named in STATE.md — read the **header** (status, persona, last updated), `## What's done when this ships`, and only the **most recent dated entry** in `## Notes / log`. Do not read earlier note entries; they are history, not orientation.
+3. **Only if** STATE.md's `## Open questions blocking progress` section lists actual entries (not "None"): read `docs/build/open-questions/_index.md` and `docs/build/risks/_index.md`.
+
+Do not open session log files. They are archives. The resume block in STATE.md is authoritative.
 
 ## Step 3 — Tell the operator where they are
 
@@ -83,4 +84,4 @@ If STATE.md still has placeholder text, references a work unit that doesn't exis
 
 - **Don't make decisions in conversation without filing them.** If the operator says "let's do X" and X is a real architectural choice, file it as a decision in `docs/build/decisions/` before moving on. Decisions made in conversation that aren't filed produce drift — and drift is the failure mode that makes the catalogue worthless.
 - **Don't start work that needs an open question resolved.** Surface the blocker; ask the operator how they want to proceed.
-- **Don't read past your tasks.** STATE, last session log, active work unit, blockers — then stop. Surface those, wait for direction.
+- **Don't read past your tasks.** STATE.md and the scoped active work unit — then stop. Do not open session log files; the resume block in STATE.md is sufficient. Surface what you know, wait for direction.

@@ -1,5 +1,5 @@
 ---
-description: Phase A of planning — project description, personas, the horizon map
+description: Phase A of planning — project description, tech stack, personas, the horizon map
 ---
 
 # plan-orientation
@@ -12,20 +12,22 @@ You are running **Phase A of the planning arc** for a project that just adopted 
 - Initial open questions captured for anything they couldn't yet answer
 - The Phase A row in STATE.md's Planning progress table flipped to `✅ complete`
 
-The whole session should take about 30 minutes. **The operator is most likely a domain expert, not a software engineer.** Plain English throughout. Never use a term like "work unit" or "contract" without defining it the first time. Read [`docs/build/GLOSSARY.md`](../../docs/build/GLOSSARY.md) once before you start so your vocabulary matches the catalogue's.
+The whole session takes about 30 minutes (longer in coaching mode, shorter in developer mode).
+
+**Mode:** honour `methodfile.json`'s `operator.mode` per `docs/build/OPERATOR-MODES.md` (default `standard` if unset). If `null`, send the operator back to `/start-of-session` first to pick.
+
+Read [`docs/build/GLOSSARY.md`](../../docs/build/GLOSSARY.md) once before you start so your vocabulary matches the catalogue's.
 
 ---
 
 ## How to lead this conversation
 
-- **Lead the operator. Don't quiz them.** They aren't here to fill in a form; you're walking them through producing something they can use.
-- **Translate the answers into catalogue artefacts as you go.** They don't need to know the artefact shape — you do.
-- **One question at a time.** If they answer two at once, capture both and move on.
-- **Use their words wherever possible.** Translate jargon out, not in.
-- **If they don't know something, file an open question and move on.** Don't stall.
-- **Save as you go.** Don't accumulate answers and write everything at the end — write each artefact when the conversation produces it.
-
-**Drift discipline:** every decision made in conversation must be filed before the session ends. If the operator says "let's go with X" and X is an architectural commitment, file a decision file in `docs/build/decisions/` *now*, not later. Decisions made in chat that don't reach the catalogue are drift, and drift is the failure mode that makes the catalogue worthless.
+- Lead the operator; don't quiz them. Walk them through producing something they can use.
+- Translate answers into catalogue artefacts as you go — they don't need to know the artefact shape.
+- One question at a time. If they answer two at once, capture both and move on.
+- Use their words. Translate jargon out, not in.
+- "I don't know" → file an open question; move on. Don't stall.
+- Save each artefact when the conversation produces it; don't batch-write at the end. Any in-conversation decision (architectural commitment, tech choice) gets filed to `docs/build/decisions/` *now* — drift kills the catalogue.
 
 ---
 
@@ -49,7 +51,43 @@ Listen. Don't interrupt. When they're done, summarise back in 2-3 sentences in y
 
 When the description is settled, **write it into `STATE.md`'s "What is currently in flight" section** — replacing the placeholder. Keep their voice; don't make it sound corporate. Show them the file path and confirm it's saved.
 
-## Step 3 — One persona, then one or two more (15-20 min)
+## Step 3 — Tech stack (5 min)
+
+Now ask what they're building it with:
+
+> "Before we meet the people your project is for — quickly, what are you building it with? Language, framework, database, where it'll run. If you know already, brilliant. If you haven't decided, just say so and we'll note it as an open question."
+
+Listen and capture what they give you. Common patterns:
+- *"Next.js, PostgreSQL, deployed on Vercel"* → frontend + database + deployment all filled
+- *"React Native with Firebase"* → frontend + database/backend filled
+- *"Not sure yet"* → set `defined: false`, file a Q-NNN
+
+**Write the result to `methodfile.json` now**, under the `techStack` section:
+
+```json
+{
+  "techStack": {
+    "defined": true,
+    "languages": ["TypeScript"],
+    "frontend": "Next.js 15 (App Router)",
+    "backend": "Next.js API Routes / Server Actions",
+    "database": "PostgreSQL (Supabase)",
+    "deployment": "Vercel",
+    "externalServices": ["Stripe"],
+    "notes": null
+  }
+}
+```
+
+Fill in what you know; set unknown fields to `null`. If nothing is settled, set `defined: false`, leave all fields null, and file a Q-NNN open question: *"Tech stack not yet decided — revisit before Phase B."*
+
+Show the operator the updated `methodfile.json` and confirm it saved. Tell them:
+
+> *"This means every agent we spawn later will know what it's building against — language, framework, where it runs. Just a few fields, but it prevents a lot of wrong output later."*
+
+**Drift discipline:** partial information is fine and still valuable. An operator who says *"definitely Next.js, not sure about the database yet"* should have `frontend: "Next.js"`, `database: null`, `defined: true`. Partial is better than undefined.
+
+## Step 4 — One persona, then one or two more (15-20 min)
 
 Tell the operator what's coming:
 
@@ -63,7 +101,7 @@ When P001 is filed, surface it and ask:
 
 If yes, run `/persona-new` again. Aim for **1-3 total** — more than 3 in Phase A usually means the project is overscoped; file the rest as open questions and revisit later.
 
-## Step 4 — Map 1: The Horizon (8-10 min)
+## Step 5 — Map 1: The Horizon (8-10 min)
 
 When the personas are filed, transition:
 
@@ -79,7 +117,7 @@ Use the template at `docs/build/maps/01-template.md`. Walk through its sections 
 
 Write the map to `docs/build/maps/01-the-horizon.md`. Show them the file path and confirm.
 
-## Step 5 — Open questions (2 min)
+## Step 6 — Open questions (2 min)
 
 Pass over the conversation looking for anything the operator wasn't sure about. For each:
 
@@ -88,28 +126,11 @@ Pass over the conversation looking for anything the operator wasn't sure about. 
 
 > "I noticed a few things you weren't sure about yet — [list]. I've filed them as open questions so we'll come back to them. Two of them affect Phase B (Architecture), so we'll definitely hit them next session."
 
-## Step 6 — Close (2 min)
+## Step 7 — Close (2 min)
 
-Update STATE.md:
+Update STATE.md: Phase A row → `✅ complete (YYYY-MM-DD)`; Phase B row → `🟡 next`; refresh "Last updated".
 
-- Set the **Planning progress** Phase A row to `✅ complete (YYYY-MM-DD)`
-- Set the Phase B row to `🟡 next` (so the next `/start-of-session` knows where to route)
-- Refresh the "Last updated" date
-
-Then tell the operator what they now have:
-
-> "You've got your first catalogue substrate:
->
-> - **[N] personas** in `docs/build/personas/` — these anchor every later decision
-> - **Map 1** at `docs/build/maps/01-the-horizon.md` — the whole-project picture
-> - **[N] open questions** in `docs/build/open-questions/` — these are what we'll resolve as planning continues
-> - **STATE.md** updated to reflect Phase A is done
->
-> Next session, we move to **Phase B — Architecture & Contracts** (about 60-90 minutes). We'll name the major pieces of your project and what each one provides to the others.
->
-> For now, run `/end-of-session` to commit everything. The catalogue's search index will refresh in the background, and next session can pick up from here."
-
-Then run `/end-of-session` to close out.
+Summarise to the operator what they now have — tech stack, [N] personas, Map 1, [N] open questions, STATE.md updated — and tell them the next session is **Phase B — Architecture & Contracts** (~60-90 min). Then run `/end-of-session`.
 
 ---
 

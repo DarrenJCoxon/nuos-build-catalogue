@@ -30,6 +30,12 @@ Nothing yet — this catalogue was just adopted on {{TODAY}}.
 
 Run `/start-of-session` to begin. The AI will read this file and walk you through Phase A of planning.
 
+## Last session resume
+
+No sessions have run yet.
+
+_end-of-session writes here: what the last session accomplished (1–2 sentences), exactly where to pick up, and any mid-task context needed. start-of-session reads this instead of opening the session log file._
+
 ## Open questions blocking progress
 
 None currently filed. Filed questions live in [`open-questions/_index.md`](open-questions/_index.md).
@@ -56,6 +62,7 @@ None currently filed. Filed risks live in [`risks/_index.md`](risks/_index.md).
 - **What is currently in flight** describes ongoing work; updated when work changes shape
 - **What just shipped** notes the most recent completion(s)
 - **What is next** points at the immediate concrete action
+- **Last session resume** is the pickup block written by end-of-session — start-of-session reads this instead of opening a session log file
 - Below: open questions, risks, decisions, and active work units — pulled from their respective registers for quick scanning
 
 This file is the project's executive summary. The detail lives in the register files; this is the one-screen view that says where the project is.

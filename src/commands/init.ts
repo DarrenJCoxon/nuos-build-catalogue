@@ -73,7 +73,7 @@ export interface InitResult {
   exitCode: number;
 }
 
-const PROTOCOL_FILES = [
+export const PROTOCOL_FILES = [
   'start-of-session.md',
   'end-of-session.md',
   'wu-new.md',
@@ -125,7 +125,7 @@ interface ToolTarget {
   render: (slug: string, body: string) => string;
 }
 
-const TOOLS: Record<ToolSlug, ToolTarget> = {
+export const TOOLS: Record<ToolSlug, ToolTarget> = {
   claude: {
     label: 'Claude Code',
     destPath: (slug) => path.join('.claude', 'commands', `${slug}.md`),

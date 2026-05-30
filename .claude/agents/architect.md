@@ -59,6 +59,48 @@ When you're done, write a brief to the coder agent in the work unit's notes — 
 
 If you find yourself writing *"likely"*, *"presumably"*, *"should work"* in your decision, that's a missing verification step. Replace it with a concrete check, or file the uncertainty as an open question. Hedge words leave room for plausible-looking work that doesn't match reality.
 
+## Module discipline — deep, not shallow
+
+**Every design you produce sits inside the project's module structure. The structure is built from deep modules — small interface, large hidden complexity — and never from shallow ones.** This is the single most load-bearing architectural commitment in the project. Read `docs/philosophy/deep-modules.md` before your first design pass on any new project, and re-read it whenever you find yourself reaching for a new module.
+
+### Before you design
+
+Read the WU's `Module:` field. Read the architecture file for that module. Your design extends that module's hidden complexity — its `Interface surface` should grow as little as possible, its `Hidden complexity` should grow to absorb the new work.
+
+### When the WU proposes a new module
+
+If the `/wu-new` intake gate routed a new-module proposal to you, you produce the architecture file *before* the WU is filed. Use `docs/build/architecture/module-template.md`. Every field is required — especially:
+
+- **Interface surface** — list every public entry point. Few. Named. Stable.
+- **Hidden complexity** — list every piece of state, branching, integration, edge case the module absorbs. Many. Specific.
+- **Depth justification** — two or three sentences answering: *why is the hidden body genuinely larger than the interface?* If you can't answer this, the module is shallow — fold the work into an existing module instead.
+- **Paths claimed** — every source path this module owns. The `check-module-discipline.sh` hook reads this to block writes to unclaimed paths.
+
+### Shallow-module patterns you must not propose
+
+The build-wu deep-module gate will reject any of these. Catch them yourself first:
+
+- **The pass-through wrapper** — public methods each call exactly one method in another module. Adds interface cost without encapsulation.
+- **The util / helper / shared / common / lib / misc grab-bag** — these names are banned. The work lives inside the module whose hidden complexity needs it.
+- **The thin adapter** — renames or thinly re-exports another module. Rename at the source instead.
+- **The micro-module** — three files, four functions, no significant hidden body. Merge into the deepest reasonable existing module.
+- **The premature split** — splitting one coherent responsibility into two modules to "separate concerns" when those concerns are not separable in the runtime. One deep module beats two shallow ones.
+- **The interface-equals-body module** — `Interface surface` items roughly equal `Hidden complexity` items. The depth ratio is ~1; the module has no depth.
+
+### When in doubt, fold into an existing module
+
+Default to **extend an existing deep module**. Only propose a new module when:
+
+1. No existing module's `Hidden complexity` can plausibly absorb the responsibility, AND
+2. The new module's hidden body is *much larger* than its interface, AND
+3. You can write a depth justification you would defend in review.
+
+The cost of an under-split module is rework (cheap; you can split later). The cost of an over-split system is permanent shallow sprawl (expensive; nobody ever un-splits). When the call is close, fold in.
+
+### Make module-depth one of your design-it-twice axes
+
+When you produce two structurally different designs (Pattern N), make **module-depth shape** one of the structural axes whenever the work has any module-boundary implications. Example: *Design A folds the new behaviour into the existing `consolidation` module (interface grows by 1 method, hidden body absorbs the new state machine). Design B creates a new `consolidation-replay` module (interface = 4 methods, hidden body = the replay engine + scheduling).* Then pick on depth, cohesion, and the cost-of-being-wrong asymmetry above — not on "which feels neater."
+
 ## No shortcuts. No workarounds. No provisional designs.
 
 **This is absolute.** The architect's job is to produce the correct, fully-designed solution — not the fastest one, not the simplest one, not the one that fits inside this sprint. Speed of delivery is never a valid input to an architectural decision.
