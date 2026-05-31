@@ -102,11 +102,23 @@ async function buildPassingCatalogue(buildRoot: string, sessionDate: string): Pr
     'utf8'
   );
 
-  // ---- STATE.md ----
+  // ---- STATE.md — real-catalogue table format (WU 112 fix-pass) ----
+  // Real format: | Last updated | 2026-05-31 (**Session 116 — ...**) ... |
+  //              | Last session | Session 116 — prose, no markdown link |
   const stateMdPath = path.join(buildRoot, 'STATE.md');
   await writeFile(
     stateMdPath,
-    `# NuOS build state\n\n**Last updated:** ${sessionDate}\n**Last session:** [Session 116](sessions/${sessionLogFile})\n\nCurrent state summary.\n`,
+    [
+      '# NuOS build state',
+      '',
+      '| Field | Value |',
+      '|-------|-------|',
+      `| Last updated | ${sessionDate} (**Session 116 — end-of-session test**) |`,
+      `| Last session | Session 116 — end-of-session test run on ${sessionDate} |`,
+      '',
+      'Current state summary.',
+      '',
+    ].join('\n'),
     'utf8'
   );
   const nowState = new Date();
@@ -731,6 +743,411 @@ describe('AC 6 — audit chain shows step-verified and completion events', () =>
     assert.ok('update_active_wu_notes' in stored.steps, 'steps must include update_active_wu_notes');
     assert.ok('update_state_md' in stored.steps, 'steps must include update_state_md');
     assert.equal(stored.steps.update_state_md.status, 'failed', 'update_state_md step should be failed');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// WU 112 fix-pass — targeted regression tests for the three false-positive fixes
+// ---------------------------------------------------------------------------
+
+describe('WU 112 fix-pass — STATE.md "Last updated" table-row format', () => {
+  test('table-row format: | Last updated | 2026-05-31 (prose...) | is accepted', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp1-table-row');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // buildPassingCatalogue already writes the table format — this confirms end-to-end pass.
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Table-row STATE.md should pass; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('bold-colon format: **Last updated:** 2026-05-31 is also accepted', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp1-bold-colon');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // Override STATE.md with old bold-colon format (backward-compat).
+    const sessionLogFile = `${SESSION_DATE}-session-116.md`;
+    const stateMdPath = path.join(buildRoot, 'STATE.md');
+    await writeFile(
+      stateMdPath,
+      `# NuOS build state\n\n**Last updated:** ${SESSION_DATE}\n**Last session:** Session 116 — prose no link\n\nSummary.\n`,
+      'utf8'
+    );
+    const nowState = new Date();
+    await utimes(stateMdPath, nowState, nowState);
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Bold-colon STATE.md should pass; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('table-row with trailing prose: first date on the label line is captured, not a later date', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp1-first-date');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // Write STATE.md where the label line has SESSION_DATE first but also a later date in prose.
+    const stateMdPath = path.join(buildRoot, 'STATE.md');
+    await writeFile(
+      stateMdPath,
+      [
+        '# NuOS build state',
+        '',
+        '| Field | Value |',
+        '|-------|-------|',
+        `| Last updated | ${SESSION_DATE} (**Session 116 — started 2025-01-01, ended ${SESSION_DATE}**) |`,
+        `| Last session | Session 116 — some prose |`,
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const nowState = new Date();
+    await utimes(stateMdPath, nowState, nowState);
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `First-date capture should pick SESSION_DATE; output:\n${result.output}`);
+  });
+
+  test('stale "Last updated" date is still flagged as a failure', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp1-stale-date');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // Write STATE.md with a stale date in the table row.
+    const stateMdPath = path.join(buildRoot, 'STATE.md');
+    await writeFile(
+      stateMdPath,
+      [
+        '# NuOS build state',
+        '',
+        '| Field | Value |',
+        '|-------|-------|',
+        `| Last updated | 2020-01-01 (**Session 001**) |`,
+        `| Last session | Session 116 — some prose |`,
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const nowState = new Date();
+    await utimes(stateMdPath, nowState, nowState);
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 1, `Stale date should still fail; output:\n${result.output}`);
+    assert.match(result.output, /GATE: BLOCKED/i);
+  });
+});
+
+describe('WU 112 fix-pass — STATE.md "Last session" prose-row (no link to resolve)', () => {
+  test('prose-only "Last session" row is accepted (real catalogue format)', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp2-prose-session');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // buildPassingCatalogue writes the prose-row format — confirm it passes.
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Prose-row "Last session" should pass; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('markdown-link "Last session" row (old format) is also accepted', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp2-link-session');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    const sessionLogFile = `${SESSION_DATE}-session-116.md`;
+    const stateMdPath = path.join(buildRoot, 'STATE.md');
+    await writeFile(
+      stateMdPath,
+      [
+        '# NuOS build state',
+        '',
+        '| Field | Value |',
+        '|-------|-------|',
+        `| Last updated | ${SESSION_DATE} (**Session 116**) |`,
+        `| Last session | [Session 116](sessions/${sessionLogFile}) |`,
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const nowState = new Date();
+    await utimes(stateMdPath, nowState, nowState);
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    // With the fix, link-presence is not required; the row is non-empty so it passes.
+    assert.equal(result.exitCode, 0, `Link-format "Last session" should also pass; output:\n${result.output}`);
+  });
+
+  test('missing "Last session" row entirely is flagged as failure', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp2-no-session-row');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    const stateMdPath = path.join(buildRoot, 'STATE.md');
+    await writeFile(
+      stateMdPath,
+      [
+        '# NuOS build state',
+        '',
+        '| Field | Value |',
+        '|-------|-------|',
+        `| Last updated | ${SESSION_DATE} (**Session 116**) |`,
+        '| Something else | nothing |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const nowState = new Date();
+    await utimes(stateMdPath, nowState, nowState);
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 1, `Missing "Last session" row should fail; output:\n${result.output}`);
+    assert.match(result.output, /GATE: BLOCKED/i);
+  });
+});
+
+describe('WU 112 fix-pass — checkWorkUnitsIndex Design A (status-cell-only ✅, table rows only)', () => {
+  test('completed row linking to done/ that exists: passes', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-done-ok');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // Write a done file.
+    await writeFile(
+      path.join(buildRoot, 'work-units', 'done', '001-example.md'),
+      '# WU 001\n',
+      'utf8'
+    );
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '**Status legend:** - ✅ completed — moved to done/',
+        '',
+        '## Phase 0 — Bootstrap ✅ COMPLETE',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 001 | [WU 001 — Example](done/001-example.md) | ✅ completed | — |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Completed row with valid done/ link should pass; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('completed row with no link (legacy/sibling): skipped, does not fail', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-legacy-skip');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 001 | WU 001 — Legacy (no link) | ✅ completed | — |',
+        '| 002 | WU 002 — Another legacy | ✅ completed | WU 001 ✅ |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Legacy completed rows with no link should be skipped; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('non-completed row whose Depends-on column contains ✅: ignored (not treated as completed)', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-depends-on-ok');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // A row with a top-level link whose STATUS is 🟡 in_progress but Depends-on has ✅.
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 168 | [WU 168 — Current](168-current-work.md) | 🟡 in_progress | WU 088 ✅, WU 099 ✅ |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `in_progress row with Depends-on ✅ should not be treated as completed; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('completed row linking to top-level (not done/) is flagged as drift', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-drift-top-level');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // This WU is marked ✅ but its link goes to a top-level file (not done/).
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 050 | [WU 050 — Un-moved](050-un-moved.md) | ✅ completed | — |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    // Create the file at the top-level (not done/) to isolate the drift check.
+    await writeFile(path.join(buildRoot, 'work-units', '050-un-moved.md'), '# WU 050\n', 'utf8');
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 1, `Un-moved completed WU should be flagged as drift; output:\n${result.output}`);
+    assert.match(result.output, /GATE: BLOCKED/i);
+  });
+
+  test('completed row linking to done/ but file is missing: flagged as drift', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-drift-missing-file');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 099 | [WU 099 — Missing](done/099-missing.md) | ✅ completed | — |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    // Do NOT create the done/ file — it should be missing.
+
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 1, `Broken done/ link should be flagged; output:\n${result.output}`);
+    assert.match(result.output, /GATE: BLOCKED/i);
+  });
+
+  test('status legend line and phase header ✅ are not treated as completed WU rows', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-non-row-checkmarks');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '**Status legend:** - ✅ completed — moved to done/',
+        '',
+        '## Phase 0 — Bootstrap ✅ COMPLETE',
+        '',
+        '## Phase 2 — Phase name ✅ COMPLETE',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Legend + phase headers with ✅ should not be treated as WU rows; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
+  });
+
+  test('mixed realistic index: legacy + done + in-progress-with-✅-depends: all correct', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('fp3-mixed-realistic');
+    await buildPassingCatalogue(buildRoot, SESSION_DATE);
+    // Create a done/ file.
+    await writeFile(path.join(buildRoot, 'work-units', 'done', '010-done-example.md'), '# WU 010\n', 'utf8');
+    await writeFile(
+      path.join(buildRoot, 'work-units', '_index.md'),
+      [
+        '# Work units index',
+        '',
+        '**Status legend:** - ✅ completed — moved to done/',
+        '',
+        '## Phase 1 — Foundation ✅ COMPLETE',
+        '',
+        '| ID | Title | Status | Depends-on |',
+        '|----|-------|--------|------------|',
+        '| 001 | WU 001 — Legacy sibling (no link) | ✅ completed | — |',
+        '| 002 | WU 002 — Another legacy | ✅ completed | WU 001 ✅ |',
+        '| 010 | [WU 010 — Done](done/010-done-example.md) | ✅ completed | WU 001 ✅ |',
+        '| 168 | [WU 168 — In progress](168-current.md) | 🟡 in_progress | WU 010 ✅ |',
+        '',
+      ].join('\n'),
+      'utf8'
+    );
+    const { store, runtime } = await openStoreAndRuntime(workflowsPath, buildRoot);
+    const result = await cmdEndOfSession(store, runtime, {
+      buildRoot,
+      activeWuHandle: 'wu-112',
+      sessionDate: SESSION_DATE,
+      sessionStartIso: new Date(Date.now() - 60_000).toISOString(),
+    });
+    assert.equal(result.exitCode, 0, `Mixed realistic index should pass; output:\n${result.output}`);
+    assert.match(result.output, /GATE: PASSED/i);
   });
 });
 

@@ -402,20 +402,40 @@ async function checkWorkUnitsIndex(buildRoot: string): Promise<boolean> {
   const content = await fileContent(indexPath);
   if (!content) return true; // If no index, no rows to check.
 
+  // Design A (WU 112 fix-pass): operate on table rows only; check status cell only.
+  // Row shape after split on '|': ['', id, title, status, dependsOn, ...]
+  // (leading empty string from the leading pipe character)
   const lines = content.split('\n');
   for (const line of lines) {
-    // Look for rows with ✅ that link to a file.
-    if (!line.includes('✅')) continue;
-    // Extract the link target from markdown link syntax [text](path).
-    const linkMatch = line.match(/\[.*?\]\((.*?)\)/);
-    if (!linkMatch) continue;
+    // Only consider actual table rows (lines starting with '|' after optional whitespace).
+    if (!/^\s*\|/.test(line)) continue;
+    const cells = line.split('|');
+    // Need at least 5 cells: [empty, id, title, status, dependsOn, ...] (leading/trailing empty from outer pipes)
+    if (cells.length < 5) continue;
+    // Status is the 3rd content cell (index 3 in the split array, after the leading empty).
+    const statusCell = cells[3];
+    if (!statusCell) continue;
+    // A row is completed only if its STATUS cell contains ✅.
+    // This avoids false-positives from Depends-on column mentions, legend lines, and phase headers.
+    if (!statusCell.includes('✅')) continue;
+
+    // Completed row: extract the first markdown link from the TITLE cell (index 2).
+    const titleCell = cells[2];
+    if (!titleCell) continue;
+    const linkMatch = titleCell.match(/\[.*?\]\((.*?)\)/);
+    if (!linkMatch) {
+      // No link in the title cell — legacy/sibling WU (lives in a sibling repo, never had a done/ file here).
+      // Skip: not verifiable by this gate (presence-only, D130).
+      continue;
+    }
+
     const linkTarget = linkMatch[1];
-    // ✅ WUs should link to done/ subdirectory.
+    // A completed row linking to a top-level NNN-...md (not done/) is drift: the WU was never moved.
     if (!linkTarget.includes('done/')) {
       return false;
     }
-    // Check the linked file exists.
-    const filePath = path.join(buildRoot, 'work-units', linkTarget.startsWith('done/') ? linkTarget : `done/${path.basename(linkTarget)}`);
+    // A completed row whose done/ file is missing is also drift.
+    const filePath = path.join(buildRoot, 'work-units', linkTarget);
     const mtime = await fileMtime(filePath);
     if (!mtime) {
       return false;
@@ -442,22 +462,27 @@ async function checkStateMd(
   let stateMdLastSessionResolves = false;
 
   if (content) {
-    // Parse "Last updated:" line.
-    const updatedMatch = content.match(/\*\*Last updated:\*\*\s*(\d{4}-\d{2}-\d{2})/i) ||
-      content.match(/Last updated:\s*(\d{4}-\d{2}-\d{2})/i);
+    // Fix 1 (WU 112 fix-pass): accept all three "Last updated" shapes:
+    //   table-row: | Last updated | 2026-05-31 (**Session 115 — ...**) ... |
+    //   bold-colon: **Last updated:** 2026-05-31
+    //   plain-colon: Last updated: 2026-05-31
+    // Anchor on the label text (colon optional), grab the FIRST YYYY-MM-DD on the same logical line.
+    // The [^\n]*? keeps the match within the label's own row.
+    const updatedMatch = content.match(/Last updated[^\n]*?(\d{4}-\d{2}-\d{2})/i);
     if (updatedMatch) {
       stateMdLastUpdated = updatedMatch[1];
     }
 
-    // Parse "Last session:" link and check the target file exists.
-    const sessionLinkMatch = content.match(/\*\*Last session:\*\*.*?\[.*?\]\((.*?)\)/i) ||
-      content.match(/Last session:.*?\[.*?\]\((.*?)\)/i);
-    if (sessionLinkMatch) {
-      const linkTarget = sessionLinkMatch[1];
-      // Link targets are relative to docs/build/ (the buildRoot).
-      const targetPath = path.join(buildRoot, linkTarget);
-      const targetMtime = await fileMtime(targetPath);
-      stateMdLastSessionResolves = targetMtime !== null;
+    // Fix 2 (WU 112 fix-pass): the real "Last session" row is narrative prose with NO markdown link.
+    // Real format: | Last session | Session 112 — ...prose... |
+    // Assert only that a non-empty "Last session" row/line is present (D130: do not overclaim).
+    // Link-resolution is dropped because the real format carries no link to resolve.
+    // Session-log existence on disk is independently verified by Step 7 (checkSessionLog).
+    const sessionLineMatch = content.match(/Last session[^\n]*/i);
+    if (sessionLineMatch) {
+      // The row is non-empty if it contains more than just the label itself.
+      const rowText = sessionLineMatch[0].replace(/Last session/i, '').replace(/[|:\s]/g, '');
+      stateMdLastSessionResolves = rowText.length > 0;
     }
   }
 

@@ -1,5 +1,19 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.33.1 — 2026-05-31 — end-of-session fact-gatherer false-positive fix (WU 112 fix-pass)
+
+Removes three false-positive gate failures that blocked the live dry-run against the real nuos catalogue. All fixes are in `src/commands/end-of-session.ts`; the pack and its boolean contract are unchanged.
+
+**Fix 1 — STATE.md "Last updated" table-row format accepted.** The real catalogue stores `| Last updated | 2026-05-31 (**Session 115 — ...**) |` — a markdown table row with prose trailing the date. The old parser required a colon (`**Last updated:** <date>`) and read `''` on table rows, causing a false-fail on the date comparison. New regex: `/Last updated[^\n]*?(\d{4}-\d{2}-\d{2})/i` — anchors on the label text (colon optional), captures the **first** date on that row. All three forms (table-row, bold-colon, plain-colon) now accepted.
+
+**Fix 2 — STATE.md "Last session" no-link prose accepted.** The real "Last session" row is `| Last session | Session 112 — ...prose... |` with no markdown link. The old parser required `[..](target)` and resolved the link target on disk, so a prose-only row always produced `stateMdLastSessionResolves = false`. New check (Design 2b): assert only that a non-empty "Last session" row exists. Link resolution dropped because the real format carries no link. Session-log existence on disk is independently verified by Step 7 (`checkSessionLog`), so no real coverage is lost.
+
+**Fix 3 — work-units index check Design A.** The old check (`line.includes('✅')` + extract any link + require `done/`) false-fired on: (a) the status-legend line, (b) phase-header ✅ COMPLETE markers, (c) rows whose ✅ appeared only in the Depends-on column. New check: table rows only (`/^\s*\|/`); status cell (cell index 3 after pipe-split) must contain ✅; link extracted from the title cell only. Completed rows with no title-cell link are skipped as legacy/sibling. The two real drift modes are still caught: a ✅ WU whose index link points to a top-level file (not `done/`) fails; a ✅ WU whose `done/` file is missing fails.
+
+**Tests:** 288/288 (was 274; +14 targeted fix-pass tests in three new `describe` blocks in `tests/end-of-session.test.ts`). `npx tsc --noEmit` clean.
+
+---
+
 ## 0.33.0 — 2026-05-31 — end-of-session CLI command (WU 112 / D130)
 
 Adds the `nuos-catalogue end-of-session` command, wiring the pack's `end_of_session` workflow (nine steps, verify-and-gate, D130) to the CLI. The command is resumable: re-running on the same session date picks up where a previous run left off. Step state is persisted in the MIS store via `commitEndOfSessionRecord`.
