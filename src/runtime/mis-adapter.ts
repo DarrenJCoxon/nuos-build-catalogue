@@ -26,7 +26,7 @@
  *   resolving decision.
  */
 
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import type {
@@ -268,10 +268,14 @@ async function commitAdvanceStatus(
 
   // Map workflow status names to user-facing markdown status text.
   const statusEmoji = mapStatusToEmojiText(payload.toStatus);
-  const replaced = replaceStatusLine(record.rawMarkdown, statusEmoji);
+  // D129: read the current on-disk file as the edit base so that hand-edits
+  // made after the last CLI write are preserved, not overwritten by the stale
+  // store snapshot in record.rawMarkdown.
+  const diskBase = await readDiskBase(catalogueRoot, record);
+  const replaced = replaceStatusLine(diskBase, statusEmoji);
   let updatedMarkdown = replaced.replaced
     ? replaced.updated
-    : insertStatusLine(record.rawMarkdown, statusEmoji);
+    : insertStatusLine(diskBase, statusEmoji);
 
   updatedMarkdown = appendChangeLog(updatedMarkdown, {
     isoTimestamp: new Date().toISOString(),
@@ -302,14 +306,19 @@ async function commitTickAC(
     throw new Error(`commitTickAC: no record for ${payload.targetHandle}`);
   }
 
+  // D129: read the current on-disk file as the edit base so that hand-edits
+  // made after the last CLI write are preserved, not overwritten by the stale
+  // store snapshot in record.rawMarkdown.
+  const diskBase = await readDiskBase(catalogueRoot, record);
+
   // Try to flip the AC line in the markdown. If parsing succeeds we get
   // the structural tick; otherwise we fall back to the audit-log-only
   // approach (older/atypical AC shapes the parser doesn't recognise).
-  let workingMarkdown = record.rawMarkdown;
+  let workingMarkdown = diskBase;
   let acText = payload.criterionText;
   let structuralTick = false;
   try {
-    const acs = parseAcceptanceCriteria(record.rawMarkdown);
+    const acs = parseAcceptanceCriteria(diskBase);
     if (acs.length === 0) {
       // No AC section recognised — audit-log-only.
     } else if (payload.criterionIndex >= acs.length) {
@@ -318,7 +327,7 @@ async function commitTickAC(
       );
     } else {
       acText = acText ?? acs[payload.criterionIndex].text;
-      workingMarkdown = tickAcceptanceCriterion(record.rawMarkdown, payload.criterionIndex);
+      workingMarkdown = tickAcceptanceCriterion(diskBase, payload.criterionIndex);
       structuralTick = true;
     }
   } catch (err) {
@@ -365,12 +374,16 @@ async function commitSupersede(
     throw new Error(`commitSupersede: no record for superseding ${payload.supersedingHandle}`);
   }
 
+  // D129: read current on-disk files as the edit bases.
+  const targetDiskBase = await readDiskBase(catalogueRoot, target);
+  const supersedingDiskBase = await readDiskBase(catalogueRoot, superseding);
+
   // Target: status accepted → superseded by D-NNN
   const targetStatus = `superseded by ${payload.supersedingHandle}`;
-  const targetReplaced = replaceStatusLine(target.rawMarkdown, targetStatus);
+  const targetReplaced = replaceStatusLine(targetDiskBase, targetStatus);
   let targetMarkdown = targetReplaced.replaced
     ? targetReplaced.updated
-    : insertStatusLine(target.rawMarkdown, targetStatus);
+    : insertStatusLine(targetDiskBase, targetStatus);
 
   targetMarkdown = appendChangeLog(targetMarkdown, {
     isoTimestamp: new Date().toISOString(),
@@ -381,7 +394,7 @@ async function commitSupersede(
   await persist(store, catalogueRoot, target, targetMarkdown, { status: targetStatus });
 
   // Superseding: append a Build catalogue history entry naming what it supersedes.
-  const supersedingMarkdown = appendChangeLog(superseding.rawMarkdown, {
+  const supersedingMarkdown = appendChangeLog(supersedingDiskBase, {
     isoTimestamp: new Date().toISOString(),
     summary: `Supersedes ${payload.targetHandle}.`,
     details: payload.reason,
@@ -412,11 +425,15 @@ async function commitResolveQuestion(
     );
   }
 
+  // D129: read current on-disk files as the edit bases.
+  const questionDiskBase = await readDiskBase(catalogueRoot, question);
+  const decisionDiskBase = await readDiskBase(catalogueRoot, decision);
+
   const questionStatus = `resolved by ${payload.resolvingDecisionHandle}`;
-  const questionReplaced = replaceStatusLine(question.rawMarkdown, questionStatus);
+  const questionReplaced = replaceStatusLine(questionDiskBase, questionStatus);
   let questionMarkdown = questionReplaced.replaced
     ? questionReplaced.updated
-    : insertStatusLine(question.rawMarkdown, questionStatus);
+    : insertStatusLine(questionDiskBase, questionStatus);
 
   questionMarkdown = appendChangeLog(questionMarkdown, {
     isoTimestamp: new Date().toISOString(),
@@ -426,7 +443,7 @@ async function commitResolveQuestion(
   });
   await persist(store, catalogueRoot, question, questionMarkdown, { status: questionStatus });
 
-  const decisionMarkdown = appendChangeLog(decision.rawMarkdown, {
+  const decisionMarkdown = appendChangeLog(decisionDiskBase, {
     isoTimestamp: new Date().toISOString(),
     summary: `Resolves ${payload.targetHandle}.`,
     details: payload.reason,
@@ -438,6 +455,41 @@ async function commitResolveQuestion(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Read the current on-disk content of `record`'s source file as the edit
+ * base for write commands (D129: disk is canonical in Mode 1).
+ *
+ * Falls back to `record.rawMarkdown` only when the file has never been
+ * written to disk (i.e. `fileExistsMustBeTrue` is false — used for the
+ * create path where the file is written in the same operation). For all
+ * mutation paths (tick, advance, supersede, resolve) the file must already
+ * exist on disk; if it is missing the command refuses with a clear message
+ * rather than silently clobbering with a stale store snapshot.
+ */
+async function readDiskBase(
+  catalogueRoot: string,
+  record: MigratedRecord,
+  options: { mustExist?: boolean } = { mustExist: true }
+): Promise<string> {
+  const sourceAbsolute = path.join(catalogueRoot, record.sourcePath);
+  try {
+    return await readFile(sourceAbsolute, 'utf8');
+  } catch (err: unknown) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      if (options.mustExist) {
+        throw new Error(
+          `Store-coherence error: the on-disk file for ${record.handle} ` +
+            `(${record.sourcePath}) no longer exists. ` +
+            `Run 'nuos-catalogue migrate' to re-sync the workflow store before writing.`
+        );
+      }
+      // File not yet on disk (create path) — fall back to the store snapshot.
+      return record.rawMarkdown;
+    }
+    throw err;
+  }
+}
 
 async function persist(
   store: WorkflowStore,

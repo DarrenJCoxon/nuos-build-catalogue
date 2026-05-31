@@ -1,5 +1,17 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.32.1 — 2026-05-31 — store-coherence fix: disk is the edit base for all write commands (D129)
+
+**Bug fixed:** Every CLI write command (`wu tick`, `wu advance`, `decision supersede`, `open-question resolve`) was silently overwriting newer on-disk hand-edits with a stale workflow-store snapshot. The write-path read `record.rawMarkdown` from the store (frozen at the last CLI write or migration), applied its edit to that stale string, then wrote it verbatim over the current on-disk file — clobbering any hand-edits made since. In the live incident, `wu tick wu-111 --index=14` deleted ~27 lines of notes content (the Day-2 soak section added by hand three weeks after the last CLI write).
+
+**Fix (per D129):** All four mutation `commit*` handlers (`commitTickAC`, `commitAdvanceStatus`, `commitSupersede`, `commitResolveQuestion`) now read the current on-disk file as their edit base via a new `readDiskBase` helper. The store's `rawMarkdown` cache is updated from the freshly-written content afterward (read-through cache, per D129). If the on-disk file no longer exists when a mutation command runs, the command refuses with a clear error message telling the operator to re-sync via `migrate`, rather than silently proceeding with the stale snapshot. Create paths are unaffected (the file is written for the first time in the same operation).
+
+**Tests:** The debugger's regression test `wu tick preserves on-disk hand-edits made after the store snapshot (WU 214 root cause)` in `tests/wu-111-soak-findings.test.ts` now passes. Per-command preservation tests added for `advance_status`, `supersede`, and `resolve`, plus a divergence-guard test (deleted on-disk file → store-coherence error). The `appendChangeLog/tick preserve content...` fixture test continues to pass. A fragile `ac-parse.test.ts` §6 test that read a live catalogue file at a hardcoded path (broken when WU 111 moved to `done/`) was rewritten to a self-contained inline fixture. Full suite: **255/255 pass**.
+
+**Related:** WU 214, D129.
+
+---
+
 ## 0.32.0 — 2026-05-28 — code-quality gates (lite during build, full at end-of-session)
 
 Test gates catch broken behaviour; the deep-module gate catches shallow boundaries; nothing in the protocol catches structural code-quality drift — files sprawling past 1k lines, ad-hoc conditionals bolted into unrelated flows, bespoke helpers duplicating canonical ones, thin wrappers adding indirection. Over a multi-month build these compound silently. This release adds a two-layer gate inspired by Cursor's [thermo-nuclear code-quality review](https://github.com/cursor/plugins/tree/main/thermos), shaped to keep token cost negligible on doc-only sessions.

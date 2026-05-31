@@ -271,22 +271,56 @@ describe('§5 end-to-end via CLI write commands', () => {
 });
 
 // ---------------------------------------------------------------------------
-// §6 Real catalogue: parser handles WU 111's actual AC list
+// §6 Parser handles WU 111-shaped markdown (14-AC fixture)
+//
+// Previously this test read the live nuos catalogue file at a hardcoded path,
+// which broke when WU 111 was moved to work-units/done/ (2026-05-31, Session
+// 115) and the ACs were all ticked on completion. A live-file reference is
+// fragile: any move, rename, or status change in the real catalogue breaks the
+// test, which is not a signal about the parser. The test is now fixture-based:
+// it embeds a minimal WU-111-shaped markdown string that has exactly 14
+// unticked checkbox ACs with the "(= verification)" heading variant, which is
+// the parser edge-case the test was originally designed to exercise. The fixture
+// is fully self-contained and immune to live-catalogue changes.
 // ---------------------------------------------------------------------------
 
-describe('§6 parser against real catalogue', () => {
-  test('WU 111 AC list parses as 14 unticked checkbox entries', async () => {
-    const wu111 = await readFile(
-      path.resolve(
-        path.dirname(new URL(import.meta.url).pathname),
-        '../../nuos/docs/build/work-units/111-work-units-as-nuflow-instances.md'
-      ),
-      'utf8'
-    );
-    const acs = parseAcceptanceCriteria(wu111);
+describe('§6 parser against WU 111-shaped fixture (14 unticked checkboxes)', () => {
+  // Build a minimal WU 111-shaped markdown: "(= verification)" heading variant
+  // plus 14 unticked checkbox entries. This exercises the heading-suffix stripping
+  // logic and the parser's count, without any dependency on the live catalogue.
+  const wu111ShapedFixture = [
+    '# WU 111 — fixture for ac-parse §6 test',
+    '',
+    '**Status:** 🟣 in_review',
+    '',
+    '## Acceptance criteria (= verification)',
+    '',
+    '- [ ] Pack resolvable on the npm registry.',
+    '- [ ] CLI exposes new subcommand groups.',
+    '- [ ] `wu list --status=ready` returns live state.',
+    '- [ ] `wu show` renders full state.',
+    '- [ ] Advance to completed is rejected with un-ticked ACs.',
+    '- [ ] `migrate` is idempotent.',
+    '- [ ] `migrate --verify` reports zero drift.',
+    '- [ ] Pre-commit hook blocks modified committed decisions.',
+    '- [ ] Sentinel-protected sections remain protected.',
+    '- [ ] Conformance test prints N/N gates verified.',
+    '- [ ] Caret ranges used across all `@nusoft/*` deps.',
+    '- [ ] Status answers consistently after Day 20 publish.',
+    '- [ ] Migrated WUs render to done/ when completed.',
+    '- [ ] The 5-day soak runs without a session being lost.',
+    '',
+    '## Notes / log',
+    '',
+    'Fixture content.',
+    '',
+  ].join('\n');
+
+  test('WU 111-shaped AC list parses as 14 unticked checkbox entries', () => {
+    const acs = parseAcceptanceCriteria(wu111ShapedFixture);
     assert.equal(acs.length, 14, `expected 14 AC, got ${acs.length}`);
     for (const ac of acs) {
-      assert.equal(ac.style, 'checkbox');
+      assert.equal(ac.style, 'checkbox', `expected checkbox style for: ${ac.text.slice(0, 30)}`);
       assert.equal(ac.met, false, `expected ${ac.text.slice(0, 30)} to be unticked`);
     }
   });
