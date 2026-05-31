@@ -40,6 +40,7 @@ import type {
   DecisionCreatePayload,
   OpenQuestionCreatePayload,
   PersonaCreatePayload,
+  EndOfSessionPayload,
 } from '@nusoft/nuflow-pack-nuos-build-catalogue';
 import type { WorkflowStore } from '../migrate/store.js';
 import type { MigratedRecord, Register } from '../migrate/types.js';
@@ -114,6 +115,12 @@ export function createBuildCatalogueMisAdapter(
         case 'open_question.resolve':
           await commitResolveQuestion(store, catalogueRoot, intent);
           break;
+        case 'end_of_session.step_verified':
+        case 'end_of_session.completed':
+          // D130/D129: write ONLY the session.end:<date> step-state record in
+          // the store. No catalogue prose is written; no markdown is rendered.
+          commitEndOfSessionRecord(store, intent);
+          break;
         default:
           throw new Error(
             `BuildCatalogueMisAdapter: intent type ${intent.type} is not handled by the build-catalogue pack`
@@ -141,7 +148,12 @@ function isCreateIntent(intentType: string): boolean {
     intentType === 'work_unit.create' ||
     intentType === 'decision.create' ||
     intentType === 'open_question.create' ||
-    intentType === 'persona.create'
+    intentType === 'persona.create' ||
+    // end_of_session intents create/update the session.end:<date> record;
+    // the subject is not a catalogue artefact in the store, so skip the
+    // existence check.
+    intentType === 'end_of_session.step_verified' ||
+    intentType === 'end_of_session.completed'
   );
 }
 
@@ -510,6 +522,69 @@ async function persist(
     ...(fieldUpdates.status !== undefined ? { status: fieldUpdates.status } : {}),
   };
   store.put(updatedRecord);
+}
+
+/**
+ * Persist the `session.end:<date>` step-state record in the workflow store.
+ *
+ * D130/D129: this function writes NO catalogue prose and renders NO markdown.
+ * Its only write is this record in the JSON workflow store — the workflow's
+ * own bookkeeping. The record is never rendered to a catalogue markdown file.
+ *
+ * The store key is `session.end:<sessionDate>` (the intent's subject id).
+ * The rawMarkdown field carries the step-state JSON (not markdown prose)
+ * so the existing MigratedRecord shape can be reused without schema changes.
+ */
+function commitEndOfSessionRecord(
+  store: WorkflowStore,
+  intent: WriteIntent
+): void {
+  const payload = intent.payload as unknown as EndOfSessionPayload;
+  const sessionDate = payload.sessionDate;
+  const handle = `session.end:${sessionDate}`;
+  const now = new Date().toISOString();
+
+  // Use the existing record if it exists (preserve startedAt).
+  const existing = store.get(handle);
+  let startedAt = now;
+  if (existing) {
+    try {
+      const parsed = JSON.parse(existing.rawMarkdown);
+      startedAt = parsed.startedAt ?? now;
+    } catch {
+      // If the existing record's JSON is malformed, reset.
+    }
+  }
+
+  const stepStateWithStarted = JSON.stringify({
+    handle,
+    sessionDate,
+    activeWuHandle: payload.activeWuHandle,
+    steps: payload.steps,
+    completed: payload.completed,
+    failingChecks: payload.failingChecks,
+    startedAt,
+    ...(payload.completed ? { completedAt: now } : {}),
+  }, null, 2);
+
+  // Store as MigratedRecord with register='session' (cast needed because
+  // Register type doesn't include 'session' — this record is the workflow's
+  // own bookkeeping, not a catalogue artefact, and is never scanned by
+  // the migration runner).
+  const record = {
+    handle,
+    number: 0,
+    register: 'session' as unknown as import('../migrate/types.js').Register,
+    title: `End-of-session: ${sessionDate}`,
+    status: payload.completed ? 'completed' : 'in_progress',
+    slug: `end-${sessionDate}`,
+    sourcePath: `.nuos-catalogue/session.end.${sessionDate}.json`,
+    rawMarkdown: stepStateWithStarted,
+    fileModifiedAt: now,
+    migratedAt: existing?.migratedAt ?? now,
+    migratedFrom: 'markdown' as const,
+  };
+  store.put(record);
 }
 
 function mapStatusToEmojiText(workflowStatus: string): string {

@@ -498,6 +498,15 @@ Usage:
   nuos-catalogue memory    store     --value="..." [--wu=wu-007] [--agent=architect] [--key="label"]
   nuos-catalogue memory    search    --query="..." [--limit=N]   [--wu=wu-007]       [--agent=architect]
 
+  nuos-catalogue end-of-session
+                          (WU 112 — verify-and-gate: checks the nine end-of-session protocol steps
+                           against disk facts; prints a per-check report; exits non-zero on a blocked
+                           gate; persists step-state in the workflow store for resumability.
+                           Options: --active-wu=<handle>  --date=YYYY-MM-DD  --session-start=<iso>
+                                    --dry-run  [--build-root=<dir>] [--workflows=<file>])
+  nuos-catalogue start-of-session
+                          (reserved — body in a follow-up WU)
+
   nuos-catalogue help
 
 Handles accepted: canonical (wu-111, D046, Q009, P001) or friendly
@@ -681,6 +690,32 @@ async function main(): Promise<void> {
       console.error('available: memory store --value="..." [--wu=...] [--agent=...] [--key=...]');
       console.error('           memory search --query="..." [--limit=N] [--wu=...] [--agent=...]');
       process.exit(1);
+    }
+    case 'end-of-session': {
+      const buildRoot = resolveBuildRoot(args.flags['build-root']);
+      const workflowsPath = resolveWorkflowsPath(buildRoot, args.flags['workflows']);
+      const { createBuildCatalogueRuntime } = await import('./runtime/runtime.js');
+      const { cmdEndOfSession } = await import('./commands/end-of-session.js');
+      const store = await openWorkflowStore(workflowsPath);
+      const runtime = createBuildCatalogueRuntime({ store, catalogueRoot: buildRoot });
+      const result = await cmdEndOfSession(store, runtime, {
+        buildRoot,
+        activeWuHandle: args.flags['active-wu'] ? String(args.flags['active-wu']) : undefined,
+        sessionDate: args.flags['date'] ? String(args.flags['date']) : undefined,
+        sessionStartIso: args.flags['session-start'] ? String(args.flags['session-start']) : undefined,
+        dryRun: Boolean(args.flags['dry-run']),
+      });
+      if (result.output) console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'start-of-session': {
+      // Reserved handle — body in a follow-up WU.
+      console.error(
+        'start-of-session: not yet implemented (WU 112 reserves the handle; body in a follow-up WU).'
+      );
+      process.exit(2);
+      break;
     }
     case 'help':
     case '--help':

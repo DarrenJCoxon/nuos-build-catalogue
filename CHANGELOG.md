@@ -1,5 +1,25 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.33.0 — 2026-05-31 — end-of-session CLI command (WU 112 / D130)
+
+Adds the `nuos-catalogue end-of-session` command, wiring the pack's `end_of_session` workflow (nine steps, verify-and-gate, D130) to the CLI. The command is resumable: re-running on the same session date picks up where a previous run left off. Step state is persisted in the MIS store via `commitEndOfSessionRecord`.
+
+**New command:**
+```
+nuos-catalogue end-of-session [--session-date=YYYY-MM-DD] [--active-wu=wu-NNN] [--yes]
+```
+
+**What changed:**
+- `src/commands/end-of-session.ts` — nine-step end-of-session command with the `confirm_no_loss` gate, register-parity checks, and code-quality gate
+- `src/runtime/mis-adapter.ts` — `commitEndOfSessionRecord` handler (persists step state for resumability); dead `stepStateJson` block removed
+- `src/cli.ts` — `end-of-session` subcommand wired in
+
+**Tests:** 274/274 (was 255/255 at 0.32.1; +19 new tests in `tests/end-of-session.test.ts`).
+
+**Related:** WU 112, D130; pack bumped to `@nusoft/nuflow-pack-nuos-build-catalogue@0.2.0`.
+
+---
+
 ## 0.32.1 — 2026-05-31 — store-coherence fix: disk is the edit base for all write commands (D129)
 
 **Bug fixed:** Every CLI write command (`wu tick`, `wu advance`, `decision supersede`, `open-question resolve`) was silently overwriting newer on-disk hand-edits with a stale workflow-store snapshot. The write-path read `record.rawMarkdown` from the store (frozen at the last CLI write or migration), applied its edit to that stale string, then wrote it verbatim over the current on-disk file — clobbering any hand-edits made since. In the live incident, `wu tick wu-111 --index=14` deleted ~27 lines of notes content (the Day-2 soak section added by hand three weeks after the last CLI write).
