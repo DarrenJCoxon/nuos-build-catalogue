@@ -1,9 +1,24 @@
 /**
  * `nuos-catalogue state compile` — STATE.md hybrid-document recompile (WU 113b / D132).
  *
- * Reads canonical state from disk (workflow store + register indexes) and
- * splices the generated sections into the sentinel-delimited regions of
- * STATE.md, leaving all authored prose byte-for-byte identical.
+ * Reads canonical state from the **live markdown registers** (not the workflow
+ * store, which is stale under Mode 1) and splices the generated sections into
+ * the sentinel-delimited regions of STATE.md, leaving all authored prose
+ * byte-for-byte identical.
+ *
+ * **Source-of-truth for each generated region (D129 / Mode 1):**
+ *   - Active WU:        `.nuos-catalogue/active-wu` marker file (WU 136 pointer)
+ *                       + title/status resolved from `work-units/_index.md`
+ *   - WUs in progress:  🟡 row count in `work-units/_index.md`
+ *   - WUs completed:    file count in `work-units/done/`
+ *   - Blocked WUs:      🔴 rows in `work-units/_index.md`
+ *   - Decisions:        `decisions/_index.md` active section
+ *   - Open questions:   `open-questions/_index.md` active section
+ *   - Risks:            `risks/_index.md` active section
+ *
+ * The workflow store (`workflows.json`) is accepted as a parameter for API
+ * compatibility (the CLI always opens it), but is NOT consulted for any of
+ * the above — it is frozen at migration time and would produce stale counts.
  *
  * **No LLM in this path.** The adapter builds an `LLMCompilationOutput`
  * directly from disk state. `renderArticleMarkdown` is called per section,
@@ -15,11 +30,12 @@
  * sentinels into the live file is a manual operator step (Stage B walkthrough).
  *
  * D132 / D129 boundary:
- *   - Generated regions: store is source of truth; disk is rendered projection.
- *   - Authored regions: disk remains the edit base (untouched by this command).
+ *   - Generated regions: live markdown registers are source of truth; disk is
+ *     rendered projection for these regions only.
+ *   - Authored regions:  disk remains the edit base (untouched by this command).
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import type { LLMCompilationOutput, SentinelConfig } from '@nusoft/nuwiki';
 import {
@@ -28,7 +44,7 @@ import {
   checkArticleDrift,
 } from '@nusoft/nuwiki';
 import type { WorkflowStore } from '../migrate/store.js';
-import type { MigratedRecord } from '../migrate/types.js';
+import { resolveIndexDir } from '../path-resolution.js';
 
 // ---------------------------------------------------------------------------
 // Sentinel configuration — the marker scheme for STATE.md generated regions.
@@ -77,37 +93,42 @@ export interface StateCompiledOutput {
 }
 
 /**
- * Reads canonical state from the workflow store and the register index files
- * and produces the generated content for each STATE.md region.
+ * Reads canonical state from the live markdown registers and the active-WU
+ * marker file, and produces the generated content for each STATE.md region.
  *
  * No LLM call is made. The adapter derives all content deterministically.
+ * The workflow store parameter is accepted for API compatibility but is not
+ * consulted — see module-level comment for the source-of-truth map.
  */
 export async function buildStateCompilationOutput(
   input: StateSourceAdapterInput
 ): Promise<StateCompiledOutput> {
-  const { store, buildRoot } = input;
+  const { buildRoot } = input;
   const now = input.now ?? new Date().toISOString();
   const today = now.slice(0, 10);
 
-  // 1. Active WU + workflow state
-  const activeWu = deriveActiveWu(store);
-  const blockedWorkflows = deriveBlockedWorkflows(store);
+  // 1. Active WU — from the .nuos-catalogue/active-wu marker file (WU 136).
+  //    Title + status resolved from work-units/_index.md (live source).
+  const activeWu = await readActiveWuFromMarker(buildRoot);
 
-  // 2. Register indexes (parsed from disk)
+  // 2. Blocked WUs — from 🔴 rows in work-units/_index.md.
+  const blockedWorkflows = await readBlockedWorkflowsFromIndex(buildRoot);
+
+  // 3. Register indexes (all parsed from live disk files).
   const unresolvedQuestions = await readUnresolvedQuestions(buildRoot);
   const recentDecisions = await readRecentDecisions(buildRoot);
   const activeRisks = await readActiveRisks(buildRoot);
-  const healthStats = deriveHealthStats(store);
+  const healthStats = await readHealthStatsFromDisk(buildRoot);
 
-  // 3. Build each section's text content
-  const metadataText = renderMetadataSection(activeWu, today, store);
-  const whatIsNextText = renderWhatIsNextSection(activeWu, blockedWorkflows, store);
+  // 4. Build each section's text content.
+  const metadataText = renderMetadataSection(activeWu, today, healthStats);
+  const whatIsNextText = renderWhatIsNextSection(activeWu, blockedWorkflows);
   const openQuestionsText = renderOpenQuestionsSection(unresolvedQuestions);
   const recentDecisionsText = renderRecentDecisionsSection(recentDecisions);
   const risksText = renderRisksSection(activeRisks);
   const healthCheckText = renderHealthCheckSection(healthStats);
 
-  // 4. Assemble LLMCompilationOutput (one section per region, positionally ordered)
+  // 5. Assemble LLMCompilationOutput (one section per region, positionally ordered)
   const sections = [
     { key: STATE_REGION_KEYS.METADATA,         heading: 'Metadata',                              text: metadataText,        citationIds: [], position: 1 },
     { key: STATE_REGION_KEYS.WHAT_IS_NEXT,     heading: 'What is next',                          text: whatIsNextText,      citationIds: [], position: 2 },
@@ -118,7 +139,7 @@ export async function buildStateCompilationOutput(
   ];
 
   const compilationOutput: LLMCompilationOutput = {
-    summary: `STATE.md compiled ${today} from canonical workflow store (${store.list().length} records). Active: ${activeWu?.handle ?? 'none'}.`,
+    summary: `STATE.md compiled ${today} from live markdown registers. Active: ${activeWu?.handle ?? 'none'}.`,
     sections,
     citations: [],
     outboundLinks: [],
@@ -435,20 +456,64 @@ interface ActiveWuInfo {
   slug: string;
 }
 
-function deriveActiveWu(store: WorkflowStore): ActiveWuInfo | null {
-  const wuRecords = store.list().filter((r) => r.register === 'work_unit');
-  if (wuRecords.length === 0) return null;
+/**
+ * Read the active WU from the `.nuos-catalogue/active-wu` marker file (WU 136).
+ * The handle stored there (e.g. `wu-113b`) is used to locate the matching row
+ * in `work-units/_index.md` to resolve the title and status.
+ *
+ * Degrades gracefully when:
+ *   - the marker file is absent or empty  → returns null (no active WU declared)
+ *   - the index row is not found          → returns the handle with unknown title/status
+ *   - the index file is unreadable        → returns the handle with unknown title/status
+ */
+async function readActiveWuFromMarker(buildRoot: string): Promise<ActiveWuInfo | null> {
+  const catalogueDir = resolveIndexDir(buildRoot);
+  const markerPath = path.join(catalogueDir, 'active-wu');
 
-  const inProgress = wuRecords.filter(
-    (r) => r.status && r.status.includes('in_progress')
-  );
-  if (inProgress.length === 0) return null;
+  let handle: string;
+  try {
+    const raw = await readFile(markerPath, 'utf8');
+    handle = raw.trim();
+  } catch {
+    return null; // marker absent — no active WU declared
+  }
 
-  const sorted = inProgress.sort((a, b) =>
-    (b.fileModifiedAt ?? '').localeCompare(a.fileModifiedAt ?? '')
-  );
-  const r = sorted[0];
-  return { handle: r.handle, title: r.title, status: r.status, slug: r.slug };
+  if (!handle) return null;
+
+  // The handle is e.g. "wu-113b". Strip the "wu-" prefix to get the ID as it
+  // appears in the _index.md ID column (e.g. "113b").
+  const idInIndex = handle.replace(/^wu-/i, '');
+  const slug = idInIndex;
+
+  const indexContent = await readIndexFile(path.join(buildRoot, 'work-units', '_index.md'));
+  if (!indexContent) {
+    return { handle, title: '(title unknown — index unreadable)', status: 'in_progress', slug };
+  }
+
+  // Parse the matching row. Row shape: `| 113b | [Title](file.md) | 🟡 in_progress — ... | ... |`
+  for (const line of indexContent.split('\n')) {
+    if (!/^\s*\|/.test(line)) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    // cells[1] = ID cell, cells[2] = title cell, cells[3] = status cell
+    if (cells.length < 4) continue;
+    const idCell = cells[1];
+    if (idCell !== idInIndex) continue;
+
+    const titleCell = cells[2] ?? '';
+    // Strip markdown link syntax if present: [Title](file.md) → Title
+    const titleMatch = titleCell.match(/^\[([^\]]+)\]/) ?? titleCell.match(/^(.+)$/);
+    const title = titleMatch ? titleMatch[1].trim() : titleCell.trim();
+
+    const statusCell = cells[3] ?? '';
+    // Extract the status keyword (first word after the emoji, up to ' — ' or end)
+    const statusMatch = statusCell.match(/(?:🟡|🔴|🟢|🔵|🟣|✅|⚫)\s+(\S+)/);
+    const status = statusMatch ? statusMatch[1] : statusCell.split('—')[0].trim() || 'in_progress';
+
+    return { handle, title, status, slug };
+  }
+
+  // Handle declared but no matching row found in index
+  return { handle, title: '(title not found in work-units/_index.md)', status: 'in_progress', slug };
 }
 
 interface BlockedWorkflow {
@@ -456,11 +521,32 @@ interface BlockedWorkflow {
   title: string;
 }
 
-function deriveBlockedWorkflows(store: WorkflowStore): BlockedWorkflow[] {
-  return store
-    .list()
-    .filter((r) => r.status && r.status.includes('blocked'))
-    .map((r) => ({ handle: r.handle, title: r.title }));
+/**
+ * Read blocked WUs from 🔴 rows in `work-units/_index.md`.
+ * The workflow store is stale and must not be consulted for this.
+ */
+async function readBlockedWorkflowsFromIndex(buildRoot: string): Promise<BlockedWorkflow[]> {
+  const indexContent = await readIndexFile(path.join(buildRoot, 'work-units', '_index.md'));
+  if (!indexContent) return [];
+
+  const blocked: BlockedWorkflow[] = [];
+  for (const line of indexContent.split('\n')) {
+    if (!/^\s*\|/.test(line)) continue;
+    if (!line.includes('🔴')) continue;
+    const cells = line.split('|').map((c) => c.trim());
+    if (cells.length < 3) continue;
+
+    const idCell = cells[1];
+    if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID') continue;
+
+    const titleCell = cells[2] ?? '';
+    const titleMatch = titleCell.match(/^\[([^\]]+)\]/) ?? titleCell.match(/^(.+)$/);
+    const title = titleMatch ? titleMatch[1].trim() : titleCell.trim();
+
+    const handle = `wu-${idCell}`;
+    blocked.push({ handle, title });
+  }
+  return blocked;
 }
 
 interface RecentDecision {
@@ -503,30 +589,108 @@ async function readActiveRisks(buildRoot: string): Promise<ActiveRisk[]> {
 }
 
 interface HealthStats {
-  totalWus: number;
   inProgressWus: number;
   doneWus: number;
   blockedWus: number;
   totalDecisions: number;
   openQuestions: number;
   activeRisks: number;
+  /** Highest in-progress WU number (for phase derivation). */
+  maxInProgressWuNum: number;
 }
 
-function deriveHealthStats(store: WorkflowStore): HealthStats {
-  const all = store.list();
-  const wus = all.filter((r) => r.register === 'work_unit');
-  const decisions = all.filter((r) => r.register === 'decision');
-  const questions = all.filter((r) => r.register === 'open_question');
+/**
+ * Derive health stats entirely from live disk sources:
+ *   - in_progress / blocked counts: 🟡 / 🔴 rows in work-units/_index.md
+ *   - completed count: files in work-units/done/
+ *   - decisions count: active rows in decisions/_index.md
+ *   - open questions: active rows in open-questions/_index.md
+ *   - active risks: active rows in risks/_index.md
+ *
+ * The workflow store is NOT consulted (it is stale under Mode 1 — D129).
+ */
+async function readHealthStatsFromDisk(buildRoot: string): Promise<HealthStats> {
+  const wuIndex = await readIndexFile(path.join(buildRoot, 'work-units', '_index.md'));
+  let inProgressWus = 0;
+  let blockedWus = 0;
+  let maxInProgressWuNum = 0;
 
-  return {
-    totalWus: wus.length,
-    inProgressWus: wus.filter((r) => r.status?.includes('in_progress')).length,
-    doneWus: wus.filter((r) => r.status?.includes('done') || r.status?.includes('completed')).length,
-    blockedWus: wus.filter((r) => r.status?.includes('blocked')).length,
-    totalDecisions: decisions.length,
-    openQuestions: questions.filter((r) => !r.status?.includes('resolved')).length,
-    activeRisks: 0, // derived from risks index; kept as 0 here — risks are store-external
-  };
+  if (wuIndex) {
+    for (const line of wuIndex.split('\n')) {
+      if (!/^\s*\|/.test(line)) continue;
+      const cells = line.split('|').map((c) => c.trim());
+      if (cells.length < 4) continue;
+      const idCell = cells[1];
+      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID') continue;
+      const statusCell = cells[3] ?? '';
+      if (statusCell.includes('🟡')) {
+        inProgressWus++;
+        // Extract the numeric part of the ID for phase derivation
+        const numMatch = idCell.match(/^(\d+)/);
+        if (numMatch) {
+          const n = parseInt(numMatch[1], 10);
+          if (n > maxInProgressWuNum) maxInProgressWuNum = n;
+        }
+      }
+      if (statusCell.includes('🔴')) blockedWus++;
+    }
+  }
+
+  // Completed count: files in work-units/done/
+  let doneWus = 0;
+  try {
+    const doneEntries = await readdir(path.join(buildRoot, 'work-units', 'done'));
+    doneWus = doneEntries.filter((f) => f.endsWith('.md') && !f.startsWith('_')).length;
+  } catch {
+    // done/ may not exist yet
+  }
+
+  // Decisions: active rows in decisions/_index.md
+  const decisionsIndex = await readIndexFile(path.join(buildRoot, 'decisions', '_index.md'));
+  let totalDecisions = 0;
+  if (decisionsIndex) {
+    const activeSection = decisionsIndex.split(/^## (?:Superseded|Withdrawn) decisions/im)[0];
+    for (const line of activeSection.split('\n')) {
+      if (!/^\s*\|/.test(line)) continue;
+      const cells = line.split('|').map((c) => c.trim());
+      if (cells.length < 3) continue;
+      const idCell = cells[1];
+      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
+      if (/^D\d+/i.test(idCell.replace(/^\[/, ''))) totalDecisions++;
+    }
+  }
+
+  // Open questions: active section
+  const questionsIndex = await readIndexFile(path.join(buildRoot, 'open-questions', '_index.md'));
+  let openQuestions = 0;
+  if (questionsIndex) {
+    const activeSection = questionsIndex.split(/^## Resolved questions/im)[0];
+    for (const line of activeSection.split('\n')) {
+      if (!/^\s*\|/.test(line)) continue;
+      const cells = line.split('|').map((c) => c.trim());
+      if (cells.length < 3) continue;
+      const idCell = cells[1];
+      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
+      if (/^Q\d+/i.test(idCell.replace(/^\[/, ''))) openQuestions++;
+    }
+  }
+
+  // Active risks: active section
+  const risksIndex = await readIndexFile(path.join(buildRoot, 'risks', '_index.md'));
+  let activeRisks = 0;
+  if (risksIndex) {
+    const activeSection = risksIndex.split(/^## Resolved risks/im)[0];
+    for (const line of activeSection.split('\n')) {
+      if (!/^\s*\|/.test(line)) continue;
+      const cells = line.split('|').map((c) => c.trim());
+      if (cells.length < 3) continue;
+      const idCell = cells[1];
+      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
+      if (/^R\d+/i.test(idCell)) activeRisks++;
+    }
+  }
+
+  return { inProgressWus, doneWus, blockedWus, totalDecisions, openQuestions, activeRisks, maxInProgressWuNum };
 }
 
 // ---------------------------------------------------------------------------
@@ -536,69 +700,47 @@ function deriveHealthStats(store: WorkflowStore): HealthStats {
 function renderMetadataSection(
   activeWu: ActiveWuInfo | null,
   today: string,
-  store: WorkflowStore
+  stats: HealthStats
 ): string {
-  const all = store.list();
-  const wus = all.filter((r) => r.register === 'work_unit');
-  const inProgressWus = wus.filter((r) => r.status?.includes('in_progress'));
-
-  const phase = deriveCurrentPhase(store);
+  const phase = deriveCurrentPhase(stats.maxInProgressWuNum);
 
   const lines: string[] = [
     '| Field | Value |',
     '| --- | --- |',
     `| Last compiled | ${today} |`,
     `| Current phase | ${phase} |`,
-    `| Active WU | ${activeWu ? `**${activeWu.handle}** — ${activeWu.title} (${activeWu.status ?? 'unknown'})` : 'none'} |`,
-    `| WUs in progress | ${inProgressWus.length} |`,
+    `| Active WU | ${activeWu ? `**${activeWu.handle}** — ${activeWu.title} (${activeWu.status ?? 'unknown'})` : '(no active WU declared — run `nuos-catalogue wu start <handle>`)'} |`,
+    `| WUs in progress | ${stats.inProgressWus} |`,
   ];
 
   return lines.join('\n');
 }
 
-function deriveCurrentPhase(store: WorkflowStore): string {
-  // Heuristic: if any WU in the 110–120 range is in_progress, we're in
-  // Continuous Track 1. Otherwise inspect WU number ranges.
-  const inProgress = store.list().filter(
-    (r) => r.register === 'work_unit' && r.status?.includes('in_progress')
-  );
-
-  if (inProgress.length === 0) return 'No active phase detected';
-
-  // Find the highest numbered in-progress WU to estimate phase.
-  const numbers = inProgress.map((r) => r.number).filter((n) => n > 0);
-  if (numbers.length === 0) return 'Continuous Track';
-  const maxNum = Math.max(...numbers);
-
-  if (maxNum >= 100) return 'Continuous Track 1 — NuOS leads the build';
-  if (maxNum >= 80)  return 'Phase 5 — Consumer shell + productisation';
-  if (maxNum >= 60)  return 'Phase 4 — Trifecta integration test';
-  if (maxNum >= 40)  return 'Phase 3 — NuWiki + trifecta';
-  if (maxNum >= 20)  return 'Phase 2 — NuFlow';
+/**
+ * Derive the current phase label from the highest in-progress WU number
+ * (read from the live `work-units/_index.md`, not the store).
+ */
+function deriveCurrentPhase(maxInProgressWuNum: number): string {
+  if (maxInProgressWuNum === 0) return 'No active phase detected';
+  if (maxInProgressWuNum >= 100) return 'Continuous Track 1 — NuOS leads the build';
+  if (maxInProgressWuNum >= 80)  return 'Phase 5 — Consumer shell + productisation';
+  if (maxInProgressWuNum >= 60)  return 'Phase 4 — Trifecta integration test';
+  if (maxInProgressWuNum >= 40)  return 'Phase 3 — NuWiki + trifecta';
+  if (maxInProgressWuNum >= 20)  return 'Phase 2 — NuFlow';
   return 'Phase 1 — NuVector';
 }
 
 function renderWhatIsNextSection(
   activeWu: ActiveWuInfo | null,
-  blockedWorkflows: BlockedWorkflow[],
-  store: WorkflowStore
+  blockedWorkflows: BlockedWorkflow[]
 ): string {
   if (!activeWu) {
-    const nextReady = store
-      .list()
-      .filter((r) => r.register === 'work_unit' && r.status?.includes('proposed'))
-      .sort((a, b) => a.number - b.number)
-      .slice(0, 3);
-
-    if (nextReady.length === 0) {
-      return 'No active or ready work unit found in the workflow store. Run `nuos-catalogue migrate` if the store is empty, or start a work unit with `nuos-catalogue wu start <handle>`.';
-    }
-
-    const lines = ['No WU is currently in progress. Next proposed WUs:'];
-    for (const wu of nextReady) {
-      lines.push(`- **${wu.handle}** — ${wu.title}`);
-    }
-    return lines.join('\n');
+    return [
+      'No active WU marker found. Declare the active WU with:',
+      '    nuos-catalogue wu start <handle>',
+      '',
+      'Then recompile STATE.md with `nuos-catalogue state compile`.',
+    ].join('\n');
   }
 
   const lines: string[] = [
@@ -672,13 +814,13 @@ function renderRisksSection(risks: ActiveRisk[]): string {
 
 function renderHealthCheckSection(stats: HealthStats): string {
   const lines: string[] = [
-    '| Check | Status |',
+    '| Check | Count |',
     '| --- | --- |',
-    `| Workflow store populated | ${stats.totalWus > 0 ? '✅' : '⚠ run migrate first'} |`,
     `| WUs in progress | ${stats.inProgressWus} |`,
-    `| WUs completed | ${stats.doneWus} |`,
-    `| Decisions recorded | ${stats.totalDecisions} |`,
+    `| WUs completed | ${stats.doneWus} (files in work-units/done/) |`,
+    `| Decisions recorded | ${stats.totalDecisions} (active section) |`,
     `| Open questions | ${stats.openQuestions} |`,
+    `| Active risks | ${stats.activeRisks} |`,
   ];
   if (stats.blockedWus > 0) {
     lines.push(`| Blocked WUs | ${stats.blockedWus} — attention needed |`);
