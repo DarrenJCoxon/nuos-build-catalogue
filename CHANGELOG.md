@@ -1,5 +1,19 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.33.2 — 2026-05-31 — propagate D127 hook fix into CLI bundled template (WU 216)
+
+Propagates the D127 fix — "decision-immutability block scopes to HEAD status" — into the CLI's bundled hook template and own hook copy. Both files were still carrying the pre-D127 over-broad rule that blocked *any* modification to a decision file under `docs/build/decisions/`, including the legitimate `proposed → accepted` promotion. The narrowed rule now reads the decision's committed status from HEAD and only blocks edits to decisions whose pre-image status is `accepted` or `active`; editing a `proposed` decision is allowed.
+
+**Files changed:**
+- `templates/hooks/pre-commit` — carries the D127 HEAD-status logic; now byte-identical to the nuos canonical `scripts/hooks/pre-commit`
+- `scripts/hooks/pre-commit` — CLI's own installed copy; updated to match
+
+**Why this matters:** The CLI's `init` and `install-hooks` commands copy `templates/hooks/pre-commit` verbatim into every consumer's `.git/hooks/` and `scripts/hooks/`. Without this fix, the CLI silently re-clobbered the D127 fix whenever it ran hook-install, and shipped the bug to Sensight and any future `nuos init` adopter.
+
+**Related:** WU 216, D127.
+
+---
+
 ## 0.33.1 — 2026-05-31 — end-of-session fact-gatherer false-positive fix (WU 112 fix-pass)
 
 Removes three false-positive gate failures that blocked the live dry-run against the real nuos catalogue. All fixes are in `src/commands/end-of-session.ts`; the pack and its boolean contract are unchanged.

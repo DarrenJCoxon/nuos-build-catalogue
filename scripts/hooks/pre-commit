@@ -134,14 +134,38 @@ fi
 # ---------- Rule 2: active-decision modification block (WU 111 ship) ---
 
 dim "[nuos:pre-commit] active-decision modification check"
-modified_decisions=$(git diff --cached --name-only --diff-filter=M \
+#
+# "Immutable once accepted" — this blocks edits only to a decision whose
+# status *in HEAD* is already a locked state (`accepted` or `active`).
+# Editing a still-`proposed` decision is allowed: promoting it to
+# accepted/active is the sanctioned lifecycle step, not a violation, and
+# proposed decisions are in-flight by design. New decision files are
+# additions (excluded by --diff-filter=M), so a decision born `accepted`
+# is never blocked on creation. The locked-status check uses the HEAD
+# pre-image, so flipping an accepted decision back to `proposed` to sneak
+# a substantive edit is still caught.
+candidate_decisions=$(git diff --cached --name-only --diff-filter=M \
   | grep -E '^docs/build/decisions/D[0-9]+.*\.md$' \
   | grep -v '/superseded/' \
   || true)
 
-if [[ -n "$modified_decisions" ]]; then
+locked_decisions=""
+if [[ -n "$candidate_decisions" ]]; then
+  while IFS= read -r f; do
+    [[ -z "$f" ]] && continue
+    head_status=$(git show "HEAD:$f" 2>/dev/null \
+      | grep -m1 -E '^\*\*Status:\*\*' \
+      | sed -E 's/^\*\*Status:\*\*[[:space:]]*//' \
+      | awk '{print tolower($1)}')
+    case "$head_status" in
+      accepted|active) locked_decisions+="${f}"$'\n' ;;
+    esac
+  done <<< "$candidate_decisions"
+fi
+
+if [[ -n "$locked_decisions" ]]; then
   red "✖ active-decision modification — BLOCKED (WU 111 enforcement):"
-  while IFS= read -r f; do echo "    — $f"; done <<< "$modified_decisions"
+  while IFS= read -r f; do [[ -n "$f" ]] && echo "    — $f"; done <<< "$locked_decisions"
   red "  Decisions are immutable once accepted. The discipline is to write a"
   red "  superseding D-NNN+1 and link forward. Use:"
   red "    nuos-catalogue decision supersede <target> --by=<new-D> --reason=\"...\""
@@ -149,7 +173,7 @@ if [[ -n "$modified_decisions" ]]; then
   red "  If this edit is a non-substantive typo fix or link cleanup that does"
   red "  not change the decision's meaning, you may bypass this block with"
   red "  --no-verify. CLAUDE.md prohibits --no-verify for substantive changes."
-  log_event "active-decision-block" "$(echo "$modified_decisions" | tr '\n' ',')"
+  log_event "active-decision-block" "$(echo "$locked_decisions" | tr '\n' ',')"
   EXIT_CODE=1
 fi
 
