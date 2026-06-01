@@ -1,5 +1,34 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.34.0 — 2026-06-01 — STATE.md source adapter + DocumentType + `state compile` command (WU 113b Stage A / D132)
+
+Implements Stage A of the STATE.md hybrid-document cutover (D132). Adds the STATE source adapter, the `SentinelConfig`, the six generated-region keys, and the `state compile` CLI command that splices deterministically compiled content into STATE.md sentinel regions while leaving all authored prose byte-for-byte identical.
+
+**No LLM in the compile path.** The adapter (`buildStateCompilationOutput`) reads the workflow store and the three register index files (decisions, open-questions, risks) and builds an `LLMCompilationOutput` directly — no `llmAdapter.generate` call anywhere.
+
+**First-cutover boundary.** If the sentinel pairs are absent from STATE.md (as they are in the live file today), the command reports the missing regions clearly and exits non-zero without touching the file. Inserting the sentinel pairs into the live STATE.md is a one-time manual operator step in Stage B's walkthrough.
+
+**Generated sections (six):** metadata table (Last compiled, current phase, active WU), "What is next" (deterministic next-action from active WU + blockers), "Open questions blocking active work" (unresolved Q-NNN register), "Recent decisions" (recent D-NNN register), "Risks currently being watched" (risk register), "Health check" (derived counts).
+
+**Authored sections are never touched:** "What was just done", "Previously" blocks, strategic prose, "How to use this file", "Architectural commitment" — the splice guarantees this by construction (spliceGeneratedRegions writes only inside sentinel pairs; everything outside is copied verbatim from disk).
+
+**Files changed:**
+
+- `src/commands/state-compile.ts` — new file: `STATE_SENTINEL_CONFIG`, `STATE_REGION_KEYS`, `buildStateCompilationOutput` (the source adapter), `cmdStateCompile` (the command entry point), `checkStateMdDrift` (pre-configured drift check for Stage B hook). The six section renderers (`renderMetadataSection`, `renderWhatIsNextSection`, `renderOpenQuestionsSection`, `renderRecentDecisionsSection`, `renderRisksSection`, `renderHealthCheckSection`) and the three index parsers (`parseDecisionsIndex`, `parseQuestionsIndex`, `parseRisksIndex`) are all internal and deterministic.
+- `src/cli.ts` — new `state compile` subcommand case; help text updated.
+- `src/commands/end-of-session.ts` — `checkStateMd`: internal variable `stateMdLastSessionResolves` renamed to `stateMdLastSessionPresent` (WU 113b AC — the name now reflects the semantics: presence check, not link resolution). The returned field name is unchanged so `EndOfSessionFacts` from the pack is not broken.
+- `package.json` — `@nusoft/nuwiki@^0.3.0` added as a production dependency; `tests/state-compile.test.ts` added to the test script; version bumped to `0.34.0`.
+- `tests/state-compile.test.ts` — new: 17 tests across 8 describe blocks covering adapter output, authored-prose preservation, missing-sentinel reporting, idempotency, multi-state-change cycles, dry run, drift detection, and index parsers.
+
+**What Stage B (a later WU/agent) still needs to do:**
+- Wire `state compile` into the end-of-session flow as a recompile step.
+- Update the pre-commit hook to call `checkArticleDrift` and block hand-edits to generated regions only.
+- Operator walkthrough to insert the six sentinel pairs into the live `docs/build/STATE.md`.
+
+**Related:** WU 113b, D132, @nusoft/nuwiki@0.3.0.
+
+---
+
 ## 0.33.3 — 2026-06-01 — separate cross-agent memory store from doc-search index (WU 217 / D131)
 
 Implements D131: the cross-agent memory (`memory store` / `memory search`) now reads and writes `.nuos-catalogue/memory.nv`, a dedicated NuVector file separate from the doc-search index `.nuos-catalogue/index.nv`. The two stores share no file and therefore no lock — the ~40s post-commit reindex (`nuos-catalogue index`) holding the `index.nv` lock no longer blocks `memory store` calls that land in the same window.

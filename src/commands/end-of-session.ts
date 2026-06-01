@@ -459,7 +459,9 @@ async function checkStateMd(
 
   const content = await fileContent(stateMdPath);
   let stateMdLastUpdated = '';
-  let stateMdLastSessionResolves = false;
+  // Renamed from stateMdLastSessionResolves → stateMdLastSessionPresent (WU 113b).
+  // The field checks presence of a non-empty "Last session" row, not link resolution.
+  let stateMdLastSessionPresent = false;
 
   if (content) {
     // Fix 1 (WU 112 fix-pass): accept all three "Last updated" shapes:
@@ -482,11 +484,15 @@ async function checkStateMd(
     if (sessionLineMatch) {
       // The row is non-empty if it contains more than just the label itself.
       const rowText = sessionLineMatch[0].replace(/Last session/i, '').replace(/[|:\s]/g, '');
-      stateMdLastSessionResolves = rowText.length > 0;
+      stateMdLastSessionPresent = rowText.length > 0;
     }
   }
 
-  return { stateMdTouched, stateMdLastUpdated, stateMdLastSessionResolves };
+  // Return under the pack's EndOfSessionFacts field name (stateMdLastSessionResolves)
+  // — the internal variable was renamed to stateMdLastSessionPresent above to clarify
+  // the semantics (presence check, not link-resolution). The published interface is
+  // unchanged so the pack type is not broken.
+  return { stateMdTouched, stateMdLastUpdated, stateMdLastSessionResolves: stateMdLastSessionPresent };
 }
 
 async function checkSessionLog(

@@ -498,6 +498,11 @@ Usage:
   nuos-catalogue memory    store     --value="..." [--wu=wu-007] [--agent=architect] [--key="label"]
   nuos-catalogue memory    search    --query="..." [--limit=N]   [--wu=wu-007]       [--agent=architect]
 
+  nuos-catalogue state      compile   [--dry-run] [--state-md=<path>]
+                          (WU 113b — recompile STATE.md generated regions from canonical store;
+                           splices metadata / what-is-next / open-questions / decisions / risks /
+                           health-check regions; preserves authored prose byte-for-byte)
+
   nuos-catalogue end-of-session
                           (WU 112 — verify-and-gate: checks the nine end-of-session protocol steps
                            against disk facts; prints a per-check report; exits non-zero on a blocked
@@ -703,6 +708,27 @@ async function main(): Promise<void> {
         activeWuHandle: args.flags['active-wu'] ? String(args.flags['active-wu']) : undefined,
         sessionDate: args.flags['date'] ? String(args.flags['date']) : undefined,
         sessionStartIso: args.flags['session-start'] ? String(args.flags['session-start']) : undefined,
+        dryRun: Boolean(args.flags['dry-run']),
+      });
+      if (result.output) console.log(result.output);
+      process.exit(result.exitCode);
+      break;
+    }
+    case 'state': {
+      // `state compile` — regenerate the generated regions of STATE.md (WU 113b / D132).
+      const sub = args.positional[0];
+      if (sub !== 'compile') {
+        console.error(`unknown state subcommand: ${sub ?? '(none)'}`);
+        console.error('available: state compile [--dry-run] [--state-md=<path>] [--build-root=<dir>] [--workflows=<file>]');
+        process.exit(1);
+      }
+      const buildRoot = resolveBuildRoot(args.flags['build-root']);
+      const workflowsPath = resolveWorkflowsPath(buildRoot, args.flags['workflows']);
+      const { cmdStateCompile } = await import('./commands/state-compile.js');
+      const store = await openWorkflowStore(workflowsPath);
+      const result = await cmdStateCompile(store, {
+        buildRoot,
+        stateMdPath: args.flags['state-md'] ? String(args.flags['state-md']) : undefined,
         dryRun: Boolean(args.flags['dry-run']),
       });
       if (result.output) console.log(result.output);
