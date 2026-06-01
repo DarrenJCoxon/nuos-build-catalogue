@@ -14,7 +14,7 @@ The embedder is selected via `NUOS_CATALOGUE_EMBEDDER`:
 
 | Value | Provider | Default model | Dimensions | Notes |
 |---|---|---|---|---|
-| `ollama` (default) | Local Ollama | `qwen3-embedding:8b` | 4096 | **Sovereignty by default.** No network egress. Override the model with `NUOS_CATALOGUE_OLLAMA_MODEL=qwen3-embedding:4b` (2560 dims) or `qwen3-embedding:0.6b` (1024 dims) for smaller boxes. Needs `ollama serve` running and the model pulled (`ollama pull qwen3-embedding:8b`). |
+| `ollama` (default) | Local Ollama | `qwen3-embedding:0.6b` | 1024 | **Sovereignty by default.** No network egress. The 0.6b default (~600 MB) runs on any modern laptop, including CPU-only. For better recall on a machine with headroom, raise fidelity with `NUOS_CATALOGUE_OLLAMA_MODEL=qwen3-embedding:4b` (2560 dims, ~2.5 GB) or `qwen3-embedding:8b` (4096 dims, ~4.7 GB). Needs `ollama serve` running and the model pulled (`ollama pull qwen3-embedding:0.6b`). |
 | `vertex` | Google Vertex | `text-embedding-005` | 768 | Cloud Google. Needs `GOOGLE_CLOUD_PROJECT` plus a Vertex access token (set `GOOGLE_VERTEX_ACCESS_TOKEN`, or have `gcloud` on PATH and run `gcloud auth application-default login`). |
 | `openai` | OpenAI | `text-embedding-3-small` | 1536 | Cloud OpenAI. Needs `OPENAI_API_KEY`. |
 | `stub` | Hash-based, no API | — | 384 | Tests + dev only. Results are noisy. |
@@ -26,9 +26,9 @@ Switching embedder (or model variant) requires a full reindex (`rm -rf .nuos-cat
 ```bash
 # Pre-flight (one time):
 ollama serve                          # in another shell
-ollama pull qwen3-embedding:8b        # ~4.7 GB download
+ollama pull qwen3-embedding:0.6b      # ~600 MB download
 
-# Index the catalogue (first time — takes ~20 min on 8b)
+# Index the catalogue (first time re-embeds everything; later runs only re-embed changed files)
 npm run index
 
 # Search
