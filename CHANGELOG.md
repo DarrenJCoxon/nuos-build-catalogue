@@ -1,5 +1,37 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.35.0 — 2026-06-01 — `state drift-check` + end-of-session recompile + pre-commit drift block (WU 113b Stage B / D132)
+
+Stage B of the STATE.md hybrid-document wiring (D132). Adds the `state drift-check` command, wires the `state compile` recompile step into the `end-of-session` flow, and adds the generated-region drift block to the pre-commit hook (all three hook copies kept byte-identical per WU 216).
+
+**Exit-code contract for `state drift-check` (fail-open):**
+- exit 0 when generated regions are current (clean)
+- exit 0 when STATE.md has no sentinel regions yet (pre-cutover)
+- exit 0 when the check cannot run for any infra reason (STATE.md unreadable, store missing, adapter error)
+- exit 1 ONLY on confirmed generated-region drift
+
+**Pre-commit hook drift block (Rule 3):**
+Extends the hook with a third rule that fires when `docs/build/STATE.md` is staged. Guards on `command -v nuos-catalogue` (missing binary → skip). Guards on old-binary compatibility: distinguishes a genuine drift finding (output contains "generated regions") from an old binary's "unknown subcommand" error (output does not contain "generated regions" → skip). The drift-block only activates once CLI ≥ 0.35.0 is installed globally. All three copies (`nuos/scripts/hooks/pre-commit`, `scripts/hooks/pre-commit`, `templates/hooks/pre-commit`) updated identically.
+
+**End-of-session recompile (D132 / D130):**
+`cmdEndOfSession` now calls `cmdStateCompile` as a `recompile_state_md` step before the `update_state_md` verification step. Result is passed to the pack workflow as `stateMdRecompileResult: 'ok' | 'skipped' | 'error'`. A `'skipped'` result (pre-cutover, no sentinels) passes the gate gracefully.
+
+**Pack dependency:** bumped to `^0.3.0` (pack gains `recompile_state_md` step + `stateMdRecompileResult` facts field).
+
+**Files changed:**
+
+- `src/commands/state-compile.ts` — new `cmdStateDriftCheck` export (the drift-check command entry point with fail-open contract)
+- `src/cli.ts` — `state drift-check` subcommand added; `state compile` and `state drift-check` share the `state` case; help text updated
+- `src/commands/end-of-session.ts` — imports `cmdStateCompile`; `gatherFacts` now accepts `store` + calls `recompileStateMd` (new helper); `STEP_ORDER` updated; `STEP_LABELS` updated; `stateMdRecompileResult` + `stateMdRecompileDetail` added to returned facts
+- `scripts/hooks/pre-commit` — Rule 3 added (STATE.md drift-check; fail-open guards)
+- `templates/hooks/pre-commit` — byte-identical to `scripts/hooks/pre-commit`
+- `tests/hooks-in-sync.test.ts` — five new assertions for the WU 113b drift-block logic
+- `package.json` — version 0.34.0 → 0.35.0; `@nusoft/nuflow-pack-nuos-build-catalogue` peer updated to `^0.3.0`
+
+**Related:** WU 113b Stage B, D132, D130, WU 216 (hook sync discipline).
+
+---
+
 ## 0.34.0 — 2026-06-01 — STATE.md source adapter + DocumentType + `state compile` command (WU 113b Stage A / D132)
 
 Implements Stage A of the STATE.md hybrid-document cutover (D132). Adds the STATE source adapter, the `SentinelConfig`, the six generated-region keys, and the `state compile` CLI command that splices deterministically compiled content into STATE.md sentinel regions while leaving all authored prose byte-for-byte identical.

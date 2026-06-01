@@ -177,6 +177,49 @@ if [[ -n "$locked_decisions" ]]; then
   EXIT_CODE=1
 fi
 
+# ---------- Rule 3: STATE.md generated-region drift block (WU 113b Stage B) ---
+
+# Only run when docs/build/STATE.md is in the staged changes.
+# Guard on nuos-catalogue being present and supporting `state drift-check`.
+# Fail-open: if the binary is absent, old (doesn't know drift-check), or
+# errors for any infra reason, skip this check silently — a missing binary
+# must never block all commits.
+#
+# Old-binary detection: an old binary (< 0.35.0) exits non-zero with
+# "unknown state subcommand: drift-check" on stderr. We distinguish this
+# from a genuine drift finding by checking whether the output contains the
+# drift-specific marker phrase. If the output does NOT contain "generated regions"
+# (the phrase only the new drift-check command emits), we skip.
+staged_state_md=$(git diff --cached --name-only | grep -F 'docs/build/STATE.md' || true)
+
+if [[ -n "$staged_state_md" ]]; then
+  dim "[nuos:pre-commit] STATE.md generated-region drift check (WU 113b)"
+
+  if ! command -v nuos-catalogue > /dev/null 2>&1; then
+    dim "[nuos:pre-commit] nuos-catalogue not found — skipping STATE.md drift check"
+  else
+    # Run drift-check; capture output + exit code.
+    drift_output=$(nuos-catalogue state drift-check 2>&1) || drift_exit=$?
+    drift_exit=${drift_exit:-0}
+
+    if [[ $drift_exit -ne 0 ]]; then
+      # Non-zero exit — check whether this is a genuine drift finding or an
+      # infra/version problem (old binary, missing store, etc.).
+      if echo "$drift_output" | grep -qF 'generated regions'; then
+        # Confirmed generated-region drift — block the commit.
+        red "✖ STATE.md generated-region drift — BLOCKED (WU 113b enforcement):"
+        echo "$drift_output" | while IFS= read -r line; do echo "  $line"; done
+        log_event "state-drift-block" "generated-region drift detected"
+        EXIT_CODE=1
+      else
+        # Not a drift finding (unknown subcommand from old binary, infra error, etc.)
+        # — skip silently (fail open).
+        dim "[nuos:pre-commit] STATE.md drift check returned non-zero (not a drift finding) — skipping"
+      fi
+    fi
+  fi
+fi
+
 # ---------- Result ------------------------------------------------------
 
 if [[ $EXIT_CODE -eq 0 ]]; then

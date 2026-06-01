@@ -31,6 +31,7 @@ import type {
   EndOfSessionStepState,
 } from '@nusoft/nuflow-pack-nuos-build-catalogue';
 import type { WorkflowStore } from '../migrate/store.js';
+import { cmdStateCompile } from './state-compile.js';
 
 const BUILD_MAINTAINER: ActorRef = {
   kind: 'staff',
@@ -75,7 +76,7 @@ export async function cmdEndOfSession(
 
   // Gather disk facts — this is the only place filesystem access happens
   // (the workflow itself is pure).
-  const catalogueFacts = await gatherFacts(args.buildRoot, activeWuHandle, sessionStartIso, today);
+  const catalogueFacts = await gatherFacts(args.buildRoot, activeWuHandle, sessionStartIso, today, store);
 
   // Check for an existing (incomplete) session.end:<date> record.
   const existingHandle = `session.end:${today}`;
@@ -105,6 +106,7 @@ export async function cmdEndOfSession(
           'capture_open_questions',
           'capture_risks',
           'update_work_units_index',
+          'recompile_state_md',
           'update_state_md',
           'write_session_log',
           'confirm_no_loss',
@@ -177,7 +179,8 @@ async function gatherFacts(
   buildRoot: string,
   activeWuHandle: string,
   sessionStartIso: string,
-  sessionDate: string
+  sessionDate: string,
+  store: WorkflowStore
 ): Promise<EndOfSessionFacts> {
   const sessionStartMs = new Date(sessionStartIso).getTime();
 
@@ -207,6 +210,14 @@ async function gatherFacts(
   // Step 5: work-units index
   const doneMoveOk = await checkWorkUnitsIndex(buildRoot);
 
+  // Step 5.5 (D132): recompile the generated regions of STATE.md.
+  // This is the orchestrate-and-write step sanctioned by D132 for generated regions.
+  // It must not fail the session if STATE.md has no sentinel regions yet (pre-cutover).
+  const { stateMdRecompileResult, stateMdRecompileDetail } = await recompileStateMd(
+    buildRoot,
+    store
+  );
+
   // Step 6: STATE.md
   const { stateMdTouched, stateMdLastUpdated, stateMdLastSessionResolves } =
     await checkStateMd(buildRoot, sessionStartMs, sessionDate);
@@ -224,6 +235,8 @@ async function gatherFacts(
     questionsParity,
     risksParity,
     doneMoveOk,
+    stateMdRecompileResult,
+    stateMdRecompileDetail,
     stateMdTouched,
     stateMdLastUpdated,
     stateMdLastSessionResolves,
@@ -397,6 +410,47 @@ async function checkRisksParity(
   return { filesWithoutRow: [], rowsWithoutFile: [] };
 }
 
+/**
+ * Recompile the generated regions of STATE.md (D132 / D130: orchestrate-and-write
+ * for the generated regions is sanctioned by D132; authored prose is never touched).
+ *
+ * Fail-open contract (same as `cmdStateDriftCheck`):
+ *   - 'skipped' when STATE.md has no sentinel regions yet (pre-cutover) — ok
+ *   - 'ok'      when the recompile succeeded (or was already current)
+ *   - 'error'   when the compile command returned non-zero (adapter error, splice error)
+ *
+ * A 'skipped' result is treated as passing by the pack workflow so that
+ * end-of-session is not broken for catalogues that haven't completed Stage B cutover.
+ */
+async function recompileStateMd(
+  buildRoot: string,
+  store: WorkflowStore
+): Promise<{ stateMdRecompileResult: 'ok' | 'skipped' | 'error'; stateMdRecompileDetail?: string }> {
+  try {
+    const result = await cmdStateCompile(store, { buildRoot });
+    if (result.exitCode === 0) {
+      return { stateMdRecompileResult: 'ok', stateMdRecompileDetail: result.output?.trim() };
+    }
+    // Non-zero exit from cmdStateCompile — check if it's the missing-sentinel case (pre-cutover).
+    // The missing-sentinel output contains the specific wording from the command.
+    if (result.output?.includes('sentinel regions are absent')) {
+      return {
+        stateMdRecompileResult: 'skipped',
+        stateMdRecompileDetail: 'sentinel regions absent — pre-cutover',
+      };
+    }
+    return {
+      stateMdRecompileResult: 'error',
+      stateMdRecompileDetail: result.output?.trim(),
+    };
+  } catch (err) {
+    return {
+      stateMdRecompileResult: 'error',
+      stateMdRecompileDetail: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
 async function checkWorkUnitsIndex(buildRoot: string): Promise<boolean> {
   const indexPath = path.join(buildRoot, 'work-units', '_index.md');
   const content = await fileContent(indexPath);
@@ -546,15 +600,16 @@ function formatReport(
   lines.push('');
 
   const STEP_LABELS: Record<EndOfSessionStepId, string> = {
-    update_active_wu_notes:  'Step 1 — WU notes updated',
-    capture_decisions:       'Step 2 — decisions captured',
-    capture_open_questions:  'Step 3 — open questions captured',
-    capture_risks:           'Step 4 — risks captured',
-    update_work_units_index: 'Step 5 — work-units index updated',
-    update_state_md:         'Step 6 — STATE.md updated',
-    write_session_log:       'Step 7 — session log written',
-    confirm_no_loss:         'Step 8 — confirm-no-loss gate',
-    report:                  'Step 9 — report',
+    update_active_wu_notes:  'Step 1  — WU notes updated',
+    capture_decisions:       'Step 2  — decisions captured',
+    capture_open_questions:  'Step 3  — open questions captured',
+    capture_risks:           'Step 4  — risks captured',
+    update_work_units_index: 'Step 5  — work-units index updated',
+    recompile_state_md:      'Step 5b — STATE.md generated regions recompiled (D132)',
+    update_state_md:         'Step 6  — STATE.md updated',
+    write_session_log:       'Step 7  — session log written',
+    confirm_no_loss:         'Step 8  — confirm-no-loss gate',
+    report:                  'Step 9  — report',
   };
 
   for (const [stepId, state] of Object.entries(payload.steps) as [EndOfSessionStepId, EndOfSessionStepState][]) {
