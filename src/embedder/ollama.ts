@@ -32,6 +32,13 @@
  * idle-timeout (the keep_alive: "1m" we sent) cleans up within a
  * minute.
  *
+ * **Bounded footprint while loaded.** Beyond unloading promptly, each call
+ * also pins `options.num_ctx` (see EMBED_NUM_CTX) so the model loads with an
+ * embedding-sized context window instead of inheriting the daemon's
+ * chat-sized OLLAMA_CONTEXT_LENGTH. Without this the 639MB model loads at
+ * ~5.7GB resident; with it, ~1.1GB. This is what keeps a reindex from pushing
+ * a developer's machine into swap.
+ *
  * Sizing note — the new 0.6b default is ~600MB on disk and runs
  * comfortably on any modern laptop, including CPU-only. The 4b variant
  * (~2.5GB) and 8b variant (~4.7GB, benefits from ~16GB RAM + Metal)
@@ -51,6 +58,17 @@ const KNOWN_DIMENSIONS: Record<string, number> = {
   'qwen3-embedding:4b': 2560,
   'qwen3-embedding:0.6b': 1024,
 };
+
+// Context window for embedding loads. The Ollama daemon's global
+// OLLAMA_CONTEXT_LENGTH — set high for chat models (commonly 32K–64K) — is
+// inherited by every model that doesn't override it. Inherited unchanged, it
+// inflates the 639MB qwen3-embedding:0.6b model to ~5.7GB resident, which is
+// enough to push a 16–18GB developer machine into swap during a reindex.
+// Embedding inputs are capped at ~600 tokens (MAX_CHUNK_CHARS in
+// indexer/chunk.ts), so a 2048-token window leaves ~3x headroom and never
+// truncates a chunk. Measured 2026-06-01 (qwen3-embedding:0.6b, Apple Silicon):
+// inherited 32K ctx → 5.7GB resident; num_ctx 2048 → 1.1GB resident.
+const EMBED_NUM_CTX = 2048;
 
 export class OllamaEmbedder implements Embedder {
   readonly dimensions: number;
@@ -81,7 +99,13 @@ export class OllamaEmbedder implements Embedder {
       const probe = await fetch(`${host}/api/embed`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ model: modelId, input: 'probe' }),
+        body: JSON.stringify({
+          model: modelId,
+          input: 'probe',
+          // Pin the context window here too — the probe is what first loads the
+          // model, so without it the probe alone would pull in the full ~5.7GB.
+          options: { num_ctx: EMBED_NUM_CTX },
+        }),
       });
       if (!probe.ok) {
         const body = await probe.text().catch(() => '<unreadable>');
@@ -141,6 +165,9 @@ export class OllamaEmbedder implements Embedder {
         // Keep the model warm only for the duration of one operation.
         // dispose() at the end of the run sends keep_alive: 0 to unload.
         keep_alive: '1m',
+        // Cap the context window so the model loads at ~1.1GB rather than
+        // inheriting the daemon's chat-sized window and ballooning to ~5.7GB.
+        options: { num_ctx: EMBED_NUM_CTX },
       }),
     });
     if (!res.ok) {

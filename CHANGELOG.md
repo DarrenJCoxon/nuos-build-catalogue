@@ -1,5 +1,17 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.35.1 — 2026-06-01 — Ollama embedder: cap context window (memory fix)
+
+Patch fix for a memory regression in the local Ollama embedder, found while investigating dev-server slowness on a 16–18GB machine.
+
+**Symptom:** the 639MB `qwen3-embedding:0.6b` model loaded at **~5.7GB resident** during `index`/`search`, enough to push a developer machine into swap.
+
+**Cause:** the embedder did not set `options.num_ctx`, so each load inherited the Ollama daemon's global `OLLAMA_CONTEXT_LENGTH` (commonly 32K–64K, set high for chat models). A chat-sized context window allocates gigabytes of buffers for a model that only ever embeds ~600-token chunks.
+
+**Fix:** `src/embedder/ollama.ts` now pins `options.num_ctx` (`EMBED_NUM_CTX = 2048`) on both the probe and every embed call. Chunks are capped at ~600 tokens (`MAX_CHUNK_CHARS`), so 2048 leaves ~3x headroom and never truncates. Measured (Apple Silicon, qwen3-embedding:0.6b): inherited 32K ctx → 5.7GB; `num_ctx` 2048 → 1.1GB resident. The existing keep-alive / `dispose()` unload-after-use behaviour is unchanged.
+
+No API or output change; embeddings are byte-identical (context length affects buffer allocation, not the embedding of inputs that already fit).
+
 ## 0.35.0 — 2026-06-01 — `state drift-check` + end-of-session recompile + pre-commit drift block (WU 113b Stage B / D132)
 
 Stage B of the STATE.md hybrid-document wiring (D132). Adds the `state drift-check` command, wires the `state compile` recompile step into the `end-of-session` flow, and adds the generated-region drift block to the pre-commit hook (all three hook copies kept byte-identical per WU 216).

@@ -51,18 +51,50 @@ async function makeWorkspace(label: string): Promise<{
   workspace: string;
   buildRoot: string;
   workflowsPath: string;
+  catalogueDir: string;
 }> {
   const workspace = await mkdtemp(path.join(globalWorkspace, `${label}-`));
   const buildRoot = path.join(workspace, 'docs', 'build');
   const workflowsPath = path.join(workspace, '.nuos-catalogue', 'workflows.json');
+  const catalogueDir = path.join(workspace, '.nuos-catalogue');
 
-  await mkdir(path.join(buildRoot, 'work-units'), { recursive: true });
+  await mkdir(path.join(buildRoot, 'work-units', 'done'), { recursive: true });
   await mkdir(path.join(buildRoot, 'decisions'), { recursive: true });
   await mkdir(path.join(buildRoot, 'open-questions'), { recursive: true });
   await mkdir(path.join(buildRoot, 'risks'), { recursive: true });
-  await mkdir(path.join(workspace, '.nuos-catalogue'), { recursive: true });
+  await mkdir(catalogueDir, { recursive: true });
 
-  return { workspace, buildRoot, workflowsPath };
+  return { workspace, buildRoot, workflowsPath, catalogueDir };
+}
+
+/**
+ * Write the active-wu marker file so the adapter can find the active WU.
+ * Also writes a matching row in work-units/_index.md so title/status resolve.
+ */
+async function setActiveWu(
+  buildRoot: string,
+  catalogueDir: string,
+  handle: string,
+  title: string,
+  status = 'in_progress'
+): Promise<void> {
+  await writeFile(path.join(catalogueDir, 'active-wu'), handle);
+  // Append a row to the work-units index (or create it).
+  const idInIndex = handle.replace(/^wu-/i, '');
+  const icon = status === 'in_progress' ? '🟡' : status === 'done' ? '✅' : '⬜';
+  const indexPath = path.join(buildRoot, 'work-units', '_index.md');
+  let existing = '';
+  try { existing = await readFile(indexPath, 'utf8'); } catch { /* new file */ }
+  // Only add the row if this handle isn't already in the index
+  if (!existing.includes(`| ${idInIndex} |`)) {
+    const row = `| ${idInIndex} | [${title}](${handle}.md) | ${icon} ${status} — fixture | — |\n`;
+    if (existing) {
+      await writeFile(indexPath, existing + row);
+    } else {
+      const header = '# Work Units Index\n\n| ID | Title | Status | Depends on |\n| --- | --- | --- | --- |\n';
+      await writeFile(indexPath, header + row);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -221,10 +253,11 @@ describe('STATE_SENTINEL_CONFIG and STATE_REGION_KEYS', () => {
 
 describe('buildStateCompilationOutput', () => {
   test('produces a valid LLMCompilationOutput from store + disk state — no LLM call', async () => {
-    const { buildRoot, workflowsPath } = await makeWorkspace('adapter-basic');
+    const { buildRoot, workflowsPath, catalogueDir } = await makeWorkspace('adapter-basic');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki capability', 'in_progress'));
-    store.put(makeDecisionRecord('D132', 'STATE.md hybrid compile'));
+
+    // Active WU is now sourced from the marker file + work-units/_index.md (not the store).
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki capability');
 
     // Write minimal register index files
     await writeFile(
@@ -289,10 +322,11 @@ describe('buildStateCompilationOutput', () => {
 
 describe('cmdStateCompile — authored prose preservation', () => {
   test('only generated regions change; authored prose is byte-identical', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('splice-prose');
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('splice-prose');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    store.put(makeDecisionRecord('D132', 'STATE.md hybrid compile'));
+
+    // Active WU from marker file (not store).
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
 
     await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([
       { id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' },
@@ -404,7 +438,7 @@ describe('cmdStateCompile — idempotent', () => {
 
 describe('cmdStateCompile — multiple state changes', () => {
   test('recompiles correctly across advance → revert → advance cycle', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('state-changes');
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('state-changes');
     const store = await openWorkflowStore(workflowsPath);
 
     await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
@@ -414,24 +448,22 @@ describe('cmdStateCompile — multiple state changes', () => {
     const fixturePath = path.join(workspace, 'STATE-transitions.md');
     await writeFile(fixturePath, makeFixtureStateMd());
 
-    // --- State A: wu-113 is in_progress ---
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
+    // --- State A: wu-113 is active (marker set) ---
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     const rA = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
     assert.equal(rA.exitCode, 0, `state A compile failed: ${rA.output}`);
     const afterA = await readFile(fixturePath, 'utf8');
     assert.ok(afterA.includes('wu-113'), 'State A: active WU not in output');
 
-    // --- State B: advance wu-113 to done, start wu-114 ---
-    store.put({ ...makeWuRecord('wu-113', 'Consume NuWiki', 'done'), status: 'done' });
-    store.put(makeWuRecord('wu-114', 'Per-WU notes compile', 'in_progress'));
+    // --- State B: advance — wu-114 is now active ---
+    await setActiveWu(buildRoot, catalogueDir, 'wu-114', 'Per-WU notes compile');
     const rB = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T11:00:00.000Z' });
     assert.equal(rB.exitCode, 0, `state B compile failed: ${rB.output}`);
     const afterB = await readFile(fixturePath, 'utf8');
     assert.ok(afterB.includes('wu-114'), 'State B: new active WU not in output');
 
-    // --- State C: revert — wu-113 back to in_progress (simulate undo) ---
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    store.put({ ...makeWuRecord('wu-114', 'Per-WU notes compile', 'proposed'), status: 'proposed' });
+    // --- State C: revert — wu-113 back to active ---
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     const rC = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T12:00:00.000Z' });
     assert.equal(rC.exitCode, 0, `state C compile failed: ${rC.output}`);
     const afterC = await readFile(fixturePath, 'utf8');
