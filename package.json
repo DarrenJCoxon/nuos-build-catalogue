@@ -1,6 +1,6 @@
 {
   "name": "@nusoft/nuos-build-catalogue",
-  "version": "0.34.0",
+  "version": "0.35.0",
   "description": "NuOS build-catalogue tooling: semantic search (WU 110) + migration runner that lifts markdown artefacts into JSON-backed workflow records (WU 111, Phase G).",
   "type": "module",
   "bin": {
@@ -19,14 +19,14 @@
     "build": "rm -rf dist && tsc && chmod +x dist/cli.js",
     "prepublishOnly": "npm run build",
     "verify-storage": "tsx scripts/verify-persistence.ts",
-    "test": "tsx --test tests/chunk.test.ts tests/metadata.test.ts tests/crawl.test.ts tests/migrate.test.ts tests/commands-read.test.ts tests/regenerate.test.ts tests/commands-write.test.ts tests/ac-parse.test.ts tests/create.test.ts tests/init.test.ts tests/wu-111-soak-findings.test.ts tests/plan.test.ts tests/mode.test.ts tests/render.test.ts tests/swarm.test.ts tests/setup-progress-bar.test.ts tests/setup-ollama-pull.test.ts tests/setup-run-llm-setup.test.ts tests/wu-active.test.ts tests/install-claude-hooks.test.ts tests/protocols-in-sync.test.ts tests/end-of-session.test.ts tests/hooks-in-sync.test.ts tests/memory-store-separation.test.ts tests/state-compile.test.ts",
+    "test": "tsx --test tests/chunk.test.ts tests/metadata.test.ts tests/crawl.test.ts tests/migrate.test.ts tests/commands-read.test.ts tests/regenerate.test.ts tests/commands-write.test.ts tests/ac-parse.test.ts tests/create.test.ts tests/init.test.ts tests/wu-111-soak-findings.test.ts tests/plan.test.ts tests/mode.test.ts tests/render.test.ts tests/swarm.test.ts tests/setup-progress-bar.test.ts tests/setup-ollama-pull.test.ts tests/setup-run-llm-setup.test.ts tests/wu-active.test.ts tests/install-claude-hooks.test.ts tests/protocols-in-sync.test.ts tests/end-of-session.test.ts tests/hooks-in-sync.test.ts tests/memory-store-separation.test.ts tests/state-compile.test.ts tests/state-drift-check.test.ts tests/hook-isolation.test.ts",
     "typecheck": "tsc --noEmit",
     "index": "tsx src/cli.ts index",
     "search": "tsx src/cli.ts search"
   },
   "dependencies": {
     "@nusoft/nuflow": "^0.4.1",
-    "@nusoft/nuflow-pack-nuos-build-catalogue": "^0.1.0",
+    "@nusoft/nuflow-pack-nuos-build-catalogue": "^0.3.0",
     "@nusoft/nuvector": "^0.1.5",
     "@nusoft/nuwiki": "^0.3.0"
   },

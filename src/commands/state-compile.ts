@@ -299,6 +299,132 @@ export function checkStateMdDrift(
 }
 
 // ---------------------------------------------------------------------------
+// `state drift-check` command entry point (Stage B)
+// ---------------------------------------------------------------------------
+
+export interface StateDriftCheckResult {
+  output: string;
+  exitCode: number;
+  /** 'clean' | 'drifted' | 'skipped' — used by tests */
+  verdict: 'clean' | 'drifted' | 'skipped';
+  driftedRegions?: string[];
+}
+
+/**
+ * Check whether the generated regions of STATE.md match what the canonical
+ * state currently produces. Designed to be called by the pre-commit hook.
+ *
+ * Exit-code contract (fail-open):
+ *   - exit 0  when generated regions are clean
+ *   - exit 0  when STATE.md has no sentinel regions yet (pre-cutover)
+ *   - exit 0  when the check cannot run (STATE.md unreadable, store missing)
+ *   - exit 1  ONLY on confirmed generated-region drift
+ */
+export async function cmdStateDriftCheck(
+  store: WorkflowStore,
+  args: {
+    buildRoot: string;
+    stateMdPath?: string;
+    now?: string;
+  }
+): Promise<StateDriftCheckResult> {
+  const stateMdPath = args.stateMdPath ?? path.join(args.buildRoot, 'STATE.md');
+
+  // Read the current on-disk STATE.md — if unreadable, fail open.
+  let existingFile: string;
+  try {
+    existingFile = await readFile(stateMdPath, 'utf8');
+  } catch {
+    return {
+      output: `state drift-check: STATE.md unreadable at ${stateMdPath} — skipping (fail open)`,
+      exitCode: 0,
+      verdict: 'skipped',
+    };
+  }
+
+  // Pre-cutover guard: if none of the sentinel open-markers are present,
+  // the file has no sentinel regions yet — skip gracefully (fail open).
+  const hasAnySentinel = Object.values(STATE_REGION_KEYS).some((key) => {
+    const open = STATE_SENTINEL_CONFIG.openTemplate.replace(
+      '{{marker}}',
+      STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', key)
+    );
+    return existingFile.includes(open);
+  });
+
+  if (!hasAnySentinel) {
+    return {
+      output: 'state drift-check: no sentinel regions found in STATE.md — skipping (pre-cutover)',
+      exitCode: 0,
+      verdict: 'skipped',
+    };
+  }
+
+  // Build expected regions from canonical state.
+  let compiled: StateCompiledOutput;
+  try {
+    compiled = await buildStateCompilationOutput({
+      store,
+      buildRoot: args.buildRoot,
+      now: args.now,
+    });
+  } catch {
+    return {
+      output: `state drift-check: adapter error — skipping (fail open)`,
+      exitCode: 0,
+      verdict: 'skipped',
+    };
+  }
+
+  // Run the drift check.
+  let driftReport: ReturnType<typeof checkArticleDrift>;
+  try {
+    driftReport = checkStateMdDrift(existingFile, compiled.regions);
+  } catch {
+    return {
+      output: `state drift-check: drift-check error — skipping (fail open)`,
+      exitCode: 0,
+      verdict: 'skipped',
+    };
+  }
+
+  if (driftReport.clean) {
+    return {
+      output: 'state drift-check: generated regions are current — clean',
+      exitCode: 0,
+      verdict: 'clean',
+    };
+  }
+
+  // Confirmed generated-region drift — exit non-zero.
+  const driftedRegions = driftReport.regions
+    .filter((r) => r.status !== 'clean')
+    .map((r) => r.key);
+
+  const lines: string[] = [
+    '✖ state drift-check: generated regions in STATE.md have drifted from canonical state.',
+    '',
+    `  Drifted region(s): ${driftedRegions.join(', ')}`,
+    '',
+    '  These regions are compiled deterministically from the workflow store and',
+    '  register indexes. Hand-editing them will be overwritten on next recompile.',
+    '',
+    '  To fix: recompile the generated regions and re-stage STATE.md:',
+    '    nuos-catalogue state compile',
+    '    git add docs/build/STATE.md',
+    '',
+    '  Then re-commit.',
+  ];
+
+  return {
+    output: lines.join('\n'),
+    exitCode: 1,
+    verdict: 'drifted',
+    driftedRegions,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Section renderers — deterministic, no LLM
 // ---------------------------------------------------------------------------
 

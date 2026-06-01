@@ -105,3 +105,52 @@ test('templates/hooks/pre-commit does NOT contain the old modified_decisions var
     'should not appear in the fixed hook. The hook may have been reverted.'
   );
 });
+
+// ---------- 4. WU 113b Stage B: STATE.md drift-block logic present -------
+
+test('templates/hooks/pre-commit contains the staged_state_md guard (WU 113b drift-block)', async () => {
+  const template = await readFile(TEMPLATE_HOOK, 'utf8');
+  assert.ok(
+    template.includes('staged_state_md'),
+    'Expected templates/hooks/pre-commit to contain `staged_state_md` ' +
+    '(the variable that gates the drift-check on STATE.md being staged). ' +
+    'Missing means the WU 113b Stage B drift-block was not landed.'
+  );
+});
+
+test('templates/hooks/pre-commit contains the nuos-catalogue drift-check invocation (WU 113b)', async () => {
+  const template = await readFile(TEMPLATE_HOOK, 'utf8');
+  assert.ok(
+    template.includes('nuos-catalogue state drift-check'),
+    'Expected templates/hooks/pre-commit to contain the `nuos-catalogue state drift-check` ' +
+    'invocation. Missing means the WU 113b Stage B drift-block was not landed.'
+  );
+});
+
+test('templates/hooks/pre-commit guards on command -v nuos-catalogue before drift-check (fail-open)', async () => {
+  const template = await readFile(TEMPLATE_HOOK, 'utf8');
+  assert.ok(
+    template.includes('command -v nuos-catalogue'),
+    'Expected templates/hooks/pre-commit to guard on `command -v nuos-catalogue` before ' +
+    'invoking the drift-check. The hook must never block commits when the binary is absent.'
+  );
+});
+
+test('templates/hooks/pre-commit contains the old-binary skip guard (fail-open for < 0.35.0)', async () => {
+  const template = await readFile(TEMPLATE_HOOK, 'utf8');
+  assert.ok(
+    template.includes('generated regions'),
+    'Expected templates/hooks/pre-commit to contain the `generated regions` phrase check ' +
+    'that distinguishes a genuine drift finding from an old-binary "unknown subcommand" error. ' +
+    'Missing means old binaries (< 0.35.0) would block commits on their "unknown command" exit.'
+  );
+});
+
+test('templates/hooks/pre-commit contains state-drift-block log event (WU 113b)', async () => {
+  const template = await readFile(TEMPLATE_HOOK, 'utf8');
+  assert.ok(
+    template.includes('state-drift-block'),
+    'Expected templates/hooks/pre-commit to log a `state-drift-block` event when blocking. ' +
+    'Missing means drift-block events are not recorded in the enforcement log.'
+  );
+});

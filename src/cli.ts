@@ -502,6 +502,10 @@ Usage:
                           (WU 113b — recompile STATE.md generated regions from canonical store;
                            splices metadata / what-is-next / open-questions / decisions / risks /
                            health-check regions; preserves authored prose byte-for-byte)
+  nuos-catalogue state      drift-check [--state-md=<path>]
+                          (WU 113b Stage B — check whether STATE.md generated regions match
+                           canonical state; exit 0 on clean / no-regions / can't-run;
+                           exit 1 ONLY on confirmed generated-region drift; called by pre-commit hook)
 
   nuos-catalogue end-of-session
                           (WU 112 — verify-and-gate: checks the nine end-of-session protocol steps
@@ -715,24 +719,39 @@ async function main(): Promise<void> {
       break;
     }
     case 'state': {
-      // `state compile` — regenerate the generated regions of STATE.md (WU 113b / D132).
+      // `state compile`      — regenerate the generated regions of STATE.md (WU 113b / D132).
+      // `state drift-check`  — check for generated-region drift (Stage B; called by pre-commit hook).
       const sub = args.positional[0];
-      if (sub !== 'compile') {
-        console.error(`unknown state subcommand: ${sub ?? '(none)'}`);
-        console.error('available: state compile [--dry-run] [--state-md=<path>] [--build-root=<dir>] [--workflows=<file>]');
-        process.exit(1);
-      }
       const buildRoot = resolveBuildRoot(args.flags['build-root']);
       const workflowsPath = resolveWorkflowsPath(buildRoot, args.flags['workflows']);
-      const { cmdStateCompile } = await import('./commands/state-compile.js');
-      const store = await openWorkflowStore(workflowsPath);
-      const result = await cmdStateCompile(store, {
-        buildRoot,
-        stateMdPath: args.flags['state-md'] ? String(args.flags['state-md']) : undefined,
-        dryRun: Boolean(args.flags['dry-run']),
-      });
-      if (result.output) console.log(result.output);
-      process.exit(result.exitCode);
+
+      if (sub === 'compile') {
+        const { cmdStateCompile } = await import('./commands/state-compile.js');
+        const store = await openWorkflowStore(workflowsPath);
+        const result = await cmdStateCompile(store, {
+          buildRoot,
+          stateMdPath: args.flags['state-md'] ? String(args.flags['state-md']) : undefined,
+          dryRun: Boolean(args.flags['dry-run']),
+        });
+        if (result.output) console.log(result.output);
+        process.exit(result.exitCode);
+      } else if (sub === 'drift-check') {
+        const { cmdStateDriftCheck } = await import('./commands/state-compile.js');
+        const store = await openWorkflowStore(workflowsPath);
+        const result = await cmdStateDriftCheck(store, {
+          buildRoot,
+          stateMdPath: args.flags['state-md'] ? String(args.flags['state-md']) : undefined,
+        });
+        // Drift-check output: clean/skipped messages go to stderr (informational); drifted goes to stderr too.
+        if (result.output) process.stderr.write(result.output + '\n');
+        process.exit(result.exitCode);
+      } else {
+        console.error(`unknown state subcommand: ${sub ?? '(none)'}`);
+        console.error('available:');
+        console.error('  state compile     [--dry-run] [--state-md=<path>] [--build-root=<dir>] [--workflows=<file>]');
+        console.error('  state drift-check [--state-md=<path>] [--build-root=<dir>] [--workflows=<file>]');
+        process.exit(1);
+      }
       break;
     }
     case 'start-of-session': {
