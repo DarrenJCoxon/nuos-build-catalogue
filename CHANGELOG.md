@@ -1,5 +1,18 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.33.3 — 2026-06-01 — separate cross-agent memory store from doc-search index (WU 217 / D131)
+
+Implements D131: the cross-agent memory (`memory store` / `memory search`) now reads and writes `.nuos-catalogue/memory.nv`, a dedicated NuVector file separate from the doc-search index `.nuos-catalogue/index.nv`. The two stores share no file and therefore no lock — the ~40s post-commit reindex (`nuos-catalogue index`) holding the `index.nv` lock no longer blocks `memory store` calls that land in the same window.
+
+**Files changed:**
+
+- `src/path-resolution.ts` — new `resolveMemoryPath` helper that derives `<index-dir>/memory.nv` from `resolveIndexDir` (same `.nuos-catalogue/` directory, separate file); respects a `NUOS_CATALOGUE_MEMORY_PATH` env-var override.
+- `src/commands/memory.ts` — `cmdMemoryStore` and `cmdMemorySearch` now resolve `memory.nv` via `resolveMemoryPath`; `resolveIndexPath` / `index.nv` is no longer referenced in the memory path. A `memory` option is added to both option interfaces (`index` retained as deprecated fallback). A `migrateMemoryRecordsIfNeeded` helper runs lazily on the first memory command when `memory.nv` does not yet exist: it copies qualifying records (kind `workflow_provenance` with an `agent_role` metadata field) out of `index.nv` into `memory.nv`, preserving ids, text, embeddings (read via `fetch(ids)` — no re-embedding), and metadata. The migration is idempotent: once `memory.nv` exists (with no `.migrating` sentinel) it is skipped entirely. Migrated records are left in `index.nv` (harmless dead weight; see WU 217 notes for rationale). **Fix-pass 1 hardening (F1):** migration is now atomic via a sentinel file (`memory.nv.migrating`). The sentinel is written before `memory.nv` is opened and deleted on successful close; if the process crashes mid-migration, the next run sees both files and retries. A rename-then-reopen approach was prototyped but NuVector's in-process inode registry blocks reopening a renamed file in the same process; the sentinel approach avoids this. **Fix-pass 2 durability (F1 bug in fix-pass 1):** the interrupted-migration branch previously called `unlinkSync(memoryPath)` then `openStore(memoryPath)` in the same process — NuVector's NAPI in-process inode registry keeps the data alive in cache without materialising the file on disk, silently losing all data on process exit. Fixed by removing the `unlinkSync` from the recovery path: the existing partial `memory.nv` is opened directly and `upsertBatch` (idempotent by id) completes it — same-process materialisation is guaranteed because no unlink+reopen occurs. The only remaining `unlinkSync(memoryPath)` is the corrupt-open-failure guard, which always rethrows immediately and never reopens in the same process. Source (`index.nv`) is opened once for both the enumeration query and the fetch (single open, no close→reopen cycle). No-records case: opening and closing an empty destination store materialises `memory.nv` on disk, stabilising the gate.
+
+**Related:** WU 217, D131.
+
+---
+
 ## 0.33.2 — 2026-05-31 — propagate D127 hook fix into CLI bundled template (WU 216)
 
 Propagates the D127 fix — "decision-immutability block scopes to HEAD status" — into the CLI's bundled hook template and own hook copy. Both files were still carrying the pre-D127 over-broad rule that blocked *any* modification to a decision file under `docs/build/decisions/`, including the legitimate `proposed → accepted` promotion. The narrowed rule now reads the decision's committed status from HEAD and only blocks edits to decisions whose pre-image status is `accepted` or `active`; editing a `proposed` decision is allowed.

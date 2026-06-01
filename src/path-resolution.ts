@@ -131,6 +131,25 @@ export function resolveIndexPath(
   return path.join(resolveIndexDir(buildRoot, ctx), 'index.nv');
 }
 
+/**
+ * Resolve the cross-agent memory store path. Always co-located with the
+ * doc-index in the same `.nuos-catalogue/` directory, but in a separate
+ * file (`memory.nv`) so that the doc-index reindex (which holds an
+ * exclusive lock on `index.nv`) never contends with memory writes.
+ * Resolves `NUOS_CATALOGUE_MEMORY_PATH` env var when set; otherwise
+ * derives from `resolveIndexDir`. See D131.
+ */
+export function resolveMemoryPath(
+  buildRoot: string,
+  flag: string | boolean | undefined,
+  ctx?: ResolutionContext
+): string {
+  if (typeof flag === 'string' && flag.length > 0) return path.resolve(flag);
+  const env = ctxEnv(ctx);
+  if (env.NUOS_CATALOGUE_MEMORY_PATH) return path.resolve(env.NUOS_CATALOGUE_MEMORY_PATH);
+  return path.join(resolveIndexDir(buildRoot, ctx), 'memory.nv');
+}
+
 export function resolveHashPath(
   buildRoot: string,
   flag: string | boolean | undefined,
