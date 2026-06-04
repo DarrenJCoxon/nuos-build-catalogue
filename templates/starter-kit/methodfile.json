@@ -17,7 +17,13 @@
     "database": null,
     "deployment": null,
     "externalServices": [],
-    "notes": null
+    "notes": null,
+    "services": {
+      "database": { "provider": "none", "migrations": "none", "deployOnMerge": false, "secrets": [] },
+      "jobs": { "provider": "none", "deployOnMerge": false, "secrets": [] },
+      "web": { "provider": "none", "autoDeploy": false, "secrets": [] }
+    },
+    "servicesComment": "Backend service wiring (D150 / WU 231). Per service: 'provider', whether it 'deployOnMerge' to main, and the 'secrets' it needs; 'database' also names its 'migrations' tool; 'web' declares 'autoDeploy' (e.g. Vercel's Git integration). Set provider to 'none' to opt a service out. When a provider is set, `nuos init` scaffolds the deploy automation (build packages → migrate deploy → jobs deploy via the installed CLI) and the doctor verifies the secrets exist and flags deploy drift. Providers — database: supabase|neon|railway|none; jobs: trigger.dev|none; web: vercel|none."
   },
   "testing": {
     "framework": "vitest",
