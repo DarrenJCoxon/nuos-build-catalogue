@@ -36,7 +36,8 @@ The starter kit is *not* the harness. The harness is when NuVector indexes the c
         │   └── D001-template.md
         ├── work-units/
         │   ├── _index.md
-        │   └── 001-template.md
+        │   ├── 001-template-simple.md
+        │   └── 001-template-full.md
         ├── sessions/
         │   ├── _index.md
         │   └── 0000-00-00-template.md
@@ -76,7 +77,7 @@ These appear throughout the catalogue. The maps directory is where (1), (2), and
 
 4. **Write your first decision.** Open `docs/build/decisions/D001-template.md`, rename it to match your first real architectural commitment (e.g., `D001-we-are-building-on-postgres.md`), fill it in. Update `docs/build/decisions/_index.md`.
 
-5. **Write your first work unit.** Open `docs/build/work-units/001-template.md`, rename it (e.g., `001-postgres-schema-bootstrap.md`), fill it in. Update `docs/build/work-units/_index.md`.
+5. **Write your first work unit.** Open `docs/build/work-units/001-template-simple.md` (or `001-template-full.md` for the full six-field shape), rename it (e.g., `001-postgres-schema-bootstrap.md`), fill it in. Update `docs/build/work-units/_index.md`.
 
 6. **Update STATE.md.** Replace the placeholder content with your project's actual current state (Phase 0, no work units shipped, first decision in flight).
 
