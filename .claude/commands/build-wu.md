@@ -56,8 +56,8 @@ Decide what shape this work is. Most work units fall into one of these patterns:
 | Pattern | When | Agents needed |
 |---|---|---|
 | **Design-only** | Work unit is "decide how X is structured"; no code shipped this round | architect |
-| **Implementation** | Design already exists (architect's brief in the WU notes, or referenced contracts settled); just need to build + test + review | coder → tester → reviewer |
-| **Full feature** | Greenfield work unit with no prior design; needs the whole pipeline | architect → coder → tester → reviewer |
+| **Implementation** | Design already exists (architect's brief in the WU notes, or referenced contracts settled); just need to build + test + review | coder → tester → reviewer → challenger |
+| **Full feature** | Greenfield work unit with no prior design; needs the whole pipeline | architect → coder → tester → reviewer → challenger |
 | **Bug fix** | A failure is reported; root cause unknown | debugger (Opus) traces; coder applies fix; tester verifies |
 | **Research first** | Work unit is blocked on a current-fact lookup (library API, error message, recent migration) | researcher first, then route per the answer |
 
@@ -73,8 +73,9 @@ A typical full-feature decomposition:
 2. **Coder**: implement against architect's brief; matches existing code idioms; smallest change that satisfies acceptance criteria
 3. **Tester**: writes one test per acceptance criterion + failure-path tests; runs them
 4. **Reviewer**: reads coder + tester output against spec, design system, decisions; flags drift
+5. **Challenger**: after the reviewer approves, tries to *refute* each passed claim (acceptance criteria, coder decisions, DRY, build standards, contract failure behaviour); the coder must fix or rebut on the record before promotion (see Step 5.4)
 
-Skip steps when context allows — implementation-only WUs skip the architect; bug-fix WUs use debugger instead of architect.
+Skip steps when context allows — implementation-only WUs skip the architect; bug-fix WUs use debugger instead of architect. The challenger does **not** get skipped on any WU that ships code — it's the gate that lets the harness trust machine-written code without a human reading every line.
 
 ### Design-it-twice (required for every architect pass)
 
@@ -118,13 +119,27 @@ For each spawn:
 
 When each agent returns, capture their output. Three outcomes are typical:
 
-- **APPROVED** by reviewer → do NOT promote yet. Go to Step 5.1 — developer walkthrough.
+- **APPROVED** by reviewer → do NOT promote yet, and do NOT go straight to the human. Go to **Step 5.4 — adversarial challenge** first. The reviewer's APPROVE is a *candidate* for promotion; the challenger pressure-tests it before any human time is spent.
 - **REQUEST CHANGES** by reviewer → re-spawn coder with reviewer's findings as input. Cap at 3 retry loops; if still failing, escalate to debugger or operator.
 - **ESCALATE** (any agent surfaces an architectural issue, a design ambiguity, a need for the operator's call) → STOP the swarm. Surface the issue to the operator in plain English; do not auto-decide.
 
+## Step 5.4 — Adversarial challenge (mandatory before the human is involved)
+
+The reviewer approved. Before you spend the operator's time on a walkthrough, spawn the **challenger** (Opus) to try to *refute* the approval. This is the harness's answer to "should AI-written code be reviewed?": not by a human reading every line, but by an adversary that actively tries to break each passed claim. A claim that survives a real refutation attempt is trustworthy; an un-challenged "looks good" is not.
+
+Spawn the challenger with, as required reading: the WU and its acceptance criteria, the architect's brief, the coder's notes, the **reviewer's findings** (these are the claims under attack), the diff (`git diff <swarm-base>...HEAD`), the owning module's architecture file, the contracts the WU touches, and the design system if it ships UI. The spawn prompt must say explicitly: *"The reviewer APPROVED this. Your job is to prove that was wrong. Attack the acceptance criteria, the coder's key decisions, DRY, build standards, and the contract's failure behaviour. For each, report REFUTED / SURVIVES / UNRESOLVED with the specific attack you ran."* (See [challenger.md](../agents/challenger.md) for the five attack fronts and output format.)
+
+Route the challenger's verdict:
+
+- **ALL SURVIVES** → the approval held under attack. Record the challenge results in the WU notes and the swarm audit, then proceed to Step 5.1 (developer walkthrough). This is the strong-confidence path.
+- **Any REFUTED or UNRESOLVED** → do NOT promote and do NOT go to the human yet. Re-spawn the **coder** with the challenger's items as input. The coder must either (a) fix the code, or (b) **rebut the challenge on the record** in the WU `## Notes / log` with a concrete justification (the design-it-twice reasoning, the reuse that doesn't apply, the edge case that can't occur). Forcing this written justification is half the value of the gate — it's how DRY and the build standards stay upheld under pressure rather than by assertion.
+- After the coder responds, re-spawn the challenger to attack the fix or the rebuttal. This loop counts against the **same 3-attempt cap** as Step 5. After the third unresolved round, escalate to the operator in plain English: *"After three rounds the challenger still can't be satisfied on [list]. Either the coder needs a different approach or the challenge is over-reaching — here's both sides; how do you want to proceed?"* — and show the operator the challenger's items and the coder's rebuttals side by side so they can make the call.
+
+Record `✓ adversarial challenge passed (N claims survived, M resolved over K rounds)` in the swarm audit entry under `## Challenge`. A WU that promoted without a clean challenge result is not promotable.
+
 ## Step 5.1 — Developer walkthrough (mandatory before promotion)
 
-The reviewer has approved. Before the work unit is promoted to shipped, **stop and brief the developer** so they can verify the feature themselves in their running dev environment.
+The reviewer has approved and the challenger could not refute it. Before the work unit is promoted to shipped, **stop and brief the developer** so they can verify the feature themselves in their running dev environment.
 
 Write a short, plain-English walkthrough that tells the developer:
 
@@ -215,6 +230,7 @@ Write an audit entry at `docs/build/swarm/YYYY-MM-DD-wu-<handle>.md`. Use the te
 - The work unit + classification
 - The decomposition you chose
 - Each agent spawned: role, model, input summary, output summary, time spent (if known)
+- The gate results: test gate, code-quality lite gate, and the **adversarial challenge** result under `## Challenge` (claims survived, claims resolved, rounds taken)
 - Final outcome + next action
 - Any decisions / open questions / risks that surfaced
 
@@ -242,7 +258,7 @@ nuos-catalogue memory store \
 
 ## Step 7 — Update the work unit + STATE
 
-If the swarm produced a complete outcome (reviewer approved), the work unit promotes:
+If the swarm produced a complete outcome (reviewer approved **and** the adversarial challenge in Step 5.4 came back clean — all challenges either SURVIVES or resolved by the coder — **and** the developer confirmed the walkthrough), the work unit promotes:
 
 - Update its status to ✅ shipped
 - Move the file to `work-units/done/NNN-slug.md`

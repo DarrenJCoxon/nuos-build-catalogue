@@ -31,6 +31,15 @@ Read [`docs/build/GLOSSARY.md`](../../docs/build/GLOSSARY.md) once before you st
 
 ---
 
+## Step 0 — Check intake first
+
+Before you welcome the operator, list `docs/build/intake/` (excluding `README.md` and `.gitkeep`).
+
+- **If there's material there**, the operator has dropped real input — transcripts, a brief, notes, persona descriptions. Don't plan from a blank page. Run `/ingest-intake` now (read the material, draft proposed records for the operator to accept), then return here with those drafts in place. Open the welcome with: *"You've dropped some material in `intake/` — I've read it and drafted a few things for you to confirm as we go. Let's plan from what you already have."*
+- **If it's empty**, proceed straight to Step 1 as normal. (You can mention the folder exists: *"If you have any notes, transcripts, or a brief lying around, you can drop them in `docs/build/intake/` and I'll read them — but we can also just talk it through."*)
+
+Either way, anything intake produced is `proposed`, not accepted. The planning conversation is where the operator confirms what becomes catalogue truth.
+
 ## Step 1 — Welcome (2 min)
 
 Open with something like:

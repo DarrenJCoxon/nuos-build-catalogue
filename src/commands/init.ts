@@ -76,8 +76,10 @@ export interface InitResult {
 export const PROTOCOL_FILES = [
   'start-of-session.md',
   'end-of-session.md',
+  'explore.md',
   'wu-new.md',
   'persona-new.md',
+  'ingest-intake.md',
   'plan-orientation.md',
   'plan-architecture.md',
   'plan-uiux.md',
@@ -95,8 +97,10 @@ export const PROTOCOL_FILES = [
 const PROTOCOL_DESCRIPTIONS: Record<string, string> = {
   'start-of-session': 'Read where the project is and propose the next concrete action',
   'end-of-session': 'Capture what happened, update state, write session log, commit',
+  'explore': 'Investigate an existing surface, module, or behaviour; file a durable finding that exits into work units or an open question',
   'wu-new': 'File a new work unit through a guided plain-English conversation',
   'persona-new': 'File a new persona by walking the seven dimensions conversationally',
+  'ingest-intake': 'Read raw material dropped in docs/build/intake/ and draft proposed catalogue records for the operator to accept',
   'plan-orientation': 'Phase A of planning — project description, tech stack, personas, the horizon map',
   'plan-architecture': 'Phase B of planning — name the major modules and define what each one provides',
   'plan-uiux': 'Phase C of planning — enumerate every surface and build the complete design system',
@@ -545,13 +549,14 @@ async function writeHookFile(
  * get copied into <cwd>/.claude/agents/ where Claude Code's Task tool
  * discovers them.
  *
- * Six default agents land in 0.15.0:
- *   architect (opus) — design + contracts
- *   debugger  (opus) — trace failures
- *   coder     (sonnet) — implementation
- *   tester    (sonnet) — tests against acceptance criteria
- *   reviewer  (sonnet) — code review against spec + design system
- *   researcher(haiku) — online lookups + summaries
+ * Default agents (all *.md in templates/agents/ are installed):
+ *   architect  (opus)   — design + contracts
+ *   debugger   (opus)   — trace failures
+ *   coder      (sonnet) — implementation
+ *   tester     (sonnet) — tests against acceptance criteria
+ *   reviewer   (sonnet) — code review against spec + design system
+ *   challenger (opus)   — adversarial refute pass before promotion
+ *   researcher (haiku)  — online lookups + summaries
  *
  * Per-agent model is the default. Project-wide overrides live in
  * methodfile.json under swarm.models. Per-spawn overrides via the Task
