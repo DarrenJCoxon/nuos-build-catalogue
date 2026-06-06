@@ -1,5 +1,17 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.37.0 — 2026-06-06 — AI-native upgrades: intake ingestion, adversarial challenge gate, explore protocol
+
+Three additions that push the harness further toward an AI-native lifecycle — review relocated to the spec, code verified adversarially rather than hand-read. Each honours the existing honesty rule (D130 lineage): the machine reads and structures; the human owns truth.
+
+**1. Intake ingestion (`/ingest-intake`).** New protocol + a scaffolded `docs/build/intake/` drop-folder (with `README.md` + `.gitkeep`). The operator drops raw pre-build material — transcripts, briefs, notes, persona descriptions — and the LLM reads it and drafts *proposed* catalogue records (decisions as `🔵 proposed`, candidate personas, open questions) for the operator to accept, edit, or reject. Two hard rules enforced in the protocol: intake is **read-only source** (originals never touched), and **nothing drafted is accepted truth** without the human gate. `/plan-orientation` now opens with a Step 0 that checks intake first, so planning starts from real material instead of a blank page.
+
+**2. Adversarial challenge gate (`challenger` agent + build-wu Step 5.4).** New Opus `challenger` agent runs after the reviewer APPROVEs and *before* any human walkthrough. Its stance is to **refute** the approval — attacking acceptance criteria, the coder's key decisions, DRY (strict, grep-proven), build standards (premature abstraction, idiom drift, module discipline, 1k-line/spaghetti), and the contract's failure behaviour. Verdicts are `REFUTED`/`SURVIVES`/`UNRESOLVED`; the coder must fix the code or **rebut on the record** before promotion. Shares the 3-attempt cap. Promotion now requires a clean challenge result, recorded in the swarm audit under `## Challenge`. This is the harness's answer to "should AI-written code be reviewed?" — not by a human reading every line, but by an adversary that tries to break each claim.
+
+**3. `explore` protocol now shipped.** The previously-listed-but-unbundled `explore` protocol template and its installed tool copies are now committed, repairing a latent drift-guard inconsistency (`init.ts` listed `explore.md` with no tracked template).
+
+All protocol fan-out copies (Claude Code / OpenCode / Codex CLI) regenerated; `installAgents` picks up `challenger.md` automatically. 366 tests pass; build clean.
+
 ## 0.35.1 — 2026-06-01 — Ollama embedder: cap context window (memory fix)
 
 Patch fix for a memory regression in the local Ollama embedder, found while investigating dev-server slowness on a 16–18GB machine.
