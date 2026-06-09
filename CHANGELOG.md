@@ -1,5 +1,24 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.38.0 — 2026-06-09 — STATE.md is a handoff contract, not an executive summary
+
+On a long project STATE.md bloated, because it tried to be two things at once: the pickup point an agent reads to resume work, *and* a project dashboard mirroring the registers. This release makes it one thing — the handoff contract — and lets the registers and (future) `doctor` own the dashboard role they already serve better.
+
+**The lean contract.** STATE.md now carries only what an agent handing off actually needs:
+
+- **Planning progress** — authored, and only during the planning arc (it routes `/start-of-session`); deleted once all five phases are ✅.
+- **Active work unit** — generated; the pointer to what's open.
+- **Resume** — the single authored block: where we are, exactly where the last session stopped, the next concrete action. This replaces the four overlapping narrative slots ("in flight" / "just shipped" / "what is next" / "last session resume") that all described the same moment.
+- **Blockers** — generated; blocked WUs (🔴) plus *only* the open questions whose "Blocks" column names something. A question that blocks nothing stays in its register.
+
+**Deleted from the always-read path:** the recent-decisions table, non-blocking risks, health counts, and "what just shipped". Nothing is lost — decisions/risks/open-questions live in their registers (the canonical, always-current lists) and the narrative lives in the session logs. Mirroring them into STATE.md was a second source of truth that drifted from the registers — the exact failure the catalogue exists to prevent.
+
+**Mechanically enforced.** `state compile` collapses from six generated regions to two (`where`, `blockers`); ~250 lines of decisions/risks/health parsers are gone. The lean shape can't ratchet back up: the generated regions are bounded by code, and end-of-session writes exactly one prose block. New catalogues ship the STATE.md sentinels pre-inserted, so the generated regions work from day one with no manual cutover.
+
+**Protocols updated, fan-out regenerated.** `end-of-session` Step 6 and `start-of-session` Step 2 rewritten to the new section names; the three planning protocols (`plan-orientation`, `plan-initial-wu`, `plan-review`) and the starter-kit `END-OF-SESSION.md` reference doc no longer point at the deleted "What is currently in flight" section. All Claude Code / OpenCode / Codex CLI copies regenerated; `protocols-in-sync` passes. 364 tests pass; build clean.
+
+**Migration (existing projects).** A live STATE.md from ≤0.37 still has the old six sentinel regions. On next `state compile`, the two surviving regions (`where`, `blockers`) recompile; the four orphaned ones (`metadata`, `what_is_next`, `recent_decisions`, `risks`, `health_check`) are left untouched (the compiler only manages regions it knows). Do a one-time manual pass on that file: delete the orphaned sentinel blocks and exec-summary prose, and adopt the new Planning-progress / Active-work-unit / Resume / Blockers shape from the starter-kit template.
+
 ## 0.37.0 — 2026-06-06 — AI-native upgrades: intake ingestion, adversarial challenge gate, explore protocol
 
 Three additions that push the harness further toward an AI-native lifecycle — review relocated to the spec, code verified adversarially rather than hand-read. Each honours the existing honesty rule (D130 lineage): the machine reads and structures; the human owns truth.
