@@ -1,5 +1,11 @@
 # Changelog — `@nusoft/nuos-build-catalogue`
 
+## 0.38.1 — 2026-06-09 — Blockers region excludes "blocks: nothing" disclaimers
+
+Found while applying the 0.38.0 lean STATE.md to a live catalogue (a 320KB → 7KB trim): registers use the open-questions "Blocks" column descriptively, so rows read `blocks: nothing on the critical path (build-hygiene)`. The 0.38.0 blockers filter kept any non-empty "Blocks" value, so questions that explicitly block *nothing* appeared under the **Blockers** heading — self-contradictory, and it bloated the one generated region meant to stay tiny.
+
+`readBlockingQuestions` now also drops values that open with "nothing" / "none" (not just empty/dash). A test covers the descriptive-disclaimer case; 364 tests pass; build clean. No other behaviour change.
+
 ## 0.38.0 — 2026-06-09 — STATE.md is a handoff contract, not an executive summary
 
 On a long project STATE.md bloated, because it tried to be two things at once: the pickup point an agent reads to resume work, *and* a project dashboard mirroring the registers. This release makes it one thing — the handoff contract — and lets the registers and (future) `doctor` own the dashboard role they already serve better.
@@ -9,7 +15,7 @@ On a long project STATE.md bloated, because it tried to be two things at once: t
 - **Planning progress** — authored, and only during the planning arc (it routes `/start-of-session`); deleted once all five phases are ✅.
 - **Active work unit** — generated; the pointer to what's open.
 - **Resume** — the single authored block: where we are, exactly where the last session stopped, the next concrete action. This replaces the four overlapping narrative slots ("in flight" / "just shipped" / "what is next" / "last session resume") that all described the same moment.
-- **Blockers** — generated; blocked WUs (🔴) plus *only* the open questions whose "Blocks" column names something real. Rows that disclaim blocking in prose (`blocks: nothing on the critical path…`, `blocks: none…`) are excluded, not just empty ones — registers use the column descriptively. A question that blocks nothing stays in its register.
+- **Blockers** — generated; blocked WUs (🔴) plus *only* the open questions whose "Blocks" column names something. A question that blocks nothing stays in its register.
 
 **Deleted from the always-read path:** the recent-decisions table, non-blocking risks, health counts, and "what just shipped". Nothing is lost — decisions/risks/open-questions live in their registers (the canonical, always-current lists) and the narrative lives in the session logs. Mirroring them into STATE.md was a second source of truth that drifted from the registers — the exact failure the catalogue exists to prevent.
 
