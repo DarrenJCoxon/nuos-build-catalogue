@@ -1,6 +1,12 @@
 /**
  * Tests for `nuos-catalogue state compile` — WU 113b / D132.
  *
+ * STATE.md is the handoff snapshot: two generated regions only —
+ *   `where`    (the active-WU pointer)
+ *   `blockers` (blocked WUs + open questions that name something they block)
+ * Decisions, risks, health, and "what shipped" are NOT mirrored here; they live
+ * in their registers and `doctor` (STATE.md is the handoff contract, not a dashboard).
+ *
  * All tests operate against FIXTURE files in a temp directory.
  * The live docs/build/STATE.md is NEVER read or written.
  *
@@ -13,7 +19,7 @@
  *   6. Dry run: reports update set but does not write to disk
  *   7. SentinelConfig + region key constants are exported correctly
  *   8. checkStateMdDrift detects drifted and clean regions
- *   9. Index parsers: decisions, questions, risks each produce correct output
+ *   9. Blockers: blocking questions and blocked WUs appear; non-blocking / resolved do not
  */
 
 import { test, describe, before, after } from 'node:test';
@@ -79,13 +85,25 @@ async function setActiveWu(
   status = 'in_progress'
 ): Promise<void> {
   await writeFile(path.join(catalogueDir, 'active-wu'), handle);
-  // Append a row to the work-units index (or create it).
+  await appendWuRow(buildRoot, handle, title, status);
+}
+
+/**
+ * Append a row to work-units/_index.md (creating it with a header if absent).
+ * `status` drives the icon: in_progress → 🟡, blocked → 🔴, done → ✅.
+ */
+async function appendWuRow(
+  buildRoot: string,
+  handle: string,
+  title: string,
+  status: string
+): Promise<void> {
   const idInIndex = handle.replace(/^wu-/i, '');
-  const icon = status === 'in_progress' ? '🟡' : status === 'done' ? '✅' : '⬜';
+  const icon =
+    status === 'in_progress' ? '🟡' : status === 'blocked' ? '🔴' : status === 'done' ? '✅' : '⬜';
   const indexPath = path.join(buildRoot, 'work-units', '_index.md');
   let existing = '';
   try { existing = await readFile(indexPath, 'utf8'); } catch { /* new file */ }
-  // Only add the row if this handle isn't already in the index
   if (!existing.includes(`| ${idInIndex} |`)) {
     const row = `| ${idInIndex} | [${title}](${handle}.md) | ${icon} ${status} — fixture | — |\n`;
     if (existing) {
@@ -119,25 +137,7 @@ function makeWuRecord(handle: string, title: string, status: string): MigratedRe
   };
 }
 
-function makeDecisionRecord(handle: string, title: string, status = 'active'): MigratedRecord {
-  const numStr = handle.replace(/[^\d]/g, '');
-  const num = numStr ? parseInt(numStr, 10) : 1;
-  return {
-    handle,
-    number: num,
-    register: 'decision',
-    title,
-    status,
-    slug: handle.replace('D', ''),
-    sourcePath: `decisions/${handle}-test.md`,
-    rawMarkdown: `# ${handle}\n\nTest decision.`,
-    fileModifiedAt: '2026-06-01T10:00:00.000Z',
-    migratedAt: '2026-06-01T10:00:00.000Z',
-    migratedFrom: 'markdown',
-  };
-}
-
-/** A minimal fixture STATE.md with all six sentinel pairs + authored prose around them. */
+/** A minimal fixture STATE.md with both sentinel pairs + authored prose around them. */
 function makeFixtureStateMd(extraAuthoredProse = ''): string {
   const regions = Object.values(STATE_REGION_KEYS);
   const blocks: string[] = [
@@ -163,28 +163,12 @@ function makeFixtureStateMd(extraAuthoredProse = ''): string {
     blocks.push('');
   }
 
-  blocks.push('## What was just done');
+  blocks.push('## Resume');
   blocks.push('');
-  blocks.push('This authored section is hand-maintained and must never be touched by state compile.');
+  blocks.push('This authored Resume block is hand-maintained and must never be touched by state compile.');
   blocks.push('');
 
   return blocks.join('\n');
-}
-
-/** The decisions _index.md format used by the live catalogue. */
-function makeDecisionsIndex(entries: Array<{ id: string; title: string; date: string; status: string }>): string {
-  const lines = [
-    '# Decisions Index',
-    '',
-    '## Active decisions',
-    '',
-    '| ID | Title | Date | Status |',
-    '|---|---|---|---|',
-  ];
-  for (const e of entries) {
-    lines.push(`| [${e.id}](${e.id}-test.md) | ${e.title} | ${e.date} | ${e.status} |`);
-  }
-  return lines.join('\n') + '\n';
 }
 
 function makeQuestionsIndex(entries: Array<{ id: string; title: string; blocks: string }>): string {
@@ -207,23 +191,6 @@ function makeQuestionsIndex(entries: Array<{ id: string; title: string; blocks: 
   return lines.join('\n') + '\n';
 }
 
-function makeRisksIndex(entries: Array<{ id: string; title: string; severity: string; likelihood: string; status: string }>): string {
-  const lines = [
-    '# Risk Register',
-    '',
-    '## Active risks',
-    '',
-    '| ID | Title | Severity | Likelihood | Status |',
-    '|---|---|---|---|---|',
-  ];
-  for (const e of entries) {
-    lines.push(`| ${e.id} | ${e.title} | ${e.severity} | ${e.likelihood} | ${e.status} |`);
-  }
-  lines.push('');
-  lines.push('## Resolved risks');
-  return lines.join('\n') + '\n';
-}
-
 // ---------------------------------------------------------------------------
 // Test 1: SentinelConfig + region keys exported correctly
 // ---------------------------------------------------------------------------
@@ -235,15 +202,15 @@ describe('STATE_SENTINEL_CONFIG and STATE_REGION_KEYS', () => {
     assert.equal(STATE_SENTINEL_CONFIG.closeTemplate, '<!-- {{marker}}:end -->');
   });
 
-  test('exports all six region keys', () => {
+  test('exports exactly the two handoff region keys', () => {
     const keys = Object.values(STATE_REGION_KEYS);
-    assert.equal(keys.length, 6);
-    assert.ok(keys.includes('metadata'));
-    assert.ok(keys.includes('what_is_next'));
-    assert.ok(keys.includes('open_questions'));
-    assert.ok(keys.includes('recent_decisions'));
-    assert.ok(keys.includes('risks'));
-    assert.ok(keys.includes('health_check'));
+    assert.equal(keys.length, 2);
+    assert.ok(keys.includes('where'));
+    assert.ok(keys.includes('blockers'));
+    // The exec-summary regions are gone — handoff contract, not a dashboard.
+    assert.ok(!keys.includes('recent_decisions' as never), 'recent_decisions region must not exist');
+    assert.ok(!keys.includes('risks' as never), 'risks region must not exist');
+    assert.ok(!keys.includes('health_check' as never), 'health_check region must not exist');
   });
 });
 
@@ -252,26 +219,13 @@ describe('STATE_SENTINEL_CONFIG and STATE_REGION_KEYS', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildStateCompilationOutput', () => {
-  test('produces a valid LLMCompilationOutput from store + disk state — no LLM call', async () => {
+  test('produces a valid LLMCompilationOutput from disk state — no LLM call', async () => {
     const { buildRoot, workflowsPath, catalogueDir } = await makeWorkspace('adapter-basic');
     const store = await openWorkflowStore(workflowsPath);
 
-    // Active WU is now sourced from the marker file + work-units/_index.md (not the store).
+    // Active WU is sourced from the marker file + work-units/_index.md (not the store).
     await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki capability');
-
-    // Write minimal register index files
-    await writeFile(
-      path.join(buildRoot, 'decisions', '_index.md'),
-      makeDecisionsIndex([{ id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' }])
-    );
-    await writeFile(
-      path.join(buildRoot, 'open-questions', '_index.md'),
-      makeQuestionsIndex([])
-    );
-    await writeFile(
-      path.join(buildRoot, 'risks', '_index.md'),
-      makeRisksIndex([])
-    );
+    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
 
     const result = await buildStateCompilationOutput({
       store,
@@ -279,40 +233,34 @@ describe('buildStateCompilationOutput', () => {
       now: '2026-06-01T12:00:00.000Z',
     });
 
-    // Structural checks
+    // Structural checks — exactly two regions.
     assert.ok(result.compilationOutput.summary.length > 0);
-    assert.equal(result.compilationOutput.sections.length, 6);
+    assert.equal(result.compilationOutput.sections.length, 2);
     assert.equal(result.compilationOutput.citations.length, 0);
     assert.equal(result.compilationOutput.outboundLinks.length, 0);
 
-    // All six regions must be present
-    const keys = Object.values(STATE_REGION_KEYS);
-    for (const key of keys) {
+    for (const key of Object.values(STATE_REGION_KEYS)) {
       assert.ok(Object.prototype.hasOwnProperty.call(result.regions, key), `missing region: ${key}`);
       assert.ok(result.regions[key as keyof typeof result.regions].length > 0, `empty region: ${key}`);
     }
 
-    // Metadata region must contain today's date
-    assert.ok(result.regions.metadata.includes('2026-06-01'), 'metadata region missing today date');
+    // `where` region carries today's date and the active WU handle.
+    assert.ok(result.regions.where.includes('2026-06-01'), 'where region missing today date');
+    assert.ok(result.regions.where.includes('wu-113'), 'where region missing active WU handle');
 
-    // What-is-next region must mention the active WU
-    assert.ok(result.regions.what_is_next.includes('wu-113'), 'what_is_next missing active WU handle');
-
-    // Decisions region must mention D132
-    assert.ok(result.regions.recent_decisions.includes('D132'), 'recent_decisions missing D132');
+    // `blockers` region says None when nothing blocks.
+    assert.ok(result.regions.blockers.includes('None'), 'blockers region should say None when unblocked');
   });
 
-  test('produces correct output when store is empty', async () => {
+  test('produces correct output when there is no active WU', async () => {
     const { buildRoot, workflowsPath } = await makeWorkspace('adapter-empty');
     const store = await openWorkflowStore(workflowsPath);
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const result = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T09:00:00.000Z' });
 
-    assert.equal(result.compilationOutput.sections.length, 6);
-    assert.ok(result.regions.what_is_next.includes('No active'), 'empty store should say no active WU');
+    assert.equal(result.compilationOutput.sections.length, 2);
+    assert.ok(result.regions.where.includes('No active'), 'no-marker should say no active WU');
   });
 });
 
@@ -325,14 +273,8 @@ describe('cmdStateCompile — authored prose preservation', () => {
     const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('splice-prose');
     const store = await openWorkflowStore(workflowsPath);
 
-    // Active WU from marker file (not store).
     await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([
-      { id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' },
-    ]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const authoredProse = 'AUTHORED: this exact string must survive compilation unchanged.';
     const fixturePath = path.join(workspace, 'STATE-fixture.md');
@@ -349,16 +291,12 @@ describe('cmdStateCompile — authored prose preservation', () => {
 
     const after = await readFile(fixturePath, 'utf8');
 
-    // The authored prose must be byte-identical
     assert.ok(after.includes(authoredProse), 'authored prose string was not preserved');
     assert.ok(after.includes('This is authored prose above the first generated region.'), 'authored prose above first region was changed');
-    assert.ok(after.includes('## What was just done'), 'authored What-was-just-done section was removed');
-    assert.ok(after.includes('This authored section is hand-maintained'), 'authored section body was changed');
+    assert.ok(after.includes('## Resume'), 'authored Resume section was removed');
+    assert.ok(after.includes('This authored Resume block is hand-maintained'), 'authored section body was changed');
 
-    // The generated regions must have changed (they contained placeholder text)
     assert.ok(!after.includes('(generated content goes here)'), 'placeholder text was not replaced');
-
-    // Generated regions must contain real content
     assert.ok(after.includes('wu-113'), 'active WU not reflected in generated output');
   });
 });
@@ -372,12 +310,9 @@ describe('cmdStateCompile — missing sentinels', () => {
     const { buildRoot, workflowsPath, workspace } = await makeWorkspace('missing-sentinels');
     const store = await openWorkflowStore(workflowsPath);
     store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
-    // STATE.md with NO sentinel pairs
-    const stateMdContent = '# STATE\n\nAuthored content only — no sentinel pairs.\n\n## What was just done\n\nSome history.\n';
+    const stateMdContent = '# STATE\n\nAuthored content only — no sentinel pairs.\n\n## Resume\n\nSome pickup note.\n';
     const fixturePath = path.join(workspace, 'STATE-no-sentinels.md');
     await writeFile(fixturePath, stateMdContent);
 
@@ -390,9 +325,7 @@ describe('cmdStateCompile — missing sentinels', () => {
     assert.equal(result.exitCode, 1, 'should exit non-zero when sentinels are missing');
     assert.ok(result.output.includes('sentinel regions are absent'), `missing message: ${result.output}`);
     assert.ok(result.output.includes('nuos:generated:'), 'output should name the missing sentinels');
-    assert.ok(result.output.includes('Stage B'), 'output should reference Stage B cutover guidance');
 
-    // File must be unchanged
     const after = await readFile(fixturePath, 'utf8');
     assert.equal(after, stateMdContent, 'file was modified despite missing sentinels');
   });
@@ -403,31 +336,24 @@ describe('cmdStateCompile — missing sentinels', () => {
 // ---------------------------------------------------------------------------
 
 describe('cmdStateCompile — idempotent', () => {
-  test('second compile with unchanged store produces identical output', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('idempotent');
+  test('second compile with unchanged state produces identical output', async () => {
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('idempotent');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixturePath = path.join(workspace, 'STATE-idempotent.md');
     await writeFile(fixturePath, makeFixtureStateMd());
 
-    // First compile
     const r1 = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
     assert.equal(r1.exitCode, 0, `first compile failed: ${r1.output}`);
     const afterFirst = await readFile(fixturePath, 'utf8');
 
-    // Second compile — same store, same now
     const r2 = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
     assert.equal(r2.exitCode, 0, `second compile failed: ${r2.output}`);
     const afterSecond = await readFile(fixturePath, 'utf8');
 
-    // Output must be byte-identical
     assert.equal(afterSecond, afterFirst, 'second compile changed the file (not idempotent)');
-
-    // Second compile should report no updated regions
     assert.deepEqual(r2.updatedRegions, [], 'second compile should have no updated regions');
   });
 });
@@ -440,15 +366,12 @@ describe('cmdStateCompile — multiple state changes', () => {
   test('recompiles correctly across advance → revert → advance cycle', async () => {
     const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('state-changes');
     const store = await openWorkflowStore(workflowsPath);
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixturePath = path.join(workspace, 'STATE-transitions.md');
     await writeFile(fixturePath, makeFixtureStateMd());
 
-    // --- State A: wu-113 is active (marker set) ---
+    // --- State A: wu-113 is active ---
     await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     const rA = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
     assert.equal(rA.exitCode, 0, `state A compile failed: ${rA.output}`);
@@ -463,15 +386,15 @@ describe('cmdStateCompile — multiple state changes', () => {
     assert.ok(afterB.includes('wu-114'), 'State B: new active WU not in output');
 
     // --- State C: revert — wu-113 back to active ---
-    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
+    await writeFile(path.join(catalogueDir, 'active-wu'), 'wu-113');
     const rC = await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T12:00:00.000Z' });
     assert.equal(rC.exitCode, 0, `state C compile failed: ${rC.output}`);
     const afterC = await readFile(fixturePath, 'utf8');
     assert.ok(afterC.includes('wu-113'), 'State C: reverted active WU not in output');
 
-    // Authored prose must have survived all transitions
-    assert.ok(afterC.includes('## What was just done'), 'authored section removed after state transitions');
-    assert.ok(afterC.includes('This authored section is hand-maintained'), 'authored prose body was lost');
+    // Authored prose must have survived all transitions.
+    assert.ok(afterC.includes('## Resume'), 'authored section removed after state transitions');
+    assert.ok(afterC.includes('This authored Resume block is hand-maintained'), 'authored prose body was lost');
   });
 });
 
@@ -481,12 +404,10 @@ describe('cmdStateCompile — multiple state changes', () => {
 
 describe('cmdStateCompile — dry run', () => {
   test('dry run reports update set but does not write', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('dry-run');
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('dry-run');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixture = makeFixtureStateMd();
     const fixturePath = path.join(workspace, 'STATE-dryrun.md');
@@ -502,7 +423,6 @@ describe('cmdStateCompile — dry run', () => {
     assert.equal(result.exitCode, 0, `dry run failed: ${result.output}`);
     assert.ok(result.output.includes('dry run'), 'dry run label not in output');
 
-    // File must be unchanged
     const after = await readFile(fixturePath, 'utf8');
     assert.equal(after, fixture, 'dry run modified the file');
   });
@@ -514,94 +434,64 @@ describe('cmdStateCompile — dry run', () => {
 
 describe('checkStateMdDrift', () => {
   test('returns clean=true when file matches expected regions', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('drift-clean');
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('drift-clean');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixturePath = path.join(workspace, 'STATE-drift.md');
     await writeFile(fixturePath, makeFixtureStateMd());
 
-    // First compile to establish baseline
     await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
     const compiled = await readFile(fixturePath, 'utf8');
 
-    // Build expected regions from same adapter call
     const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
 
     const report = checkStateMdDrift(compiled, regions);
     assert.equal(report.clean, true, `drift reported after a clean compile: ${JSON.stringify(report.regions.filter(r => r.status !== 'clean'))}`);
   });
 
-  test('returns clean=false when a generated region has been hand-edited', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('drift-detected');
+  test('returns clean=false when the where region has been hand-edited', async () => {
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('drift-detected');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixturePath = path.join(workspace, 'STATE-hand-edit.md');
     await writeFile(fixturePath, makeFixtureStateMd());
 
-    // Compile once to populate regions
     await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
 
-    // Hand-edit the metadata region
     const compiled = await readFile(fixturePath, 'utf8');
-    const metaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.METADATA);
-    const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', metaMarker);
-    const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', metaMarker);
+    const marker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.WHERE);
+    const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', marker);
+    const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', marker);
     const modified = compiled.replace(
       new RegExp(`(${escapeRegex(openLine)}\n)[\\s\\S]*?(\n${escapeRegex(closeLine)})`),
       `$1HAND-EDITED: this should not be here\n$2`
     );
     await writeFile(fixturePath, modified);
 
-    // Build expected regions
     const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
 
     const report = checkStateMdDrift(modified, regions);
     assert.equal(report.clean, false, 'drift not detected after hand-edit');
-    const metaDrift = report.regions.find(r => r.key === STATE_REGION_KEYS.METADATA);
-    assert.ok(metaDrift, 'metadata region not in drift report');
-    assert.equal(metaDrift?.status, 'drifted', 'metadata region should be drifted');
+    const whereDrift = report.regions.find(r => r.key === STATE_REGION_KEYS.WHERE);
+    assert.ok(whereDrift, 'where region not in drift report');
+    assert.equal(whereDrift?.status, 'drifted', 'where region should be drifted');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Test 9: Index parsers (decisions, questions, risks)
+// Test 9: Blockers region (blocking questions + blocked WUs)
 // ---------------------------------------------------------------------------
 
-describe('index parsers via buildStateCompilationOutput', () => {
-  test('decisions index: recent decisions appear in generated region', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('decisions-index');
+describe('blockers region', () => {
+  test('open questions that name something they block appear in the blockers region', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('blockers-questions');
     const store = await openWorkflowStore(workflowsPath);
     store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
 
-    await writeFile(
-      path.join(buildRoot, 'decisions', '_index.md'),
-      makeDecisionsIndex([
-        { id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' },
-        { id: 'D131', title: 'Memory store separation', date: '2026-06-01', status: 'accepted' },
-      ])
-    );
-    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
-
-    const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
-    assert.ok(regions.recent_decisions.includes('D132'), 'D132 not in decisions region');
-    assert.ok(regions.recent_decisions.includes('D131'), 'D131 not in decisions region');
-  });
-
-  test('open-questions index: active questions appear in generated region', async () => {
-    const { buildRoot, workflowsPath } = await makeWorkspace('questions-index');
-    const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
     await writeFile(
       path.join(buildRoot, 'open-questions', '_index.md'),
       makeQuestionsIndex([
@@ -609,78 +499,97 @@ describe('index parsers via buildStateCompilationOutput', () => {
         { id: 'Q020', title: 'Maintainer Mac bus factor', blocks: 'nuvector release' },
       ])
     );
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
-    assert.ok(regions.open_questions.includes('Q009'), 'Q009 not in open_questions region');
-    assert.ok(regions.open_questions.includes('Q020'), 'Q020 not in open_questions region');
+    assert.ok(regions.blockers.includes('Q009'), 'Q009 not in blockers region');
+    assert.ok(regions.blockers.includes('Q020'), 'Q020 not in blockers region');
+    assert.ok(!regions.blockers.includes('None'), 'blockers should not say None when questions block');
   });
 
-  test('risks index: active risks appear in generated region', async () => {
-    const { buildRoot, workflowsPath } = await makeWorkspace('risks-index');
+  test('open questions that block nothing do NOT appear in the blockers region', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('blockers-nonblocking');
     const store = await openWorkflowStore(workflowsPath);
     store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
 
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
-    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
     await writeFile(
-      path.join(buildRoot, 'risks', '_index.md'),
-      makeRisksIndex([
-        { id: 'R005', title: 'Programme runway', severity: 'Critical', likelihood: 'Medium', status: 'monitoring' },
-        { id: 'R007', title: 'Catalogue discipline loss', severity: 'High', likelihood: 'Medium', status: 'monitoring' },
+      path.join(buildRoot, 'open-questions', '_index.md'),
+      makeQuestionsIndex([
+        { id: 'Q030', title: 'Nice-to-know, blocks nothing', blocks: '—' },
+        { id: 'Q031', title: 'Also non-blocking', blocks: '' },
       ])
     );
 
     const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
-    assert.ok(regions.risks.includes('R005'), 'R005 not in risks region');
-    assert.ok(regions.risks.includes('R007'), 'R007 not in risks region');
+    assert.ok(!regions.blockers.includes('Q030'), 'non-blocking Q030 must not appear in blockers');
+    assert.ok(!regions.blockers.includes('Q031'), 'non-blocking Q031 must not appear in blockers');
+    assert.ok(regions.blockers.includes('None'), 'blockers should say None when only non-blocking questions exist');
+  });
+
+  test('blocked WUs (🔴 rows) appear in the blockers region', async () => {
+    const { buildRoot, workflowsPath, catalogueDir } = await makeWorkspace('blockers-wus');
+    const store = await openWorkflowStore(workflowsPath);
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Active WU');
+    await appendWuRow(buildRoot, 'wu-200', 'Stuck on upstream contract', 'blocked');
+    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
+
+    const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
+    assert.ok(regions.blockers.includes('wu-200'), 'blocked wu-200 not in blockers region');
+    assert.ok(regions.blockers.includes('Stuck on upstream contract'), 'blocked WU title not in blockers region');
+  });
+
+  test('resolved questions do NOT leak into the blockers region (section-boundary isolation)', async () => {
+    const { buildRoot, workflowsPath } = await makeWorkspace('blockers-resolved');
+    const store = await openWorkflowStore(workflowsPath);
+    store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
+
+    // Q050 is active and blocking; Q999 sits under ## Resolved questions and must not leak.
+    const indexContent = [
+      '# Open Questions Index',
+      '',
+      '## Active questions',
+      '',
+      '| ID | Title | Blocks | Raised |',
+      '|---|---|---|---|',
+      '| [Q050](Q050-test.md) | Active blocking question | WU 113 | 2026-06-01 |',
+      '',
+      '## Resolved questions',
+      '',
+      '| ID | Title | Blocks | Raised |',
+      '|---|---|---|---|',
+      '| [Q999](Q999-test.md) | Resolved question | WU 113 | 2026-06-01 |',
+      '',
+    ].join('\n');
+    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), indexContent);
+
+    const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
+    assert.ok(regions.blockers.includes('Q050'), 'active blocking Q050 must appear in blockers');
+    assert.ok(!regions.blockers.includes('Q999'), 'resolved Q999 must NOT appear in blockers — section boundary not respected');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Additional tests (WU 113b Stage A tester pass)
-// ---------------------------------------------------------------------------
-
 // AC 1: No LLM in the compile path — code-inspection + run-without-adapter
 // ---------------------------------------------------------------------------
 
 describe('AC 1 — No LLM in the compile path', () => {
-  test('state-compile.ts contains no llmAdapter.generate call (static inspection)', async () => {
+  test('state-compile.ts contains no llmAdapter reference (static inspection)', async () => {
     const { readFile: rf } = await import('node:fs/promises');
     const src = await rf(
       new URL('../src/commands/state-compile.ts', import.meta.url),
       'utf8'
     );
-    // The file must not contain llmAdapter.generate or any .generate( call that
-    // would imply an LLM round-trip.
-    assert.ok(
-      !src.includes('llmAdapter.generate'),
-      'state-compile.ts must not call llmAdapter.generate'
-    );
-    assert.ok(
-      !src.includes('llmAdapter'),
-      'state-compile.ts must not import or reference llmAdapter at all'
-    );
+    assert.ok(!src.includes('llmAdapter.generate'), 'state-compile.ts must not call llmAdapter.generate');
+    assert.ok(!src.includes('llmAdapter'), 'state-compile.ts must not import or reference llmAdapter at all');
   });
 
   test('buildStateCompilationOutput completes successfully with no LLM or embedder configured', async () => {
-    // The test environment has no LLM or embedding provider configured.
-    // If the compile path required either, this would throw or return empty regions.
     const { buildRoot, workflowsPath } = await makeWorkspace('ac1-no-llm');
     const store = await openWorkflowStore(workflowsPath);
     store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([
-      { id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' },
-    ]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([
       { id: 'Q009', title: 'Catalogue maintenance gate', blocks: 'WU 113' },
     ]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([
-      { id: 'R005', title: 'Programme runway', severity: 'Critical', likelihood: 'Medium', status: 'monitoring' },
-    ]));
 
-    // This must complete with no errors and produce all six regions —
-    // no LLM or embedding service is running.
     let result: Awaited<ReturnType<typeof buildStateCompilationOutput>>;
     await assert.doesNotReject(async () => {
       result = await buildStateCompilationOutput({
@@ -690,7 +599,6 @@ describe('AC 1 — No LLM in the compile path', () => {
       });
     }, 'buildStateCompilationOutput should not throw without an LLM or embedder');
 
-    // All six regions must be non-empty.
     for (const key of Object.values(STATE_REGION_KEYS)) {
       const content = result!.regions[key as keyof typeof result.regions];
       assert.ok(content && content.length > 0, `region "${key}" is empty — possible LLM dependency`);
@@ -698,26 +606,15 @@ describe('AC 1 — No LLM in the compile path', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
 // AC 2: Byte-preservation — span-level comparison (not includes())
 // ---------------------------------------------------------------------------
 
 /**
- * Extract the non-generated-region spans from a STATE.md string.
- *
- * The sentinel pairs look like:
- *   <!-- nuos:generated:<key>:start -->
- *   ...generated content...
- *   <!-- nuos:generated:<key>:end -->
- *
- * This function strips everything BETWEEN the open and close sentinel lines
- * (inclusive of the content lines but keeping the sentinel lines themselves),
- * leaving a string that consists only of:
- *   - the open sentinel line
- *   - the close sentinel line
- *   - everything outside the sentinel pairs
- *
- * Two files with identical non-region content will produce identical output
- * from this function, regardless of what was written inside the sentinel pairs.
+ * Extract the non-generated-region spans from a STATE.md string — strips the
+ * content between each sentinel pair (keeping the sentinel lines), leaving only
+ * authored spans. Two files with identical authored content produce identical
+ * output regardless of what was written inside the sentinel pairs.
  */
 function extractNonRegionSpans(fileContent: string): string {
   const keys = Object.values(STATE_REGION_KEYS);
@@ -728,9 +625,6 @@ function extractNonRegionSpans(fileContent: string): string {
     const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', marker);
     const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', marker);
 
-    // Replace everything between the sentinel lines (exclusive of the sentinel
-    // lines themselves) with the empty string.  This normalises the generated
-    // content so the comparison only measures the authored spans.
     const escapedOpen = openLine.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const escapedClose = closeLine.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regionRegex = new RegExp(
@@ -744,22 +638,12 @@ function extractNonRegionSpans(fileContent: string): string {
 }
 
 describe('AC 2 — Byte-preservation (span-level strictEqual, not includes())', () => {
-  test('authored prose spans are byte-for-byte identical before and after compile (strictEqual on non-region spans)', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('ac2-byte-exact');
+  test('authored prose spans are byte-for-byte identical before and after compile', async () => {
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('ac2-byte-exact');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([
-      { id: 'D132', title: 'STATE.md hybrid compile', date: '2026-06-01', status: 'accepted' },
-    ]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
-    // Authored prose that is intentionally chosen to include:
-    //   - markdown headings
-    //   - blank lines
-    //   - trailing whitespace on a line
-    //   - content that superficially resembles a sentinel marker comment
     const tricky = [
       '',
       '## Authored heading — hand-written',
@@ -789,28 +673,20 @@ describe('AC 2 — Byte-preservation (span-level strictEqual, not includes())', 
     const after = await readFile(fixturePath, 'utf8');
     const afterNonRegionSpans = extractNonRegionSpans(after);
 
-    // This is the safety-critical assertion: every byte outside the six
-    // sentinel-delimited regions must be byte-for-byte identical.
     assert.equal(
       afterNonRegionSpans,
       originalNonRegionSpans,
       'Non-region spans are not byte-identical after compile — authored prose was modified'
     );
 
-    // Separately confirm: the placeholder content was replaced.
-    assert.ok(
-      !after.includes('(generated content goes here)'),
-      'placeholder text was not replaced inside sentinel regions'
-    );
+    assert.ok(!after.includes('(generated content goes here)'), 'placeholder text was not replaced inside sentinel regions');
   });
 
   test('sentinel lines themselves are preserved verbatim (not rewritten)', async () => {
-    const { buildRoot, workflowsPath, workspace } = await makeWorkspace('ac2-sentinel-verbatim');
+    const { buildRoot, workflowsPath, workspace, catalogueDir } = await makeWorkspace('ac2-sentinel-verbatim');
     const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
+    await setActiveWu(buildRoot, catalogueDir, 'wu-113', 'Consume NuWiki');
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
     const fixturePath = path.join(workspace, 'STATE-sentinel-verbatim.md');
     const original = makeFixtureStateMd();
@@ -824,7 +700,6 @@ describe('AC 2 — Byte-preservation (span-level strictEqual, not includes())', 
 
     const after = await readFile(fixturePath, 'utf8');
 
-    // Every sentinel line from the original must still be present verbatim.
     for (const key of Object.values(STATE_REGION_KEYS)) {
       const marker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', key);
       const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', marker);
@@ -835,26 +710,22 @@ describe('AC 2 — Byte-preservation (span-level strictEqual, not includes())', 
   });
 
   test('absent-sentinel path does not write a single byte to the file', async () => {
-    // This is the most critical safety test: when sentinels are missing, the
-    // file must be completely unchanged — not even a timestamp bump.
     const { buildRoot, workflowsPath, workspace } = await makeWorkspace('ac2-absent-no-write');
     const store = await openWorkflowStore(workflowsPath);
     store.put(makeWuRecord('wu-113', 'Consume NuWiki', 'in_progress'));
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
     await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
 
-    // A STATE.md with only SOME sentinels (3 of 6 missing).
+    // A STATE.md with only ONE of the two sentinels present.
     const partial = [
       '# STATE',
       '',
-      '<!-- nuos:generated:metadata:start -->',
+      '<!-- nuos:generated:where:start -->',
       '(stale)',
-      '<!-- nuos:generated:metadata:end -->',
+      '<!-- nuos:generated:where:end -->',
       '',
-      '## Authored section',
+      '## Resume',
       '',
-      'Some authored prose — no other sentinel regions exist.',
+      'Some authored prose — the blockers sentinel region does not exist.',
       '',
     ].join('\n');
 
@@ -867,19 +738,17 @@ describe('AC 2 — Byte-preservation (span-level strictEqual, not includes())', 
       now: '2026-06-01T10:00:00.000Z',
     });
 
-    // Must exit non-zero.
     assert.equal(result.exitCode, 1, 'should exit non-zero when some sentinels are missing');
-
-    // Must report the missing regions.
     assert.ok(result.output.includes('sentinel regions are absent'), `missing-region message absent: ${result.output}`);
 
-    // File bytes must be unchanged — use strictEqual.
     const after = await readFile(fixturePath, 'utf8');
     assert.strictEqual(after, partial, 'file was modified despite absent sentinels (byte-safety failure)');
   });
 });
 
+// ---------------------------------------------------------------------------
 // AC 6: The rename — stateMdLastSessionResolves → stateMdLastSessionPresent
+// (verifies end-of-session.ts internals; unrelated to region collapse)
 // ---------------------------------------------------------------------------
 
 describe('AC 6 — The rename: stateMdLastSessionPresent in end-of-session.ts', () => {
@@ -889,15 +758,10 @@ describe('AC 6 — The rename: stateMdLastSessionPresent in end-of-session.ts', 
       new URL('../src/commands/end-of-session.ts', import.meta.url),
       'utf8'
     );
-    // The old variable name must not appear as an internal variable declaration.
-    // (It is still used as the returned field name to preserve the published interface.)
-    // The internal variable used for the check must be the new name.
     assert.ok(
       src.includes('stateMdLastSessionPresent'),
       'end-of-session.ts must use the renamed variable stateMdLastSessionPresent'
     );
-    // The old name may appear once as a returned property key (interface compatibility),
-    // but must NOT appear as a let/const/var declaration.
     const letConstDeclarations = src.match(/(?:let|const|var)\s+stateMdLastSessionResolves\b/g);
     assert.equal(
       letConstDeclarations,
@@ -912,193 +776,9 @@ describe('AC 6 — The rename: stateMdLastSessionPresent in end-of-session.ts', 
       new URL('../src/commands/end-of-session.ts', import.meta.url),
       'utf8'
     );
-    // The published EndOfSessionFacts interface uses stateMdLastSessionResolves —
-    // the return statement in checkStateMd must still map to that field name.
     assert.ok(
       src.includes('stateMdLastSessionResolves: stateMdLastSessionPresent'),
       'end-of-session.ts must return { stateMdLastSessionResolves: stateMdLastSessionPresent } to preserve the published interface'
-    );
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Test 10: Section-boundary isolation — superseded decisions and resolved risks
-// must never appear in the generated regions (WARN fix verification)
-// ---------------------------------------------------------------------------
-
-describe('index parsers — section-boundary isolation', () => {
-  /**
-   * Build a decisions _index.md that matches the real file structure:
-   *   ## Active decisions    → active rows
-   *   ## Superseded decisions → superseded rows (must NOT appear in output)
-   *   ## Withdrawn decisions  → withdrawn rows (must NOT appear in output)
-   */
-  function makeDecisionsIndexWithSuperseded(
-    active: Array<{ id: string; title: string; date: string; status: string }>,
-    superseded: Array<{ id: string; title: string; date: string; supersededBy: string }>
-  ): string {
-    const lines = [
-      '# Decisions Index',
-      '',
-      '> Every architectural decision.',
-      '',
-      '## Active decisions',
-      '',
-      '| ID | Title | Date | Status |',
-      '|---|---|---|---|',
-    ];
-    for (const e of active) {
-      lines.push(`| [${e.id}](${e.id}-test.md) | ${e.title} | ${e.date} | ${e.status} |`);
-    }
-    lines.push('');
-    lines.push('## Superseded decisions');
-    lines.push('');
-    lines.push('| ID | Title | Date | Superseded by |');
-    lines.push('|---|---|---|---|');
-    for (const e of superseded) {
-      lines.push(`| [${e.id}](superseded/${e.id}-test.md) | ${e.title} | ${e.date} | ${e.supersededBy} |`);
-    }
-    lines.push('');
-    lines.push('## Withdrawn decisions');
-    lines.push('');
-    lines.push('(none yet)');
-    lines.push('');
-    lines.push('## How to write a decision');
-    lines.push('');
-    lines.push('Use the file format established in D001.');
-    return lines.join('\n') + '\n';
-  }
-
-  function makeRisksIndexWithResolved(
-    active: Array<{ id: string; title: string; severity: string; likelihood: string; status: string }>,
-    resolved: Array<{ id: string; title: string; severity: string; likelihood: string; status: string }>
-  ): string {
-    const lines = [
-      '# Risk Register',
-      '',
-      '## Active risks',
-      '',
-      '| ID | Title | Severity | Likelihood | Status |',
-      '|---|---|---|---|---|',
-    ];
-    for (const e of active) {
-      lines.push(`| ${e.id} | ${e.title} | ${e.severity} | ${e.likelihood} | ${e.status} |`);
-    }
-    lines.push('');
-    lines.push('## Resolved risks');
-    lines.push('');
-    lines.push('| ID | Title | Severity | Likelihood | Status |');
-    lines.push('|---|---|---|---|---|');
-    for (const e of resolved) {
-      lines.push(`| ${e.id} | ${e.title} | ${e.severity} | ${e.likelihood} | ${e.status} |`);
-    }
-    lines.push('');
-    lines.push('## Format');
-    lines.push('');
-    lines.push('Each risk file should record the risk in one sentence.');
-    return lines.join('\n') + '\n';
-  }
-
-  test('superseded decisions (high D-number) must NOT appear in recent_decisions region', async () => {
-    const { buildRoot, workflowsPath } = await makeWorkspace('superseded-decisions');
-    const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
-
-    // D010 is active; D999 is high-numbered but in the Superseded section — must not leak.
-    await writeFile(
-      path.join(buildRoot, 'decisions', '_index.md'),
-      makeDecisionsIndexWithSuperseded(
-        [{ id: 'D010', title: 'Active decision', date: '2026-06-01', status: 'active' }],
-        [{ id: 'D999', title: 'High-number superseded decision', date: '2026-06-01', supersededBy: 'D010' }]
-      )
-    );
-    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
-
-    const { regions } = await buildStateCompilationOutput({
-      store, buildRoot, now: '2026-06-01T10:00:00.000Z',
-    });
-
-    assert.ok(
-      regions.recent_decisions.includes('D010'),
-      'active D010 must appear in recent_decisions'
-    );
-    assert.ok(
-      !regions.recent_decisions.includes('D999'),
-      'superseded D999 must NOT appear in recent_decisions — section boundary not respected'
-    );
-  });
-
-  test('withdrawn decisions must NOT appear in recent_decisions region', async () => {
-    // The ## Withdrawn decisions section also follows ## Superseded decisions;
-    // the split on /## (?:Superseded|Withdrawn) decisions/ must catch both.
-    const { buildRoot, workflowsPath } = await makeWorkspace('withdrawn-decisions');
-    const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
-
-    // Build a fixture where the ## Withdrawn decisions header comes BEFORE
-    // ## Superseded decisions — verifies the regex matches whichever appears first.
-    const indexContent = [
-      '# Decisions Index',
-      '',
-      '## Active decisions',
-      '',
-      '| ID | Title | Date | Status |',
-      '|---|---|---|---|',
-      '| [D010](D010-test.md) | Active decision | 2026-06-01 | active |',
-      '',
-      '## Withdrawn decisions',
-      '',
-      '| ID | Title | Date | Withdrawn by |',
-      '|---|---|---|---|',
-      '| [D888](D888-test.md) | High-number withdrawn decision | 2026-06-01 | operator |',
-      '',
-    ].join('\n');
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), indexContent);
-    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(path.join(buildRoot, 'risks', '_index.md'), makeRisksIndex([]));
-
-    const { regions } = await buildStateCompilationOutput({
-      store, buildRoot, now: '2026-06-01T10:00:00.000Z',
-    });
-
-    assert.ok(
-      regions.recent_decisions.includes('D010'),
-      'active D010 must appear in recent_decisions'
-    );
-    assert.ok(
-      !regions.recent_decisions.includes('D888'),
-      'withdrawn D888 must NOT appear in recent_decisions — section boundary not respected'
-    );
-  });
-
-  test('resolved risks must NOT appear in risks region', async () => {
-    const { buildRoot, workflowsPath } = await makeWorkspace('resolved-risks');
-    const store = await openWorkflowStore(workflowsPath);
-    store.put(makeWuRecord('wu-113', 'Test', 'in_progress'));
-
-    await writeFile(path.join(buildRoot, 'decisions', '_index.md'), makeDecisionsIndex([]));
-    await writeFile(path.join(buildRoot, 'open-questions', '_index.md'), makeQuestionsIndex([]));
-    await writeFile(
-      path.join(buildRoot, 'risks', '_index.md'),
-      makeRisksIndexWithResolved(
-        [{ id: 'R007', title: 'Active risk', severity: 'High', likelihood: 'Medium', status: 'monitoring' }],
-        [{ id: 'R999', title: 'Resolved risk', severity: 'Low', likelihood: 'Low', status: 'resolved' }]
-      )
-    );
-
-    const { regions } = await buildStateCompilationOutput({
-      store, buildRoot, now: '2026-06-01T10:00:00.000Z',
-    });
-
-    assert.ok(
-      regions.risks.includes('R007'),
-      'active R007 must appear in risks region'
-    );
-    assert.ok(
-      !regions.risks.includes('R999'),
-      'resolved R999 must NOT appear in risks region — section boundary not respected'
     );
   });
 });

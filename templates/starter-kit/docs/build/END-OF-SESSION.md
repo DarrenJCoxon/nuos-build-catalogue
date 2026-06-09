@@ -13,13 +13,11 @@
 
    The auditor's-question test: *"Could a third-party auditor read this entry and answer 'why was this done and what evidence justifies the next step?' without contacting the team?"* If yes, the entry is sufficient.
 
-2. **Update [`STATE.md`](STATE.md)** to reflect the session's outcome:
-   - Refresh "What is currently in flight"
-   - Refresh "What just shipped" if anything completed
-   - Refresh "What is next"
-   - Update the work-units-in-flight table
-   - Update the decisions-made-recently table if any decisions landed
+2. **Update [`STATE.md`](STATE.md)** — the handoff snapshot, not a dashboard:
+   - Overwrite the **Resume** block: where we are, exactly where this session stopped, the single next concrete action
    - Update the "Last updated" date
+   - Leave the generated **Active work unit** and **Blockers** regions alone — `nuos-catalogue state compile` rewrites them from the active-WU marker and the registers
+   - Do **not** mirror decisions, risks, open questions, or "what shipped" here — they live in their registers and the session log
 
 3. **Write a new session log entry** in [`sessions/`](sessions/) named `YYYY-MM-DD-short-description.md`. The entry should include:
    - **What this session was about** — one paragraph framing
@@ -27,7 +25,7 @@
    - **Decisions that surfaced** — link to D-NNN files
    - **Open questions raised** — link to Q-NNN files
    - **Risks identified** — link to R-NNN files
-   - **What's next** — the concrete next action (mirrors STATE.md "What is next")
+   - **What's next** — the concrete next action (mirrors STATE.md's Resume block)
 
 4. **Update the relevant `_index.md` files**:
    - If a new D-NNN landed, add it to `decisions/_index.md`

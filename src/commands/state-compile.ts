@@ -1,41 +1,44 @@
 /**
  * `nuos-catalogue state compile` — STATE.md hybrid-document recompile (WU 113b / D132).
  *
- * Reads canonical state from the **live markdown registers** (not the workflow
- * store, which is stale under Mode 1) and splices the generated sections into
+ * STATE.md is the **handoff snapshot** — the pickup point read at the start of every
+ * session, kept to one screen on purpose. It is NOT a project dashboard: decisions,
+ * risks, open questions, and health counts are NOT mirrored here. Those live in their
+ * registers (the canonical, always-current lists) and `nuos-catalogue doctor`.
+ * Duplicating them into STATE.md is the exact drift the catalogue exists to prevent:
+ * STATE.md is the handoff contract, not the executive summary.
+ *
+ * This command reads canonical state from the **live markdown registers** (not the
+ * workflow store, which is stale under Mode 1) and splices the generated sections into
  * the sentinel-delimited regions of STATE.md, leaving all authored prose
- * byte-for-byte identical.
+ * (Planning progress, Resume) byte-for-byte identical.
  *
  * **Source-of-truth for each generated region (D129 / Mode 1):**
- *   - Active WU:        `.nuos-catalogue/active-wu` marker file (WU 136 pointer)
- *                       + title/status resolved from `work-units/_index.md`
- *   - WUs in progress:  🟡 row count in `work-units/_index.md`
- *   - WUs completed:    file count in `work-units/done/`
- *   - Blocked WUs:      🔴 rows in `work-units/_index.md`
- *   - Decisions:        `decisions/_index.md` active section
- *   - Open questions:   `open-questions/_index.md` active section
- *   - Risks:            `risks/_index.md` active section
+ *   - `where`     (Active work unit): `.nuos-catalogue/active-wu` marker file (WU 136
+ *                 pointer) + title/status resolved from `work-units/_index.md`.
+ *   - `blockers`  (Blockers): 🔴 rows in `work-units/_index.md` (blocked WUs) +
+ *                 open questions whose "Blocks" column is non-empty
+ *                 (`open-questions/_index.md` active section).
+ *
+ * The **Resume** block is authored prose, not a generated region — no register can
+ * derive "where the last session stopped and the next concrete action." end-of-session
+ * overwrites it by hand each session; this command never touches it.
  *
  * The workflow store (`workflows.json`) is accepted as a parameter for API
- * compatibility (the CLI always opens it), but is NOT consulted for any of
- * the above — it is frozen at migration time and would produce stale counts.
+ * compatibility (the CLI always opens it), but is NOT consulted — it is frozen at
+ * migration time and would produce stale counts.
  *
- * **No LLM in this path.** The adapter builds an `LLMCompilationOutput`
- * directly from disk state. `renderArticleMarkdown` is called per section,
- * then `spliceGeneratedRegions` writes only inside the sentinel pairs.
+ * **No LLM in this path.** The adapter builds an `LLMCompilationOutput` directly from
+ * disk state. `renderArticleMarkdown` is called per section, then
+ * `spliceGeneratedRegions` writes only inside the sentinel pairs.
  *
- * **First-cutover boundary.** If a sentinel region is absent from the target
- * STATE.md, this command reports the missing regions clearly and exits
- * non-zero without guessing where to insert them. The one-time insertion of
- * sentinels into the live file is a manual operator step (Stage B walkthrough).
- *
- * D132 / D129 boundary:
- *   - Generated regions: live markdown registers are source of truth; disk is
- *     rendered projection for these regions only.
- *   - Authored regions:  disk remains the edit base (untouched by this command).
+ * **First-cutover boundary.** If a sentinel region is absent from the target STATE.md,
+ * this command reports the missing regions clearly and exits non-zero without guessing
+ * where to insert them. New catalogues ship the sentinels pre-inserted in the starter
+ * kit, so this path only matters for older STATE.md files mid-migration.
  */
 
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { LLMCompilationOutput, SentinelConfig } from '@nusoft/nuwiki';
 import {
@@ -60,16 +63,17 @@ export const STATE_SENTINEL_CONFIG: SentinelConfig = {
 };
 
 // ---------------------------------------------------------------------------
-// Region keys — one per generated section (per WU 113b section map).
+// Region keys — one per generated section. STATE.md is the handoff contract,
+// so only the two regions a picking-up agent needs are generated:
+//   - where:    the active-WU pointer
+//   - blockers: what stands between the active WU and its next step
+// Everything else (decisions, risks, health, "what shipped") lives in the
+// registers and `doctor`, not here.
 // ---------------------------------------------------------------------------
 
 export const STATE_REGION_KEYS = {
-  METADATA: 'metadata',
-  WHAT_IS_NEXT: 'what_is_next',
-  OPEN_QUESTIONS: 'open_questions',
-  RECENT_DECISIONS: 'recent_decisions',
-  RISKS: 'risks',
-  HEALTH_CHECK: 'health_check',
+  WHERE: 'where',
+  BLOCKERS: 'blockers',
 } as const;
 
 export type StateRegionKey = (typeof STATE_REGION_KEYS)[keyof typeof STATE_REGION_KEYS];
@@ -94,7 +98,7 @@ export interface StateCompiledOutput {
 
 /**
  * Reads canonical state from the live markdown registers and the active-WU
- * marker file, and produces the generated content for each STATE.md region.
+ * marker file, and produces the generated content for the two STATE.md regions.
  *
  * No LLM call is made. The adapter derives all content deterministically.
  * The workflow store parameter is accepted for API compatibility but is not
@@ -111,35 +115,24 @@ export async function buildStateCompilationOutput(
   //    Title + status resolved from work-units/_index.md (live source).
   const activeWu = await readActiveWuFromMarker(buildRoot);
 
-  // 2. Blocked WUs — from 🔴 rows in work-units/_index.md.
+  // 2. Blockers — 🔴 rows in work-units/_index.md (blocked WUs) + open questions
+  //    whose "Blocks" column is non-empty (a question that blocks nothing is
+  //    reference material, not a handoff blocker — it stays in its register).
   const blockedWorkflows = await readBlockedWorkflowsFromIndex(buildRoot);
+  const blockingQuestions = await readBlockingQuestions(buildRoot);
 
-  // 3. Register indexes (all parsed from live disk files).
-  const unresolvedQuestions = await readUnresolvedQuestions(buildRoot);
-  const recentDecisions = await readRecentDecisions(buildRoot);
-  const activeRisks = await readActiveRisks(buildRoot);
-  const healthStats = await readHealthStatsFromDisk(buildRoot);
+  // 3. Build each section's text content.
+  const whereText = renderWhereSection(activeWu, today);
+  const blockersText = renderBlockersSection(blockedWorkflows, blockingQuestions);
 
-  // 4. Build each section's text content.
-  const metadataText = renderMetadataSection(activeWu, today, healthStats);
-  const whatIsNextText = renderWhatIsNextSection(activeWu, blockedWorkflows);
-  const openQuestionsText = renderOpenQuestionsSection(unresolvedQuestions);
-  const recentDecisionsText = renderRecentDecisionsSection(recentDecisions);
-  const risksText = renderRisksSection(activeRisks);
-  const healthCheckText = renderHealthCheckSection(healthStats);
-
-  // 5. Assemble LLMCompilationOutput (one section per region, positionally ordered)
+  // 4. Assemble LLMCompilationOutput (one section per region, positionally ordered)
   const sections = [
-    { key: STATE_REGION_KEYS.METADATA,         heading: 'Metadata',                              text: metadataText,        citationIds: [], position: 1 },
-    { key: STATE_REGION_KEYS.WHAT_IS_NEXT,     heading: 'What is next',                          text: whatIsNextText,      citationIds: [], position: 2 },
-    { key: STATE_REGION_KEYS.OPEN_QUESTIONS,   heading: 'Open questions blocking active work',   text: openQuestionsText,   citationIds: [], position: 3 },
-    { key: STATE_REGION_KEYS.RECENT_DECISIONS, heading: 'Recent decisions',                      text: recentDecisionsText, citationIds: [], position: 4 },
-    { key: STATE_REGION_KEYS.RISKS,            heading: 'Risks currently being watched',         text: risksText,           citationIds: [], position: 5 },
-    { key: STATE_REGION_KEYS.HEALTH_CHECK,     heading: 'Health check',                          text: healthCheckText,     citationIds: [], position: 6 },
+    { key: STATE_REGION_KEYS.WHERE,    heading: 'Active work unit', text: whereText,    citationIds: [], position: 1 },
+    { key: STATE_REGION_KEYS.BLOCKERS, heading: 'Blockers',         text: blockersText, citationIds: [], position: 2 },
   ];
 
   const compilationOutput: LLMCompilationOutput = {
-    summary: `STATE.md compiled ${today} from live markdown registers. Active: ${activeWu?.handle ?? 'none'}.`,
+    summary: `STATE.md handoff snapshot compiled ${today} from live markdown registers. Active: ${activeWu?.handle ?? 'none'}.`,
     sections,
     citations: [],
     outboundLinks: [],
@@ -228,8 +221,8 @@ export async function cmdStateCompile(
       lines.push(`  missing: <!-- ${marker}:start --> / <!-- ${marker}:end -->`);
     }
     lines.push('');
-    lines.push('This is expected on first cutover. The sentinel pairs must be inserted');
-    lines.push('manually into STATE.md by the operator (Stage B walkthrough) before');
+    lines.push('New catalogues ship these sentinels pre-inserted. If you are migrating an');
+    lines.push('older STATE.md, the sentinel pairs must be inserted manually before');
     lines.push('`state compile` can manage those regions.');
     lines.push('');
     lines.push('For each missing region, add a sentinel pair at the appropriate location:');
@@ -427,7 +420,7 @@ export async function cmdStateDriftCheck(
     '',
     `  Drifted region(s): ${driftedRegions.join(', ')}`,
     '',
-    '  These regions are compiled deterministically from the workflow store and',
+    '  These regions are compiled deterministically from the active-WU marker and',
     '  register indexes. Hand-editing them will be overwritten on next recompile.',
     '',
     '  To fix: recompile the generated regions and re-stage STATE.md:',
@@ -549,19 +542,6 @@ async function readBlockedWorkflowsFromIndex(buildRoot: string): Promise<Blocked
   return blocked;
 }
 
-interface RecentDecision {
-  handle: string;
-  title: string;
-  status: string | null;
-  fileModifiedAt: string;
-}
-
-async function readRecentDecisions(buildRoot: string): Promise<RecentDecision[]> {
-  const indexContent = await readIndexFile(path.join(buildRoot, 'decisions', '_index.md'));
-  if (!indexContent) return [];
-  return parseDecisionsIndex(indexContent);
-}
-
 interface UnresolvedQuestion {
   id: string;
   title: string;
@@ -574,256 +554,68 @@ async function readUnresolvedQuestions(buildRoot: string): Promise<UnresolvedQue
   return parseQuestionsIndex(indexContent);
 }
 
-interface ActiveRisk {
-  id: string;
-  title: string;
-  severity: string;
-  likelihood: string;
-  status: string;
-}
-
-async function readActiveRisks(buildRoot: string): Promise<ActiveRisk[]> {
-  const indexContent = await readIndexFile(path.join(buildRoot, 'risks', '_index.md'));
-  if (!indexContent) return [];
-  return parseRisksIndex(indexContent);
-}
-
-interface HealthStats {
-  inProgressWus: number;
-  doneWus: number;
-  blockedWus: number;
-  totalDecisions: number;
-  openQuestions: number;
-  activeRisks: number;
-  /** Highest in-progress WU number (for phase derivation). */
-  maxInProgressWuNum: number;
-}
-
 /**
- * Derive health stats entirely from live disk sources:
- *   - in_progress / blocked counts: 🟡 / 🔴 rows in work-units/_index.md
- *   - completed count: files in work-units/done/
- *   - decisions count: active rows in decisions/_index.md
- *   - open questions: active rows in open-questions/_index.md
- *   - active risks: active rows in risks/_index.md
- *
- * The workflow store is NOT consulted (it is stale under Mode 1 — D129).
+ * The subset of unresolved questions that actually block work — i.e. whose
+ * "Blocks" column names something. A question that blocks nothing is reference
+ * material and stays in `open-questions/_index.md`; it is not a handoff blocker.
  */
-async function readHealthStatsFromDisk(buildRoot: string): Promise<HealthStats> {
-  const wuIndex = await readIndexFile(path.join(buildRoot, 'work-units', '_index.md'));
-  let inProgressWus = 0;
-  let blockedWus = 0;
-  let maxInProgressWuNum = 0;
-
-  if (wuIndex) {
-    for (const line of wuIndex.split('\n')) {
-      if (!/^\s*\|/.test(line)) continue;
-      const cells = line.split('|').map((c) => c.trim());
-      if (cells.length < 4) continue;
-      const idCell = cells[1];
-      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID') continue;
-      const statusCell = cells[3] ?? '';
-      if (statusCell.includes('🟡')) {
-        inProgressWus++;
-        // Extract the numeric part of the ID for phase derivation
-        const numMatch = idCell.match(/^(\d+)/);
-        if (numMatch) {
-          const n = parseInt(numMatch[1], 10);
-          if (n > maxInProgressWuNum) maxInProgressWuNum = n;
-        }
-      }
-      if (statusCell.includes('🔴')) blockedWus++;
-    }
-  }
-
-  // Completed count: files in work-units/done/
-  let doneWus = 0;
-  try {
-    const doneEntries = await readdir(path.join(buildRoot, 'work-units', 'done'));
-    doneWus = doneEntries.filter((f) => f.endsWith('.md') && !f.startsWith('_')).length;
-  } catch {
-    // done/ may not exist yet
-  }
-
-  // Decisions: active rows in decisions/_index.md
-  const decisionsIndex = await readIndexFile(path.join(buildRoot, 'decisions', '_index.md'));
-  let totalDecisions = 0;
-  if (decisionsIndex) {
-    const activeSection = decisionsIndex.split(/^## (?:Superseded|Withdrawn) decisions/im)[0];
-    for (const line of activeSection.split('\n')) {
-      if (!/^\s*\|/.test(line)) continue;
-      const cells = line.split('|').map((c) => c.trim());
-      if (cells.length < 3) continue;
-      const idCell = cells[1];
-      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
-      if (/^D\d+/i.test(idCell.replace(/^\[/, ''))) totalDecisions++;
-    }
-  }
-
-  // Open questions: active section
-  const questionsIndex = await readIndexFile(path.join(buildRoot, 'open-questions', '_index.md'));
-  let openQuestions = 0;
-  if (questionsIndex) {
-    const activeSection = questionsIndex.split(/^## Resolved questions/im)[0];
-    for (const line of activeSection.split('\n')) {
-      if (!/^\s*\|/.test(line)) continue;
-      const cells = line.split('|').map((c) => c.trim());
-      if (cells.length < 3) continue;
-      const idCell = cells[1];
-      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
-      if (/^Q\d+/i.test(idCell.replace(/^\[/, ''))) openQuestions++;
-    }
-  }
-
-  // Active risks: active section
-  const risksIndex = await readIndexFile(path.join(buildRoot, 'risks', '_index.md'));
-  let activeRisks = 0;
-  if (risksIndex) {
-    const activeSection = risksIndex.split(/^## Resolved risks/im)[0];
-    for (const line of activeSection.split('\n')) {
-      if (!/^\s*\|/.test(line)) continue;
-      const cells = line.split('|').map((c) => c.trim());
-      if (cells.length < 3) continue;
-      const idCell = cells[1];
-      if (!idCell || /^[-\s]*$/.test(idCell) || idCell === 'ID' || idCell === '---') continue;
-      if (/^R\d+/i.test(idCell)) activeRisks++;
-    }
-  }
-
-  return { inProgressWus, doneWus, blockedWus, totalDecisions, openQuestions, activeRisks, maxInProgressWuNum };
+async function readBlockingQuestions(buildRoot: string): Promise<UnresolvedQuestion[]> {
+  const all = await readUnresolvedQuestions(buildRoot);
+  return all.filter((q) => {
+    const b = (q.blocks ?? '').trim();
+    return b.length > 0 && b !== '—' && b !== '-' && b.toLowerCase() !== 'none';
+  });
 }
 
 // ---------------------------------------------------------------------------
-// Text renderers for each section
+// Text renderers for each region
 // ---------------------------------------------------------------------------
 
-function renderMetadataSection(
-  activeWu: ActiveWuInfo | null,
-  today: string,
-  stats: HealthStats
-): string {
-  const phase = deriveCurrentPhase(stats.maxInProgressWuNum);
-
-  const lines: string[] = [
-    '| Field | Value |',
-    '| --- | --- |',
-    `| Last compiled | ${today} |`,
-    `| Current phase | ${phase} |`,
-    `| Active WU | ${activeWu ? `**${activeWu.handle}** — ${activeWu.title} (${activeWu.status ?? 'unknown'})` : '(no active WU declared — run `nuos-catalogue wu start <handle>`)'} |`,
-    `| WUs in progress | ${stats.inProgressWus} |`,
-  ];
-
-  return lines.join('\n');
-}
-
 /**
- * Derive the current phase label from the highest in-progress WU number
- * (read from the live `work-units/_index.md`, not the store).
+ * The `where` region — the active-WU pointer. Detail (acceptance criteria,
+ * notes) lives in the WU file; this is just the name + status so the picking-up
+ * agent knows what is open.
  */
-function deriveCurrentPhase(maxInProgressWuNum: number): string {
-  if (maxInProgressWuNum === 0) return 'No active phase detected';
-  if (maxInProgressWuNum >= 100) return 'Continuous Track 1 — NuOS leads the build';
-  if (maxInProgressWuNum >= 80)  return 'Phase 5 — Consumer shell + productisation';
-  if (maxInProgressWuNum >= 60)  return 'Phase 4 — Trifecta integration test';
-  if (maxInProgressWuNum >= 40)  return 'Phase 3 — NuWiki + trifecta';
-  if (maxInProgressWuNum >= 20)  return 'Phase 2 — NuFlow';
-  return 'Phase 1 — NuVector';
-}
-
-function renderWhatIsNextSection(
-  activeWu: ActiveWuInfo | null,
-  blockedWorkflows: BlockedWorkflow[]
-): string {
+function renderWhereSection(activeWu: ActiveWuInfo | null, today: string): string {
   if (!activeWu) {
     return [
-      'No active WU marker found. Declare the active WU with:',
-      '    nuos-catalogue wu start <handle>',
+      'No active WU declared.',
       '',
-      'Then recompile STATE.md with `nuos-catalogue state compile`.',
+      'Set one with `nuos-catalogue wu start <handle>`, then recompile with',
+      '`nuos-catalogue state compile`.',
+      '',
+      `_Last compiled: ${today}._`,
     ].join('\n');
   }
 
-  const lines: string[] = [
+  return [
     `**Active WU: ${activeWu.handle}** — ${activeWu.title}`,
-    `Status: \`${activeWu.status ?? 'in_progress'}\``,
-  ];
-
-  if (blockedWorkflows.length > 0) {
-    lines.push('');
-    lines.push('**Blocked work units requiring attention:**');
-    for (const b of blockedWorkflows) {
-      lines.push(`- ${b.handle} — ${b.title}`);
-    }
-  }
-
-  lines.push('');
-  lines.push('Continue the active WU. Recompile STATE.md at end-of-session via `nuos-catalogue state compile`.');
-
-  return lines.join('\n');
+    `Status: \`${activeWu.status ?? 'in_progress'}\` · Last compiled: ${today}`,
+  ].join('\n');
 }
 
-function renderOpenQuestionsSection(questions: UnresolvedQuestion[]): string {
-  if (questions.length === 0) {
-    return 'No unresolved open questions. See `docs/build/open-questions/_index.md` for the full register.';
+/**
+ * The `blockers` region — everything standing between the active WU and its next
+ * step: blocked WUs (🔴) and open questions that name something they block. If
+ * neither exists, the next action is unblocked.
+ */
+function renderBlockersSection(
+  blocked: BlockedWorkflow[],
+  blockingQuestions: UnresolvedQuestion[]
+): string {
+  if (blocked.length === 0 && blockingQuestions.length === 0) {
+    return 'None. The active work unit is unblocked.';
   }
 
   const lines: string[] = [];
-  for (const q of questions.slice(0, 10)) {
-    const blocks = q.blocks ? ` — blocks: ${q.blocks}` : '';
-    lines.push(`- **${q.id}** — ${q.title}${blocks}`);
+  for (const b of blocked) {
+    lines.push(`- 🔴 **${b.handle}** — ${b.title}`);
   }
-  if (questions.length > 10) {
-    lines.push(`- *(${questions.length - 10} more — see open-questions/_index.md)*`);
+  for (const q of blockingQuestions.slice(0, 10)) {
+    lines.push(`- **${q.id}** — ${q.title} (blocks: ${q.blocks})`);
   }
-
-  return lines.join('\n');
-}
-
-function renderRecentDecisionsSection(decisions: RecentDecision[]): string {
-  if (decisions.length === 0) {
-    return 'No decisions found. See `docs/build/decisions/_index.md` for the full register.';
-  }
-
-  const recent = decisions.slice(0, 8);
-  const lines: string[] = [];
-  for (const d of recent) {
-    lines.push(`- **${d.handle}** — ${d.title}${d.status ? ` *(${d.status})*` : ''}`);
-  }
-  if (decisions.length > 8) {
-    lines.push(`- *(${decisions.length - 8} more — see decisions/_index.md)*`);
-  }
-
-  return lines.join('\n');
-}
-
-function renderRisksSection(risks: ActiveRisk[]): string {
-  if (risks.length === 0) {
-    return 'No active risks found. See `docs/build/risks/_index.md` for the full register.';
-  }
-
-  const lines: string[] = [];
-  for (const r of risks.slice(0, 5)) {
-    lines.push(`- **${r.id}** (${r.severity}) — ${r.title} *(${r.status})*`);
-  }
-  if (risks.length > 5) {
-    lines.push(`- *(${risks.length - 5} more — see risks/_index.md)*`);
-  }
-
-  return lines.join('\n');
-}
-
-function renderHealthCheckSection(stats: HealthStats): string {
-  const lines: string[] = [
-    '| Check | Count |',
-    '| --- | --- |',
-    `| WUs in progress | ${stats.inProgressWus} |`,
-    `| WUs completed | ${stats.doneWus} (files in work-units/done/) |`,
-    `| Decisions recorded | ${stats.totalDecisions} (active section) |`,
-    `| Open questions | ${stats.openQuestions} |`,
-    `| Active risks | ${stats.activeRisks} |`,
-  ];
-  if (stats.blockedWus > 0) {
-    lines.push(`| Blocked WUs | ${stats.blockedWus} — attention needed |`);
+  if (blockingQuestions.length > 10) {
+    lines.push(`- *(${blockingQuestions.length - 10} more — see open-questions/_index.md)*`);
   }
   return lines.join('\n');
 }
@@ -834,72 +626,19 @@ function renderHealthCheckSection(stats: HealthStats): string {
 
 async function readIndexFile(filePath: string): Promise<string | null> {
   try {
-    const { readFile: rf } = await import('node:fs/promises');
-    return await rf(filePath, 'utf8');
+    return await readFile(filePath, 'utf8');
   } catch {
     return null;
   }
 }
 
 /**
- * Parse the decisions _index.md table — active decisions only.
- * Row shape: `| [D001](file.md) | Title | Date | Status |`
- * or: `| D001 | Title | Date | Status |`
- *
- * The real decisions/_index.md has three terminal sections after the active
- * table: `## Superseded decisions`, `## Withdrawn decisions`, and
- * `## How to write a decision`. We split on the first non-active section
- * (whichever of Superseded / Withdrawn appears first) so a high-numbered
- * decision that is later superseded never leaks into the generated region.
- */
-function parseDecisionsIndex(content: string): RecentDecision[] {
-  const decisions: RecentDecision[] = [];
-
-  // Scope to the active-decisions section only.
-  // Split on the first of the two non-active `##` headers that follow it.
-  const activeSection = content.split(/^## (?:Superseded|Withdrawn) decisions/im)[0];
-  const lines = activeSection.split('\n');
-
-  for (const line of lines) {
-    if (!/^\s*\|/.test(line)) continue;
-    const cells = line.split('|').map((c) => c.trim());
-    // Expect: [empty, id-cell, title, date, status, empty]
-    if (cells.length < 5) continue;
-
-    const idCell = cells[1];
-    if (!idCell || !/^D\d+/i.test(idCell.replace(/^\[/, ''))) continue;
-
-    // Extract the handle — strip link markup if present
-    const handleMatch = idCell.match(/\[?(D\d+)\]?/i);
-    if (!handleMatch) continue;
-    const handle = handleMatch[1];
-
-    const title = cells[2] ?? '';
-    if (!title || title === 'Title' || title === '---') continue;
-
-    const status = cells[4] ?? null;
-    if (status === 'Status' || status === '---') continue;
-
-    decisions.push({
-      handle,
-      title,
-      status: status || null,
-      fileModifiedAt: cells[3] ?? '',
-    });
-  }
-
-  // Sort by handle number descending to get most recent first
-  return decisions.sort((a, b) => {
-    const na = parseInt(a.handle.slice(1), 10);
-    const nb = parseInt(b.handle.slice(1), 10);
-    return nb - na;
-  });
-}
-
-/**
  * Parse the open-questions _index.md active table.
  * Row shape: `| [Q003](file.md) | Title | Blocks | Raised |`
  * or: `| Q003 | Title | Blocks | Raised |`
+ *
+ * Scoped to the active-questions section only — the split on `## Resolved
+ * questions` keeps resolved questions out of the generated region.
  */
 function parseQuestionsIndex(content: string): UnresolvedQuestion[] {
   const questions: UnresolvedQuestion[] = [];
@@ -930,39 +669,4 @@ function parseQuestionsIndex(content: string): UnresolvedQuestion[] {
   }
 
   return questions;
-}
-
-/**
- * Parse the risks _index.md active table.
- * Row shape: `| R001 | Title | Severity | Likelihood | Status |`
- */
-function parseRisksIndex(content: string): ActiveRisk[] {
-  const risks: ActiveRisk[] = [];
-
-  // Find the "Active risks" section — stop at "Resolved risks"
-  const activeSection = content.split(/^## Resolved risks/im)[0];
-  const lines = activeSection.split('\n');
-
-  for (const line of lines) {
-    if (!/^\s*\|/.test(line)) continue;
-    const cells = line.split('|').map((c) => c.trim());
-    if (cells.length < 6) continue;
-
-    const idCell = cells[1];
-    if (!idCell || !/^R\d+/i.test(idCell)) continue;
-    if (idCell === 'ID' || idCell === '---') continue;
-
-    const id = idCell;
-    const title = cells[2] ?? '';
-    if (!title || title === 'Title' || title === '---') continue;
-
-    const severity = cells[3] ?? '';
-    const likelihood = cells[4] ?? '';
-    const status = cells[5] ?? '';
-    if (status === 'Status' || status === '---') continue;
-
-    risks.push({ id, title, severity, likelihood, status });
-  }
-
-  return risks;
 }

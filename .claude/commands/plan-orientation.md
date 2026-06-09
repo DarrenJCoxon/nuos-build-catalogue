@@ -58,7 +58,7 @@ Ask, in conversation:
 
 Listen. Don't interrupt. When they're done, summarise back in 2-3 sentences in your words, and ask if you've got it. Refine if needed.
 
-When the description is settled, **write it into `STATE.md`'s "What is currently in flight" section** — replacing the placeholder. Keep their voice; don't make it sound corporate. Show them the file path and confirm it's saved.
+When the description is settled, **write it into `STATE.md`'s Resume block** — replacing the placeholder. Keep their voice; don't make it sound corporate. Show them the file path and confirm it's saved.
 
 ## Step 3 — Tech stack (5 min)
 

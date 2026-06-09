@@ -38,7 +38,7 @@ Read `docs/build/STATE.md`. Look at the **Planning progress** section:
 
   If yes, **switch to the `plan-orientation` protocol** (invoke `/plan-orientation` if available; otherwise read `.claude/commands/plan-orientation.md` and follow it). If no, point them at `docs/build/WELCOME.md` and `docs/build/GLOSSARY.md` so they can read about the catalogue first, then wait.
 
-- If **any planning phase is in progress or marked `🟡 next`**, route to the appropriate protocol. Read STATE.md's `## Last session resume` section to know exactly where to pick up within the phase. Do not open the session log file.
+- If **any planning phase is in progress or marked `🟡 next`**, route to the appropriate protocol. Read STATE.md's `## Resume` section to know exactly where to pick up within the phase. Do not open the session log file.
 
   | Phase | Protocol |
   |---|---|
@@ -56,11 +56,15 @@ Read `docs/build/STATE.md`. Look at the **Planning progress** section:
 
 Read only what is necessary — no more:
 
-1. `docs/build/STATE.md` in full — the always-current snapshot. **This is the primary source.** The `## Last session resume` section contains the pickup point from the previous session; you do not need to open any session log file.
+1. `docs/build/STATE.md` in full — it is one screen by design. **This is the primary source.** Read its sections:
+   - **Planning progress** (if still present) — the planning-arc router; Step 1 already used it.
+   - **Active work unit** — the generated pointer to what is open.
+   - **Resume** — the authored pickup block: where we are, exactly where the last session stopped, the next concrete action. You do not need to open any session log file.
+   - **Blockers** — generated; blocked WUs and blocking questions. If it says "None", nothing stands between the active WU and its next step.
 2. The active work unit named in STATE.md — read the **header** (status, persona, last updated), `## What's done when this ships`, and only the **most recent dated entry** in `## Notes / log`. Do not read earlier note entries; they are history, not orientation.
-3. **Only if** STATE.md's `## Open questions blocking progress` section lists actual entries (not "None"): read `docs/build/open-questions/_index.md` and `docs/build/risks/_index.md`.
+3. **Only if** STATE.md's `## Blockers` section lists actual entries (not "None"): read the relevant register row(s) in `docs/build/open-questions/_index.md` and `docs/build/risks/_index.md` for detail.
 
-Do not open session log files. They are archives. The resume block in STATE.md is authoritative.
+STATE.md no longer carries decisions/risks/health tables — those are in their registers; open them only when the Resume or a Blocker points you there. Do not open session log files. They are archives. The Resume block in STATE.md is authoritative.
 
 ## Step 3 — Tell the operator where they are
 

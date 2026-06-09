@@ -248,7 +248,7 @@ describe('(c) stub emitting confirmed drift (contains "generated regions") + exi
       'nuos-catalogue',
       `#!/usr/bin/env bash
 echo "state drift-check: generated regions in STATE.md have drifted from canonical state." >&2
-echo "  Drifted region(s): metadata, what_is_next" >&2
+echo "  Drifted region(s): where, blockers" >&2
 exit 1
 `
     );

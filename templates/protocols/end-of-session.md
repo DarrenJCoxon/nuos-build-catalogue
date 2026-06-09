@@ -42,16 +42,17 @@ Confirm status icons reflect reality. When a work unit promotes to ✅ shipped:
 - Update the row link in `_index.md` to point at `done/`
 - Fix any internal relative paths in the moved file (they go one level deeper)
 
-### 6. Update STATE.md
+### 6. Update STATE.md — the handoff snapshot
 
-Refresh:
+STATE.md is the pickup point for the next session, **not a dashboard**. Keep it to one screen. There is exactly one block you write by hand:
 
-- **Last updated** — today's date
-- **What is currently in flight** — the current state of work in one paragraph
-- **What just shipped** — the most recent completion
-- **What is next** — the immediate next action
-- **Planning progress** — if a planning phase advanced, update its status here
-- The decisions, questions, and active work units tables — pull the most recent rows from each register
+- **Resume** — overwrite it with three things and nothing more: (1) where we are in the arc, one line; (2) exactly where this session stopped; (3) the single next concrete action, specific enough to start without re-reading. Write it once, well. This is the *only* narrative block — do not reintroduce separate "in flight", "just shipped", or "what is next" sections; they all describe the same moment and belong here together.
+- **Planning progress** — only while planning: if a phase advanced, update its status row. Once all five are ✅, delete the section.
+- **Last updated** — today's date (in the header note).
+
+Do **not** hand-edit the generated regions (**Active work unit**, **Blockers**) — `nuos-catalogue state compile` rewrites them from the active-WU marker and the registers, and Step 5b runs it for you.
+
+Do **not** mirror decisions, risks, open questions, health counts, or "what shipped" into STATE.md. They live in their registers and the session log; the registers are the canonical lists. Duplicating them here is exactly the drift this protocol exists to prevent — STATE.md is the handoff contract, not the executive summary.
 
 ### 7. Write a session log entry
 

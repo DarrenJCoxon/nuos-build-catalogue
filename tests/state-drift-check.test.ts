@@ -133,7 +133,7 @@ function makeRisksIndex(): string {
   ].join('\n') + '\n';
 }
 
-/** A minimal fixture STATE.md with all six sentinel pairs + authored prose. */
+/** A minimal fixture STATE.md with both sentinel pairs + authored prose. */
 function makeFixtureStateMd(): string {
   const regions = Object.values(STATE_REGION_KEYS);
   const blocks: string[] = [
@@ -267,7 +267,7 @@ describe('§4 — cmdStateDriftCheck: exit 0 when adapter fails (fail-open)', ()
     // Store is empty; register files are NOT written
     // Write a STATE.md with ONE sentinel so the pre-cutover guard does not trigger
     const fixturePath = path.join(workspace, 'STATE-one-sentinel.md');
-    const marker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.METADATA);
+    const marker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.WHERE);
     const open = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', marker);
     const close = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', marker);
     await writeFile(
@@ -319,9 +319,9 @@ describe('§5 — cmdStateDriftCheck: exit 1 only on confirmed drift; names drif
       now: '2026-06-01T10:00:00.000Z',
     });
 
-    // Hand-edit the metadata region content
+    // Hand-edit the where region content
     const compiled = await readFile(fixturePath, 'utf8');
-    const metaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.METADATA);
+    const metaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.WHERE);
     const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', metaMarker);
     const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', metaMarker);
 
@@ -342,7 +342,7 @@ describe('§5 — cmdStateDriftCheck: exit 1 only on confirmed drift; names drif
     assert.equal(result.exitCode, 1, `expected exit 1 on confirmed drift, got: ${result.output}`);
     assert.equal(result.verdict, 'drifted');
     assert.ok(result.driftedRegions && result.driftedRegions.length > 0, 'driftedRegions must be populated');
-    assert.ok(result.driftedRegions!.includes(STATE_REGION_KEYS.METADATA), 'metadata must be named as drifted');
+    assert.ok(result.driftedRegions!.includes(STATE_REGION_KEYS.WHERE), 'where must be named as drifted');
     // Output must contain "generated regions" (the phrase the hook uses for old-binary detection)
     assert.ok(
       result.output.includes('generated regions'),
@@ -360,15 +360,15 @@ describe('§5 — cmdStateDriftCheck: exit 1 only on confirmed drift; names drif
     await writeFile(fixturePath, makeFixtureStateMd());
     await cmdStateCompile(store, { buildRoot, stateMdPath: fixturePath, now: '2026-06-01T10:00:00.000Z' });
 
-    // Hand-edit the what_is_next region
+    // Hand-edit the blockers region
     const compiled = await readFile(fixturePath, 'utf8');
-    const winaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.WHAT_IS_NEXT);
+    const winaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.BLOCKERS);
     const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', winaMarker);
     const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', winaMarker);
     const escaped = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const modified = compiled.replace(
       new RegExp(`(${escaped(openLine)}\n)[\\s\\S]*?(\n${escaped(closeLine)})`),
-      `$1HAND-EDITED what_is_next\n$2`
+      `$1HAND-EDITED blockers\n$2`
     );
     await writeFile(fixturePath, modified);
 
@@ -380,8 +380,8 @@ describe('§5 — cmdStateDriftCheck: exit 1 only on confirmed drift; names drif
 
     assert.equal(result.exitCode, 1);
     assert.ok(
-      result.output.includes(STATE_REGION_KEYS.WHAT_IS_NEXT),
-      `output must name the drifted region (what_is_next): ${result.output}`
+      result.output.includes(STATE_REGION_KEYS.BLOCKERS),
+      `output must name the drifted region (blockers): ${result.output}`
     );
   });
 
@@ -397,7 +397,7 @@ describe('§5 — cmdStateDriftCheck: exit 1 only on confirmed drift; names drif
 
     // Hand-edit a region
     const compiled = await readFile(fixturePath, 'utf8');
-    const metaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.METADATA);
+    const metaMarker = STATE_SENTINEL_CONFIG.markerPattern.replace('{{key}}', STATE_REGION_KEYS.WHERE);
     const openLine = STATE_SENTINEL_CONFIG.openTemplate.replace('{{marker}}', metaMarker);
     const closeLine = STATE_SENTINEL_CONFIG.closeTemplate.replace('{{marker}}', metaMarker);
     const escaped = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

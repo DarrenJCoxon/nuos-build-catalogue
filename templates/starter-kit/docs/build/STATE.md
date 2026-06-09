@@ -1,12 +1,22 @@
-# {{PROJECT_NAME}} — where we are right now
+# {{PROJECT_NAME}} — handoff snapshot
 
-> This file is the snapshot read at the start of every session. If anything important about the project's current state is not here, it is not real. The end-of-session protocol updates this file every time work stops.
-
-**Last updated:** {{TODAY}}
+> The pickup point, read at the start of every session. **Not a dashboard** — it stays
+> the size of one screen on purpose. Decisions, risks, and open questions are not
+> mirrored here; they live in their registers ([`decisions/`](decisions/_index.md),
+> [`risks/`](risks/_index.md), [`open-questions/`](open-questions/_index.md)), and the
+> session-by-session story lives in [`sessions/`](sessions/_index.md). For health counts
+> run `nuos-catalogue doctor`.
+>
+> The **Active work unit** and **Blockers** regions below are compiled by
+> `nuos-catalogue state compile` (run automatically by end-of-session). The **Resume**
+> block between them is the one part written by hand — end-of-session overwrites it each
+> session. **Last updated:** {{TODAY}}
 
 ## Planning progress
 
-This project is at the start of its planning arc. The AI will walk you through five phases before you begin building. Each phase is its own session.
+This project is at the start of its planning arc. The AI will walk you through five
+phases before you begin building. Each phase is its own session. (Once all five are
+✅ complete, delete this section — it has no role once building starts.)
 
 | Phase | What it produces | Status |
 | --- | --- | --- |
@@ -16,53 +26,31 @@ This project is at the start of its planning arc. The AI will walk you through f
 | D — Maps | Phases of work and the near-term plan | 🔵 not yet started |
 | E — Initial Work Units | The first 5-10 things to build, in dependency order | 🔵 not yet started |
 
-When you run `/start-of-session` on this fresh project, the AI will see this tracker and offer to begin Phase A.
+When you run `/start-of-session` on this fresh project, the AI will see this tracker and
+offer to begin Phase A.
 
-## What is currently in flight
+<!-- nuos:generated:where:start -->
+## Active work unit
 
-[Filled in once Phase A is underway. Today, this is a brand-new catalogue with no work in flight yet.]
+No active WU declared yet. Once planning produces the first work units, run
+`nuos-catalogue wu start <handle>` and this region will name the active WU.
+<!-- nuos:generated:where:end -->
 
-## What just shipped
+## Resume
 
-Nothing yet — this catalogue was just adopted on {{TODAY}}.
+_Planning has not started. Run `/start-of-session` to begin Phase A._
 
-## What is next
+end-of-session overwrites this block each session with exactly three things:
 
-Run `/start-of-session` to begin. The AI will read this file and walk you through Phase A of planning.
+1. **Where we are** in the arc — one line (a planning phase, or "Building — Phase N").
+2. **Where the last session stopped** — the precise pickup point.
+3. **The single next concrete action** — specific enough to start without re-reading.
 
-## Last session resume
+Write it once, well. This block replaces the old "in flight / just shipped / what is
+next / last session" slots — they all described the same moment, so they collapse here.
 
-No sessions have run yet.
+<!-- nuos:generated:blockers:start -->
+## Blockers
 
-_end-of-session writes here: what the last session accomplished (1–2 sentences), exactly where to pick up, and any mid-task context needed. start-of-session reads this instead of opening the session log file._
-
-## Open questions blocking progress
-
-None currently filed. Filed questions live in [`open-questions/_index.md`](open-questions/_index.md).
-
-## Active risks
-
-None currently filed. Filed risks live in [`risks/_index.md`](risks/_index.md).
-
-## Decisions made recently
-
-| Decision | Status | Date |
-| --- | --- | --- |
-| _none yet_ | | |
-
-## Active work units
-
-| Work Unit | Status | Notes |
-| --- | --- | --- |
-| _none yet — phase E of planning produces the first batch_ | | |
-
-## How to read this file
-
-- **Planning progress** shows where you are in the 5-phase arc that takes a brand-new project to "ready to build"
-- **What is currently in flight** describes ongoing work; updated when work changes shape
-- **What just shipped** notes the most recent completion(s)
-- **What is next** points at the immediate concrete action
-- **Last session resume** is the pickup block written by end-of-session — start-of-session reads this instead of opening a session log file
-- Below: open questions, risks, decisions, and active work units — pulled from their respective registers for quick scanning
-
-This file is the project's executive summary. The detail lives in the register files; this is the one-screen view that says where the project is.
+None. The active work unit is unblocked.
+<!-- nuos:generated:blockers:end -->

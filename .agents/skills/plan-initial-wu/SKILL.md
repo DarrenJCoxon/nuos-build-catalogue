@@ -74,7 +74,7 @@ The review typically takes 10–20 minutes. It is the difference between a catal
 
 ## Step 5 — Close
 
-Update STATE.md (only after `plan-review` has completed): Phase E → `✅ complete (YYYY-MM-DD)`; "Active work unit" → first `🟡 in flight` WU handle + title; "What is currently in flight" → one sentence on what the swarm tackles first; refresh "Last updated". Set `methodfile.json` → `planning.completedAt` to today's ISO date.
+Update STATE.md (only after `plan-review` has completed): Phase E → `✅ complete (YYYY-MM-DD)`; set the active WU with `nuos-catalogue wu start <handle>` for the first `🟡 in flight` WU (the generated **Active work unit** region compiles from that marker — don't hand-edit it); write the **Resume** block with one line on what the swarm tackles first; refresh "Last updated". Set `methodfile.json` → `planning.completedAt` to today's ISO date.
 
 Tell the operator: planning arc complete, [N] work units filed and ordered, [first WU title] is first. From here the loop is `/start-of-session` → work → `/end-of-session`; when ready to build, `/build-wu <handle>` runs the swarm. Then run `/end-of-session`.
 

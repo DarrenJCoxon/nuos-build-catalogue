@@ -128,7 +128,7 @@ Return control to whatever invoked this protocol (typically `plan-initial-wu`, w
 When `/plan-review` is called outside of the planning arc close — e.g. after a significant pivot, after a new persona is added, or when something feels off — run Steps 1–5 above, then:
 
 - Do not update planning progress in STATE.md (Phase E may already be complete)
-- Do update STATE.md's "What is currently in flight" and "Last updated"
+- Do update STATE.md's Resume block and "Last updated"
 - Run `/end-of-session` to commit the findings and any fixes
 
 ---
