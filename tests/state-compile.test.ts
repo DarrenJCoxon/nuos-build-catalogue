@@ -516,13 +516,18 @@ describe('blockers region', () => {
       makeQuestionsIndex([
         { id: 'Q030', title: 'Nice-to-know, blocks nothing', blocks: '—' },
         { id: 'Q031', title: 'Also non-blocking', blocks: '' },
+        // Registers use the Blocks column descriptively — a row can disclaim blocking in prose.
+        { id: 'Q032', title: 'Disclaims blocking', blocks: 'nothing on the critical path (build-hygiene)' },
+        { id: 'Q033', title: 'Also disclaims', blocks: 'None on the critical path' },
       ])
     );
 
     const { regions } = await buildStateCompilationOutput({ store, buildRoot, now: '2026-06-01T10:00:00.000Z' });
     assert.ok(!regions.blockers.includes('Q030'), 'non-blocking Q030 must not appear in blockers');
     assert.ok(!regions.blockers.includes('Q031'), 'non-blocking Q031 must not appear in blockers');
-    assert.ok(regions.blockers.includes('None'), 'blockers should say None when only non-blocking questions exist');
+    assert.ok(!regions.blockers.includes('Q032'), '"blocks: nothing…" Q032 must not appear in blockers');
+    assert.ok(!regions.blockers.includes('Q033'), '"blocks: None…" Q033 must not appear in blockers');
+    assert.ok(regions.blockers.includes('None'), 'blockers should say None when no question names a real blocker');
   });
 
   test('blocked WUs (🔴 rows) appear in the blockers region', async () => {

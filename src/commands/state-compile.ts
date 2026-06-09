@@ -556,14 +556,24 @@ async function readUnresolvedQuestions(buildRoot: string): Promise<UnresolvedQue
 
 /**
  * The subset of unresolved questions that actually block work — i.e. whose
- * "Blocks" column names something. A question that blocks nothing is reference
- * material and stays in `open-questions/_index.md`; it is not a handoff blocker.
+ * "Blocks" column names something real. A question that blocks nothing is
+ * reference material and stays in `open-questions/_index.md`; it is not a
+ * handoff blocker.
+ *
+ * Registers use the "Blocks" column descriptively, so a row can carry prose
+ * that *disclaims* blocking — e.g. "nothing on the critical path (build-hygiene)".
+ * Those are excluded: a value that is empty, a dash, or opens with "nothing" /
+ * "none" names nothing blocked. Anything else (a WU handle, a phase, a feature)
+ * is a genuine blocker.
  */
 async function readBlockingQuestions(buildRoot: string): Promise<UnresolvedQuestion[]> {
   const all = await readUnresolvedQuestions(buildRoot);
   return all.filter((q) => {
     const b = (q.blocks ?? '').trim();
-    return b.length > 0 && b !== '—' && b !== '-' && b.toLowerCase() !== 'none';
+    if (b.length === 0 || b === '—' || b === '-') return false;
+    // "nothing on the critical path…", "none on the critical path", "none" → not a blocker.
+    if (/^(nothing|none)\b/i.test(b)) return false;
+    return true;
   });
 }
 

@@ -9,7 +9,7 @@ On a long project STATE.md bloated, because it tried to be two things at once: t
 - **Planning progress** — authored, and only during the planning arc (it routes `/start-of-session`); deleted once all five phases are ✅.
 - **Active work unit** — generated; the pointer to what's open.
 - **Resume** — the single authored block: where we are, exactly where the last session stopped, the next concrete action. This replaces the four overlapping narrative slots ("in flight" / "just shipped" / "what is next" / "last session resume") that all described the same moment.
-- **Blockers** — generated; blocked WUs (🔴) plus *only* the open questions whose "Blocks" column names something. A question that blocks nothing stays in its register.
+- **Blockers** — generated; blocked WUs (🔴) plus *only* the open questions whose "Blocks" column names something real. Rows that disclaim blocking in prose (`blocks: nothing on the critical path…`, `blocks: none…`) are excluded, not just empty ones — registers use the column descriptively. A question that blocks nothing stays in its register.
 
 **Deleted from the always-read path:** the recent-decisions table, non-blocking risks, health counts, and "what just shipped". Nothing is lost — decisions/risks/open-questions live in their registers (the canonical, always-current lists) and the narrative lives in the session logs. Mirroring them into STATE.md was a second source of truth that drifted from the registers — the exact failure the catalogue exists to prevent.
 
